@@ -27,7 +27,7 @@ public class TempController {
     private final TempQueryService tempQueryService;
 
     @Operation(summary = "임시 데이터 생성", description = "새로운 임시 데이터를 생성합니다.")
-    @PostMapping("/")
+    @PostMapping
     public ApiResponse<TempResponseDTO.CreateTempResultDTO> createTemp(
             @RequestBody @Valid TempRequestDTO.CreateTempDTO request) {
         Long tempId = tempCommandService.createTemp(request);
@@ -43,7 +43,7 @@ public class TempController {
     }
 
     @Operation(summary = "임시 데이터 전체 조회", description = "모든 임시 데이터를 조회합니다.")
-    @GetMapping("/")
+    @GetMapping
     public ApiResponse<TempResponseDTO.TempListDTO> getAllTemps() {
         List<Temp> temps = tempQueryService.findAllTemps();
         return ApiResponse.onSuccess(TempConverter.toTempListDTO(temps));

@@ -1,6 +1,7 @@
 package com.umc.puppymode2.domain.temp.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Getter;
 import com.umc.puppymode2.domain.temp.entity.enums.TempStatus;
 
@@ -11,6 +12,7 @@ import jakarta.validation.constraints.Size;
 public class TempRequestDTO {
 
     @Getter
+    @Builder
     @Schema(description = "임시 데이터 생성 요청")
     public static class CreateTempDTO {
 
@@ -29,6 +31,7 @@ public class TempRequestDTO {
     }
 
     @Getter
+    @Builder
     @Schema(description = "임시 데이터 수정 요청")
     public static class UpdateTempDTO {
 

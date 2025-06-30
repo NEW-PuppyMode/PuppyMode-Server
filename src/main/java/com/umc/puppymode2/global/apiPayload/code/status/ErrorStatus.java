@@ -17,7 +17,8 @@ public enum ErrorStatus implements BaseErrorCode {
     _FORBIDDEN(HttpStatus.FORBIDDEN, "COMMON403", "금지된 요청입니다."),
 
     // Temp 관련 에러
-    TEMP_NOT_FOUND(HttpStatus.BAD_REQUEST, "TEMP4001", "임시 데이터가 존재하지 않습니다.");
+    TEMP_NOT_FOUND(HttpStatus.NOT_FOUND, "TEMP4041", "임시 데이터가 존재하지 않습니다."),
+    TEMP_EXCEPTION(HttpStatus.BAD_REQUEST, "TEMP4001", "테스트 에러입니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

@@ -26,7 +26,6 @@ import java.util.Optional;
 @RestControllerAdvice(annotations = {RestController.class})
 public class ExceptionAdvice extends ResponseEntityExceptionHandler {
 
-
     @ExceptionHandler
     public ResponseEntity<Object> validation(ConstraintViolationException e, WebRequest request) {
         String errorMessage = e.getConstraintViolations().stream()
@@ -50,6 +49,20 @@ public class ExceptionAdvice extends ResponseEntityExceptionHandler {
                 });
 
         return handleExceptionInternalArgs(e,HttpHeaders.EMPTY,ErrorStatus.valueOf("_BAD_REQUEST"),request,errors);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException e, WebRequest request) {
+        log.warn("IllegalArgumentException occurred: {}", e.getMessage());
+
+        ApiResponse<Object> body = ApiResponse.onFailure(ErrorStatus._BAD_REQUEST.getCode(), e.getMessage(), null);
+        return super.handleExceptionInternal(
+                e,
+                body,
+                HttpHeaders.EMPTY,
+                ErrorStatus._BAD_REQUEST.getHttpStatus(),
+                request
+        );
     }
 
     @ExceptionHandler
