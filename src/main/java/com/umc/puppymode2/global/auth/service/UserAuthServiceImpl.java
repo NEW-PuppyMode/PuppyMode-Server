@@ -41,7 +41,7 @@ public class UserAuthServiceImpl implements UserAuthService {
         String email = userInfo.getEmail();
         String newUsername = userInfo.getUsername();
 
-        // Todo: providerId로 조회하여 중복 가입 방지 로직 추가 findByProviderIdAndProvider
+        // TODO: providerId로 조회하여 중복 가입 방지 로직 추가 findByProviderIdAndProvider
         Optional<SocialAuth> optionalUserAuth = socialAuthRepository.findByUser_EmailAndProvider(email, provider);
 
         SocialAuth socialAuth;
@@ -119,7 +119,7 @@ public class UserAuthServiceImpl implements UserAuthService {
 
         return LoginResponseDTO.builder()
                 .accessToken(token)
-                .refreshToken(null) //TODO: refresh 구현
+                .refreshToken(null) // TODO: refresh 구현
                 .userInfo(loginUserInfo)
                 .build();
     }

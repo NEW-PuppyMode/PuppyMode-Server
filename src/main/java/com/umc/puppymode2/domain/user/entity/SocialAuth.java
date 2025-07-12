@@ -11,7 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
+import jakarta.persistence.Column;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -29,18 +29,19 @@ public class SocialAuth extends BaseEntity {
     private Long socialAuthId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Provider provider;
 
     private String providerId;
 
-    @Lob
+    @Column(length = 2048)
     private String accessToken;
 
-    @Lob
+    @Column(length = 2048)
     private String refreshToken;
 
     private LocalDateTime tokenExpiry;
@@ -58,5 +59,9 @@ public class SocialAuth extends BaseEntity {
 
     public void setRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

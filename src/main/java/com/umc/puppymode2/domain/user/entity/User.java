@@ -45,12 +45,39 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SocialAuth> socialAuths = new ArrayList<>();
 
+    public void addSocialAuth(SocialAuth socialAuth) {
+        socialAuths.add(socialAuth);
+        socialAuth.setUser(this);
+    }
+
+    public void removeSocialAuth(SocialAuth socialAuth) {
+        socialAuths.remove(socialAuth);
+        socialAuth.setUser(null);
+    }
+
     @Builder
     public User(String username,
                 String email,
                 Provider provider,
                 Boolean receiveNotifications,
                 UserStatus status) {
+
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("이름은 필수입니다.");
+        }
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("이메일은 필수입니다.");
+        }
+        if (provider == null) {
+            throw new IllegalArgumentException("Provider는 필수입니다.");
+        }
+        if (receiveNotifications == null) {
+            throw new IllegalArgumentException("알림 수신 여부는 필수입니다.");
+        }
+        if (status == null) {
+            throw new IllegalArgumentException("상태 값은 필수입니다.");
+        }
+
         this.username = username;
         this.email = email;
         this.provider = provider;

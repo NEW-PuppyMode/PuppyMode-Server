@@ -13,6 +13,10 @@ public class UserAuthentication extends UsernamePasswordAuthenticationToken {
     }
 
     public Long getUserId() {
-        return (Long) getPrincipal();
+        Object principal = getPrincipal();
+        if (principal instanceof Long) {
+            return (Long) principal;
+        }
+        throw new IllegalStateException("Principal is not a valid user ID");
     }
 }

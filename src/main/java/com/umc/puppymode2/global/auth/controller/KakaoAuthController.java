@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @RestController
@@ -34,6 +35,17 @@ public class KakaoAuthController {
     public ResponseEntity<ApiResponse<LoginResponseDTO>> kakaoLogin(
             @RequestParam("accessToken") String accessToken,
             @RequestParam(value = "refreshToken") String refreshToken) {
+
+        if (!StringUtils.hasText(accessToken)) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.onFailure("VALIDATION_ERROR", "accessToken은 필수입니다.", null));
+        }
+
+        if (!StringUtils.hasText(refreshToken)) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.onFailure("VALIDATION_ERROR", "refreshToken은 필수입니다.", null));
+        }
+
         try {
             UserAuthInfoDTO userInfo = kakaoAuthService.getUserInfo(accessToken);
             LoginResponseDTO loginResponse = userAuthService.createOrUpdateUser(userInfo, Provider.KAKAO, refreshToken);

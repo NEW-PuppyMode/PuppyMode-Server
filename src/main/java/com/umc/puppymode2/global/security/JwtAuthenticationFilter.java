@@ -31,7 +31,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
             final String token = getJwtFromRequest(request);
-            log.debug("Extracted JWT: {}", token);
+//            log.debug("Extracted JWT: {}", token);
+
+            if (token == null) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             if (jwtTokenProvider.validateToken(token) == VALID_JWT) {
                 Long userId = jwtTokenProvider.getUserFromJwt(token);
                 // authentication 객체 생성 -> principal에 유저정보를 담는다.
@@ -41,11 +47,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception exception) {
             log.error("JWT processing error: {}", exception.getMessage());
-            try {
-                throw new Exception();
-            } catch (Exception e) {
-                log.warn("[JwtAuthenticationFilter] 토큰 인증 실패: {}", e.getMessage());
-            }
         }
         // 다음 필터로 요청 전달
         filterChain.doFilter(request, response);
@@ -57,7 +58,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             String token = bearerToken.substring("Bearer ".length());
-            log.debug("Extracted JWT from request: {}", token);
+//            log.debug("Extracted JWT from request: {}", token);
             return token;
         }
 

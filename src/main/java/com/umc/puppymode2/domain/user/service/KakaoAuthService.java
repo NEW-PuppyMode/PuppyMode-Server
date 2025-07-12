@@ -21,7 +21,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class KakaoAuthService {
 
     private final SocialAuthRepository socialAuthRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     @Qualifier("kakaoWebClient")
     private final WebClient kakaoWebClient;
@@ -54,11 +54,11 @@ public class KakaoAuthService {
                 .bodyToMono(KakaoUserInfoResponseDTO.class)
                 .block();
 
-        log.debug("[Kakao Service] raw 응답: {}", toJson(userInfo));
+//        log.debug("[Kakao Service] raw 응답: {}", toJson(userInfo));
 
-        log.debug("[ Kakao Service ] Auth ID —> {} ", userInfo.getId());
-        log.debug("[ Kakao Service ] NickName —> {} ", userInfo.getKakaoAccount().getProfile().getNickName());
-        log.debug("[ Kakao Service ] email —> {} ", userInfo.getKakaoAccount().getEmail());
+//        log.debug("[ Kakao Service ] Auth ID —> {} ", userInfo.getId());
+//        log.debug("[ Kakao Service ] NickName —> {} ", userInfo.getKakaoAccount().getProfile().getNickName());
+//        log.debug("[ Kakao Service ] email —> {} ", userInfo.getKakaoAccount().getEmail());
 
         validateKakaoUserInfo(userInfo);
 
