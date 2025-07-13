@@ -18,7 +18,16 @@ public enum ErrorStatus implements BaseErrorCode {
 
     // Temp 관련 에러
     TEMP_NOT_FOUND(HttpStatus.NOT_FOUND, "TEMP4041", "임시 데이터가 존재하지 않습니다."),
-    TEMP_EXCEPTION(HttpStatus.BAD_REQUEST, "TEMP4001", "테스트 에러입니다.");
+    TEMP_EXCEPTION(HttpStatus.BAD_REQUEST, "TEMP4001", "테스트 에러입니다."),
+
+    // OnboardingTest 에러
+    INVALID_QUESTION_ID(HttpStatus.BAD_REQUEST, "ONBOARD4001", "유효하지 않은 질문 ID입니다."),
+    INVALID_TRAIT_COMBINATION(HttpStatus.INTERNAL_SERVER_ERROR, "ONBOARD5001", "유효하지 않은 성향 조합입니다."),
+
+    // PuppyLevel 에러
+    PUPPY_LEVEL_NOT_FOUND(HttpStatus.NOT_FOUND, "PUPPY4041", "해당 강아지 레벨 정보가 존재하지 않습니다."),
+
+    ;
 
     private final HttpStatus httpStatus;
     private final String code;
