@@ -28,7 +28,10 @@ public enum ErrorStatus implements BaseErrorCode {
 
     // PuppyLevel 에러
     PUPPY_LEVEL_NOT_FOUND(HttpStatus.NOT_FOUND, "PUPPY4041", "해당 강아지 레벨 정보가 존재하지 않습니다."),
-
+  
+    // User
+    USER_ALREADY_WITHDRAWN(HttpStatus.BAD_REQUEST, "USER_4001", "이미 탈퇴한 사용자입니다.")
+    
     ;
 
     private final HttpStatus httpStatus;
