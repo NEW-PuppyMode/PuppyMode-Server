@@ -13,8 +13,9 @@ import java.time.LocalDateTime;
 public class UserGoalHistoryConverter {
 
     public UserGoalHistory toEntity(GoalPostRequestDTO dto, Long userId) {
-        // null일 경우 기본값 15
-        //int goal = (dto.getGoal() != null) ? dto.getGoal() : 15;
+        if (dto.getGoal() == null) {
+            throw new IllegalArgumentException("목표 값은 null일 수 없습니다.");
+        }
 
         return UserGoalHistory.builder()
                 .userId(userId)
@@ -22,8 +23,6 @@ public class UserGoalHistoryConverter {
                 .monthlyActualCount(0)                   // 기본값 0
                 .isGoalExceeded(false)                   // 초기에는 목표 초과 X
                 .goalSetAt(LocalDateTime.now())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
     }
 

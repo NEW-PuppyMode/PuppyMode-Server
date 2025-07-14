@@ -21,6 +21,14 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
     @Override
     public GoalPostResponseDTO postGoal(Long userId, GoalPostRequestDTO dto) {
         if (Boolean.TRUE.equals(dto.getIsNew())) {
+
+            if (dto.getGoal() == null) {
+                throw new IllegalArgumentException("새로운 목표 설정 시 goal 값은 필수입니다.");
+            }
+            if (dto.getGoal() < 0 || dto.getGoal() > 30) {
+                throw new IllegalArgumentException("목표는 0 이상 30 이하여야 합니다.");
+            }
+
             UserGoalHistory newGoal = converter.toEntity(dto, userId);
             repository.save(newGoal);
 
@@ -32,13 +40,15 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
         } else {
             // 기존 목표 유지
             UserGoalHistory lastGoal = repository.findTopByUserIdOrderByGoalSetAtDesc(userId)
-                    .orElseThrow(() -> new IllegalStateException("기존 목표가 없습니다."));
+                    .orElseThrow(() -> new IllegalArgumentException("기존 목표가 없습니다."));
             UserGoalHistory copiedGoal = UserGoalHistory.builder()
                     .userId(userId)
                     .monthlyGoalCount(lastGoal.getMonthlyGoalCount())
                     .monthlyActualCount(0)
                     .isGoalExceeded(false)
                     .goalSetAt(LocalDateTime.now())
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
                     .build();
 
             repository.save(copiedGoal);

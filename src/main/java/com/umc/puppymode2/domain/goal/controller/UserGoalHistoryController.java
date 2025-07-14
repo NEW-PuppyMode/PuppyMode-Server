@@ -29,7 +29,7 @@ public class UserGoalHistoryController {
     // 1. 목표 등록 (신규/유지)
     @PostMapping
     @Operation(summary = "목표 등록 API", description = "목표 등록 API 입니다. 새로운 목표는 true, 기존 목표 유지는 false를 넣어주시면 됩니다.")
-    public ResponseEntity<ApiResponse<GoalPostResponseDTO>>postGoal(
+    public ResponseEntity<ApiResponse<GoalPostResponseDTO>> postGoal(
             @RequestBody @Valid GoalPostRequestDTO requestDto) {
 
         Long userId = getCurrentUserId();
