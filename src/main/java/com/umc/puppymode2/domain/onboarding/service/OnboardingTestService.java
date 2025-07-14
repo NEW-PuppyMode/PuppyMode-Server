@@ -90,19 +90,17 @@ public class OnboardingTestService {
     // 올바른 답변 형식인지 검증
     private void validOnboardingTestReqDTO(OnboardingTestReqDTO onboardingTestReqDTO) {
 
-        Set<Integer> questionIds = onboardingTestReqDTO.answers().stream()
-                .map(OnboardingTestAnswerDTO::questionId)
-                .collect(Collectors.toSet());
-
-        // 중복 questionId 체크
-        Set<Integer> uniqueIds = new HashSet<>(questionIds);
-        if (questionIds.size() != uniqueIds.size()) {
-            throw new TempHandler(ErrorStatus.DUPLICATE_QUESTION_ID);
+        Set<Integer> questionIds = new HashSet<>();
+        for (OnboardingTestAnswerDTO answer : onboardingTestReqDTO.answers()) {
+            // 중복된 questionId가 있을 경우
+            if (!questionIds.add(answer.questionId())) {
+                throw new TempHandler(ErrorStatus.DUPLICATE_QUESTION_ID);
+            }
         }
 
         // 모든 질문 번호(1~6)가 포함되어 있는지 체크
         Set<Integer> expectedIds = Set.of(1, 2, 3, 4, 5, 6);
-        if (!uniqueIds.containsAll(expectedIds)) {
+        if (!questionIds.equals(expectedIds)) {
             throw new TempHandler(ErrorStatus.MISSING_QUESTION_IDS);
         }
     }
