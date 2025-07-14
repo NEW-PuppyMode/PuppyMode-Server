@@ -11,6 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(name = "puppy_level", uniqueConstraints = @UniqueConstraint(columnNames = {"puppy_type", "puppy_level"}))
 // 관련된 엔티티/enum/repository 가 미리 생성되지 않아 임시로 구현한 파일입니다.
 // 이후 다른 분들 코드도 머지되면, 해당 코드 속 파일로 import 변경하도록 하겠습니다!
 public class PuppyLevel extends BaseEntity {

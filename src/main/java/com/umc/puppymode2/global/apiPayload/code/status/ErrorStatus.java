@@ -22,6 +22,8 @@ public enum ErrorStatus implements BaseErrorCode {
 
     // OnboardingTest 에러
     INVALID_QUESTION_ID(HttpStatus.BAD_REQUEST, "ONBOARD4001", "유효하지 않은 질문 ID입니다."),
+    DUPLICATE_QUESTION_ID(HttpStatus.BAD_REQUEST, "ONBOARD4002", "질문 번호에 중복이 존재합니다."),
+    MISSING_QUESTION_IDS(HttpStatus.BAD_REQUEST, "ONBOARD4003", "모든 질문(1~6번)에 대한 응답이 필요합니다."),
     INVALID_TRAIT_COMBINATION(HttpStatus.INTERNAL_SERVER_ERROR, "ONBOARD5001", "유효하지 않은 성향 조합입니다."),
 
     // PuppyLevel 에러

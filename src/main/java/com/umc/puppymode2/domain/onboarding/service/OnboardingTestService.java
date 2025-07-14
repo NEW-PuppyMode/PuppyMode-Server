@@ -15,6 +15,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Slf4j
 @Service
 @Transactional
@@ -26,7 +30,9 @@ public class OnboardingTestService {
 
     public OnboardingTestResDTO recommendAndCreatePuppy(OnboardingTestReqDTO onboardingTestReqDTO) {
 
-        int eScore = 0, iScore = 0, fScore = 0, tScore = 0; // 각 유형 점수에 해당하는 변수 초기화
+        // 올바른 reqDTO 형식인지 검증 후, 각 유형 점수에 해당하는 변수 초기화
+        validOnboardingTestReqDTO(onboardingTestReqDTO);
+        int eScore = 0, iScore = 0, fScore = 0, tScore = 0;
 
         // 모든 답변을 탐색하며 해당하는 유형의 점수를 업데이트
         for (OnboardingTestAnswerDTO answer : onboardingTestReqDTO.answers()) {
@@ -79,6 +85,26 @@ public class OnboardingTestService {
                 type.getDescription(),
                 type.getImageUrl()
         );
+    }
+
+    // 올바른 답변 형식인지 검증
+    private void validOnboardingTestReqDTO(OnboardingTestReqDTO onboardingTestReqDTO) {
+
+        Set<Integer> questionIds = onboardingTestReqDTO.answers().stream()
+                .map(OnboardingTestAnswerDTO::questionId)
+                .collect(Collectors.toSet());
+
+        // 중복 questionId 체크
+        Set<Integer> uniqueIds = new HashSet<>(questionIds);
+        if (questionIds.size() != uniqueIds.size()) {
+            throw new TempHandler(ErrorStatus.DUPLICATE_QUESTION_ID);
+        }
+
+        // 모든 질문 번호(1~6)가 포함되어 있는지 체크
+        Set<Integer> expectedIds = Set.of(1, 2, 3, 4, 5, 6);
+        if (!uniqueIds.containsAll(expectedIds)) {
+            throw new TempHandler(ErrorStatus.MISSING_QUESTION_IDS);
+        }
     }
 
     // 도출된 유형에 매칭되는 강아지 종 반환
