@@ -25,13 +25,14 @@ public enum ErrorStatus implements BaseErrorCode {
     DUPLICATE_QUESTION_ID(HttpStatus.BAD_REQUEST, "ONBOARD4002", "질문 번호에 중복이 존재합니다."),
     MISSING_QUESTION_IDS(HttpStatus.BAD_REQUEST, "ONBOARD4003", "모든 질문(1~6번)에 대한 응답이 필요합니다."),
     INVALID_TRAIT_COMBINATION(HttpStatus.INTERNAL_SERVER_ERROR, "ONBOARD5001", "유효하지 않은 성향 조합입니다."),
-
-    // PuppyLevel 에러
-    PUPPY_LEVEL_NOT_FOUND(HttpStatus.NOT_FOUND, "PUPPY4041", "해당 강아지 레벨 정보가 존재하지 않습니다."),
   
     // User
-    USER_ALREADY_WITHDRAWN(HttpStatus.BAD_REQUEST, "USER_4001", "이미 탈퇴한 사용자입니다.")
-    
+    USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "USER404", "해당 사용자가 존재하지 않습니다."),
+    USER_ALREADY_WITHDRAWN(HttpStatus.BAD_REQUEST, "USER_4001", "이미 탈퇴한 사용자입니다."),
+
+    // Puppy 관련 에러
+    PUPPY_LEVEL_NOT_FOUND(HttpStatus.NOT_FOUND, "PUPPY4041", "해당 강아지 레벨 정보가 존재하지 않습니다."),
+    PUPPY_NOT_FOUND(HttpStatus.NOT_FOUND, "PUPPY4042", "해당 유저의 강아지 정보가 존재하지 않습니다."),
     ;
 
     private final HttpStatus httpStatus;
