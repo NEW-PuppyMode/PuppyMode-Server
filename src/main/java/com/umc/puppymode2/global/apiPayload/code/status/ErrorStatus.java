@@ -27,7 +27,7 @@ public enum ErrorStatus implements BaseErrorCode {
     INVALID_TRAIT_COMBINATION(HttpStatus.INTERNAL_SERVER_ERROR, "ONBOARD5001", "유효하지 않은 성향 조합입니다."),
   
     // User
-    USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "USER404", "해당 사용자가 존재하지 않습니다."),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER4041", "해당 사용자가 존재하지 않습니다."),
     USER_ALREADY_WITHDRAWN(HttpStatus.BAD_REQUEST, "USER_4001", "이미 탈퇴한 사용자입니다."),
 
     // Puppy 관련 에러
