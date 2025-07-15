@@ -1,6 +1,7 @@
 package com.umc.puppymode2.domain.onboarding.entity;
 
 import com.umc.puppymode2.domain.common.BaseEntity;
+import com.umc.puppymode2.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
