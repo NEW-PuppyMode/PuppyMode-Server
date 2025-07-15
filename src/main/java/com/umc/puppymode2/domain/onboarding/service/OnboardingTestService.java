@@ -3,11 +3,11 @@ package com.umc.puppymode2.domain.onboarding.service;
 import com.umc.puppymode2.domain.onboarding.dto.OnboardingTestAnswerDTO;
 import com.umc.puppymode2.domain.onboarding.dto.OnboardingTestReqDTO;
 import com.umc.puppymode2.domain.onboarding.dto.OnboardingTestResDTO;
-import com.umc.puppymode2.domain.onboarding.entity.Puppy;
-import com.umc.puppymode2.domain.onboarding.entity.PuppyLevel;
-import com.umc.puppymode2.domain.onboarding.entity.PuppyType;
-import com.umc.puppymode2.domain.onboarding.repository.PuppyLevelRepository;
-import com.umc.puppymode2.domain.onboarding.repository.PuppyRepository;
+import com.umc.puppymode2.domain.puppy.entity.Puppy;
+import com.umc.puppymode2.domain.puppy.entity.PuppyLevel;
+import com.umc.puppymode2.domain.puppy.entity.PuppyType;
+import com.umc.puppymode2.domain.puppy.repository.PuppyLevelRepository;
+import com.umc.puppymode2.domain.puppy.repository.PuppyRepository;
 import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
 import com.umc.puppymode2.global.exception.handler.TempHandler;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
