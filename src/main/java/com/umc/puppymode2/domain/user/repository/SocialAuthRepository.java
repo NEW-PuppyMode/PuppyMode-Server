@@ -21,4 +21,6 @@ public interface SocialAuthRepository extends JpaRepository<SocialAuth, Long> {
     @Modifying
     @Query("UPDATE SocialAuth sa SET sa.refreshToken = :refreshToken WHERE sa.user.userId = :userId")
     void updateRefreshToken(@Param("userId") Long userId, @Param("refreshToken") String refreshToken);
+
+    Optional<SocialAuth> findByUserUserIdAndProvider(Long userId, Provider provider);
 }
