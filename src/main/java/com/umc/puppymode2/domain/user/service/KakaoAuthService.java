@@ -159,4 +159,30 @@ public class KakaoAuthService {
             return "[json 변환 실패]";
         }
     }
+
+    /**
+     * 카카오 계정 연결 끊기(회원탈퇴)
+     */
+    public boolean disconnectKakao(String accessToken) {
+        try {
+            kakaoWebClient.post()
+                    .uri("/v1/user/unlink")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, response ->
+                            response.bodyToMono(String.class).map(errorBody -> {
+                                log.error("[Kakao disconnect] API 에러 응답: {}", errorBody);
+                                throw new RuntimeException("카카오 계정 연결 해제 실패: " + errorBody);
+                            })
+                    )
+                    .bodyToMono(Void.class)
+                    .block();
+
+            log.info("[Kakao disconnect] 카카오 계정 연결 해제 성공");
+            return true;
+        } catch (Exception e) {
+            log.error("[Kakao disconnect] 카카오 계정 연결 해제 중 예외 발생", e);
+            return false;
+        }
+    }
 }
