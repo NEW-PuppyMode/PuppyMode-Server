@@ -32,7 +32,11 @@ public class Puppy extends BaseEntity {
     @Column(name = "puppy_exp", nullable = false)
     private Integer puppyExp;
 
+    @Column(name = "is_custom_name", nullable = false)
+    private boolean isCustomName = false;
+
     public void setPuppyName(String name) {
         this.puppyName = name;
+        this.isCustomName = true;
     }
 }
