@@ -26,7 +26,7 @@ public class CalendarQueryServiceImpl implements CalendarQueryService {
         LocalDate endDate = yearMonth.atEndOfMonth();
 
         List<DrinkHistory> drinkHistories = drinkHistoryRepository
-                .findAllByUserIdAndDrinkDateBetween(userId, startDate, endDate);
+                .findAllByUserUserIdAndDrinkDateBetween(userId, startDate, endDate);
 
         return CalendarConverter.toCalendarResponseDTOList(drinkHistories);
     }

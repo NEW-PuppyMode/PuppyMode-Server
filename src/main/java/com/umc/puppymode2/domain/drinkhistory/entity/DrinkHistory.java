@@ -1,6 +1,7 @@
 package com.umc.puppymode2.domain.drinkhistory.entity;
 
 import com.umc.puppymode2.domain.common.BaseEntity;
+import com.umc.puppymode2.domain.user.entity.User;
 import jakarta.persistence.Entity;
 import lombok.*;
 
@@ -18,10 +19,9 @@ public class DrinkHistory extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long drinkHistoryId;
 
-//    @ManyToOne
-//    @JoinColumn(name = "user_id")
-//    private User user;
-    private Long userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     private Boolean isDrink = true;
