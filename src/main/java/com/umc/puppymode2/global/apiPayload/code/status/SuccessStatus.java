@@ -17,7 +17,10 @@ public enum SuccessStatus implements BaseCode {
     TEMP_OK(HttpStatus.OK, "TEMP200", "임시 데이터 조회 성공"),
 
     // 로그인
-    KAKAO_LOGIN_SUCCESS(HttpStatus.OK, "AUTH200", "카카오 로그인 성공");
+    KAKAO_LOGIN_SUCCESS(HttpStatus.OK, "AUTH200", "카카오 로그인 성공"),
+
+    // 캘린더 조회
+    CALENDAR_GET_SUCCESS(HttpStatus.OK, "CALENDAR200", "캘린더 조회 성공");
 
 
     private final HttpStatus httpStatus;
