@@ -10,6 +10,6 @@ import java.util.List;
 
 @Repository
 public interface DrinkHistoryRepository extends JpaRepository<DrinkHistory, Long> {
-    boolean existsByUserIdAndDrinkDate(Long userId, LocalDate date);
-    List<DrinkHistory> findAllByUserIdAndDrinkDateBetween(Long userId, LocalDate start, LocalDate end);
+    boolean existsByUserUserIdAndDrinkDate(Long userId, LocalDate date);
+    List<DrinkHistory> findAllByUserUserIdAndDrinkDateBetween(Long userId, LocalDate start, LocalDate end);
 }

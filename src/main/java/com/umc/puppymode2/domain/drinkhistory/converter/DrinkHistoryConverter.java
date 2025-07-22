@@ -1,20 +1,21 @@
 package com.umc.puppymode2.domain.drinkhistory.converter;
 
 import com.umc.puppymode2.domain.drinkhistory.dto.DrinkHistoryRequestDTO;
-import com.umc.puppymode2.domain.drinkhistory.dto.DrinkHistoryResponseDTO;
+import com.umc.puppymode2.domain.drinkhistory.dto.DrinkHistoryStatusDTO;
 import com.umc.puppymode2.domain.drinkhistory.entity.DrinkHistory;
+import com.umc.puppymode2.domain.user.entity.User;
 
 public class DrinkHistoryConverter {
-    public static DrinkHistoryResponseDTO.DrinkStatus toStatusDTO(boolean yesterday, boolean today) {
-        return DrinkHistoryResponseDTO.DrinkStatus.builder()
+    public static DrinkHistoryStatusDTO toStatusDTO(boolean yesterday, boolean today) {
+        return DrinkHistoryStatusDTO.builder()
                 .yesterdayRecorded(yesterday)
                 .todayRecorded(today)
                 .build();
     }
 
-    public static DrinkHistory toEntity(Long userId, DrinkHistoryRequestDTO.CreateDrinkHistory dto) {
+    public static DrinkHistory toEntity(User user, DrinkHistoryRequestDTO dto) {
         return DrinkHistory.builder()
-                .userId(userId)
+                .user(user)
                 .isDrink(dto.getIsDrink())
                 .drinkDate(dto.getDrinkDate())
                 .build();

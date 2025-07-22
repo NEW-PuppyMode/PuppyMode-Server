@@ -4,7 +4,6 @@ import com.umc.puppymode2.domain.calendar.dto.CalendarResponseDTO;
 import com.umc.puppymode2.domain.calendar.service.CalendarQueryService;
 import com.umc.puppymode2.global.apiPayload.ApiResponse;
 import com.umc.puppymode2.global.apiPayload.code.status.SuccessStatus;
-import com.umc.puppymode2.global.auth.context.SecurityUserContext;
 import com.umc.puppymode2.global.auth.context.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

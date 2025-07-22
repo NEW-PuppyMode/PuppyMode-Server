@@ -1,7 +1,7 @@
 package com.umc.puppymode2.domain.drinkhistory.service;
 
-import com.umc.puppymode2.domain.drinkhistory.dto.DrinkHistoryResponseDTO;
+import com.umc.puppymode2.domain.drinkhistory.dto.DrinkHistoryStatusDTO;
 
 public interface DrinkHistoryQueryService {
-    DrinkHistoryResponseDTO.DrinkStatus getDrinkRecordStatus(Long userId);
+    DrinkHistoryStatusDTO getDrinkRecordStatus(Long userId);
 }

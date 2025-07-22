@@ -51,8 +51,8 @@ public class MainServiceImpl implements MainService {
 
         LocalDate today = LocalDate.now();
         LocalDate yesterday = today.minusDays(1);
-        boolean didRecordYesterday = drinkHistoryRepository.existsByUserIdAndDrinkDate(userId, yesterday);
-        boolean didRecordToday = drinkHistoryRepository.existsByUserIdAndDrinkDate(userId, today);
+        boolean didRecordYesterday = drinkHistoryRepository.existsByUserUserIdAndDrinkDate(userId, yesterday);
+        boolean didRecordToday = drinkHistoryRepository.existsByUserUserIdAndDrinkDate(userId, today);
 
         return MainResponseDto.builder()
                 .puppyLevel(level.getPuppyLevel())

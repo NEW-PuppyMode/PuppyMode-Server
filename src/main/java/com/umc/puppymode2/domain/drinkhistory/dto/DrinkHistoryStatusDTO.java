@@ -2,14 +2,13 @@ package com.umc.puppymode2.domain.drinkhistory.dto;
 
 import lombok.*;
 
-import java.time.LocalDate;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DrinkHistoryRequestDTO {
-    private LocalDate drinkDate;
-    private Boolean isDrink;
+public class DrinkHistoryStatusDTO {
+    private boolean yesterdayRecorded;
+    private boolean todayRecorded;
+
 }
