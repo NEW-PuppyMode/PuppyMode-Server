@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.umc.puppymode2.global.auth.context.UserContext;
 
 @RestController
 @RequestMapping("/report")
@@ -17,12 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class DrinkReportController {
 
     private final DrinkReportService drinkReportService;
-    private final SecurityUserContext securityUserContext;
+    private final UserContext userContext;
 
     @GetMapping
     @Operation(summary = "목표 리포트 API", description = "목표 리포트 조회 API 입니다.")
     public ResponseEntity<ApiResponse<DrinkReportResponseDTO>> getDrinkReport() {
-        Long userId = securityUserContext.getCurrentUserId();
+        Long userId = userContext.getCurrentUserId();
         DrinkReportResponseDTO response = drinkReportService.drinkReport(userId);
         return ResponseEntity.ok(
                 ApiResponse.onSuccess(response, "REPORT200","음주 리포트 조회 성공" )

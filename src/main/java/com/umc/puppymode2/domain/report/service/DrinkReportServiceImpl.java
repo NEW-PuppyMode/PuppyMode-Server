@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.report.service;
 
+import com.umc.puppymode2.domain.drinkhistory.repository.DrinkHistoryRepository;
 import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
 import com.umc.puppymode2.domain.report.converter.DrinkReportConverter;
@@ -14,7 +15,7 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class DrinkReportServiceImpl implements DrinkReportService {
     private final UserGoalHistoryRepository userGoalHistoryRepository;
-    // private final DrinkHistoryRepository drinkHistoryRepository; 음주 기록이 나오면 추가
+    private final DrinkHistoryRepository drinkHistoryRepository;
     private final DrinkReportConverter drinkReportConverter;
 
     @Transactional
@@ -29,11 +30,17 @@ public class DrinkReportServiceImpl implements DrinkReportService {
                 .orElse(15); // 기본값 15
 
         // 임시 값. 음주기록 구현되면 하기.
-        int drinkRecordCount = 0;
+        Long drinkRecordCount = drinkHistoryRepository.countByUserUserIdAndDrinkDateBetween(userId, firstDayOfMonth, lastDayOfMonth);
 
-        int drinkDays = 0;
+        Long drinkDays = drinkHistoryRepository.countDistinctDrinkDates(userId, firstDayOfMonth, lastDayOfMonth);
 
         int achievementRate = 0;
+        // 음주 횟수가 이번 달 목표를 넘겼으면 확률 0
+        if (drinkDays >= goal){
+            achievementRate = 0;
+        }else{
+            achievementRate = (int) (((double)(goal - drinkDays) / goal) * 100);
+        }
 
         int scoldedCount = 0;
 
@@ -41,8 +48,4 @@ public class DrinkReportServiceImpl implements DrinkReportService {
 
         return dto;
     }
-
-    // 리포트 관련 로직 계산 -> 음주 기록 후
-
-
 }
