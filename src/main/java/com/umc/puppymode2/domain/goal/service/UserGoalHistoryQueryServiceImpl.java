@@ -31,8 +31,7 @@ public class UserGoalHistoryQueryServiceImpl implements UserGoalHistoryQueryServ
         LocalDate lastDay = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
         long actualCount = drinkHistoryRepository.countByUserUserIdAndDrinkDateBetween(userId, firstDay, lastDay);
 
-        latest.setMonthlyActualCount(actualCount);
-        return converter.toDto(latest);
+        return converter.toDto(latest, actualCount);
     }
 
     @Override
