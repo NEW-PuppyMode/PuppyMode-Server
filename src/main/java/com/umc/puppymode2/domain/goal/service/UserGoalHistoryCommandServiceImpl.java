@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.goal.service;
 
+import com.umc.puppymode2.domain.drinkhistory.repository.DrinkHistoryRepository;
 import com.umc.puppymode2.domain.goal.converter.UserGoalHistoryConverter;
 import com.umc.puppymode2.domain.goal.dto.GoalPostRequestDTO;
 import com.umc.puppymode2.domain.goal.dto.GoalPostResponseDTO;
@@ -9,6 +10,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -16,10 +18,18 @@ import java.time.LocalDateTime;
 public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommandService {
     private final UserGoalHistoryRepository repository;
     private final UserGoalHistoryConverter converter;
+    private final DrinkHistoryRepository drinkHistoryRepository;
 
     @Transactional
     @Override
     public GoalPostResponseDTO postGoal(Long userId, GoalPostRequestDTO dto) {
+
+        LocalDate now = LocalDate.now();
+        LocalDate firstDayOfMonth = now.withDayOfMonth(1);
+        LocalDate lastDayOfMonth = now.withDayOfMonth(now.lengthOfMonth());
+
+        Long actualDrinkCount = drinkHistoryRepository.countByUserUserIdAndDrinkDateBetween(userId, firstDayOfMonth, lastDayOfMonth);
+
         if (Boolean.TRUE.equals(dto.getIsNew())) {
 
             if (dto.getGoal() == null) {
@@ -29,7 +39,7 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
                 throw new IllegalArgumentException("목표는 0 이상 30 이하여야 합니다.");
             }
 
-            UserGoalHistory newGoal = converter.toEntity(dto, userId);
+            UserGoalHistory newGoal = converter.toEntity(dto, userId, actualDrinkCount);
             repository.save(newGoal);
 
             return GoalPostResponseDTO.builder()
@@ -44,7 +54,7 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
             UserGoalHistory copiedGoal = UserGoalHistory.builder()
                     .userId(userId)
                     .monthlyGoalCount(lastGoal.getMonthlyGoalCount())
-                    .monthlyActualCount(0)
+                    .monthlyActualCount(actualDrinkCount)
                     .isGoalExceeded(false)
                     .goalSetAt(LocalDateTime.now())
                     .createdAt(LocalDateTime.now())

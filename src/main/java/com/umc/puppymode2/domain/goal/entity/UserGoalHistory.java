@@ -23,7 +23,7 @@ public class UserGoalHistory {
 
     private Integer monthlyGoalCount;  // 이번 달 목표 음주 횟수
 
-    private Integer monthlyActualCount; // 이번 달 실제 음주 횟수
+    private Long monthlyActualCount; // 이번 달 실제 음주 횟수
 
     private Boolean isGoalExceeded;
 

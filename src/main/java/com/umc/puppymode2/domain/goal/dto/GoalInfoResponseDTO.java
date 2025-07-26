@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 public class GoalInfoResponseDTO {
     private Integer monthlyGoalCount;
-    private Integer monthlyActualCount;
+    private Long monthlyActualCount;
     private Boolean isGoalExceeded;
     private LocalDateTime goalSetAt;
 }
