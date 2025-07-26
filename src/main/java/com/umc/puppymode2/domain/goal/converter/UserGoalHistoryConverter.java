@@ -12,25 +12,26 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class UserGoalHistoryConverter {
 
-    public UserGoalHistory toEntity(GoalPostRequestDTO dto, Long userId) {
+    public UserGoalHistory toEntity(GoalPostRequestDTO dto, Long userId, Long monthlyActualCount) {
+
         if (dto.getGoal() == null) {
             throw new IllegalArgumentException("목표 값은 null일 수 없습니다.");
         }
 
         return UserGoalHistory.builder()
                 .userId(userId)
-                .monthlyGoalCount(dto.getGoal())         // DTO에서 받은 목표
-                .monthlyActualCount(0)                   // 기본값 0
-                .isGoalExceeded(false)                   // 초기에는 목표 초과 X
+                .monthlyGoalCount(dto.getGoal())
+                .monthlyActualCount(monthlyActualCount)
+                .isGoalExceeded(false)
                 .goalSetAt(LocalDateTime.now())
                 .build();
     }
 
 
-    public GoalInfoResponseDTO toDto(UserGoalHistory entity) {
+    public GoalInfoResponseDTO toDto(UserGoalHistory entity, Long monthlyActualCount) {
         return GoalInfoResponseDTO.builder()
                 .monthlyGoalCount(entity.getMonthlyGoalCount())
-                .monthlyActualCount(entity.getMonthlyActualCount())
+                .monthlyActualCount(monthlyActualCount)
                 .isGoalExceeded(entity.getIsGoalExceeded())
                 .goalSetAt(entity.getGoalSetAt())
                 .build();
