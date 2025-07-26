@@ -9,8 +9,8 @@ import lombok.*;
 @Builder
 public class DrinkReportResponseDTO {
     private Integer goal;
-    private Integer drinkRecordCount;
-    private Integer drinkDays;
-    private Integer achievementRate;
-    private Integer scoldedCount;
+    private Long drinkRecordCount;
+    private Long drinkDays;
+    private int achievementRate;
+    private int scoldedCount;
 }
