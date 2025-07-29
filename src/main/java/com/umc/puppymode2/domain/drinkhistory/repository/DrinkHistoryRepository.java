@@ -19,4 +19,5 @@ public interface DrinkHistoryRepository extends JpaRepository<DrinkHistory, Long
     long countDistinctDrinkDates(@Param("userId") Long userId,
                                  @Param("start") LocalDate start,
                                  @Param("end") LocalDate end);
+    long countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(Long userId, LocalDate start, LocalDate end);
 }

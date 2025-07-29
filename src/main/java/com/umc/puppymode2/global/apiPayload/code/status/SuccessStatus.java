@@ -26,7 +26,10 @@ public enum SuccessStatus implements BaseCode {
     DRINK_HISTORY_STATUS_SUCCESS(HttpStatus.OK, "DRINK_HISTORY201", "음주 기록 상태 조회 성공"),
 
     // 캘린더 조회
-    CALENDAR_GET_SUCCESS(HttpStatus.OK, "CALENDAR200", "캘린더 조회 성공");
+    CALENDAR_GET_SUCCESS(HttpStatus.OK, "CALENDAR200", "캘린더 조회 성공"),
+    
+    // 한마디 조회
+    ADVICE_GET_SUCCESS(HttpStatus.OK, "ADVICE200", "한마디 조회 성공");
 
 
     private final HttpStatus httpStatus;
