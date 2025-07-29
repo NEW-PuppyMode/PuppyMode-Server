@@ -25,7 +25,7 @@ public class AdviceController {
 
     @Operation(summary = "한마디 조회", description = "한마디를 조회하는 API 입니다.")
     @GetMapping
-    public ApiResponse<AdviceResponseDTO> getCalendar() {
+    public ApiResponse<AdviceResponseDTO> getAdvice() {
         Long userId = userContext.getCurrentUserId();
         AdviceResponseDTO advice =  adviceQueryService.getAdvice(userId);
         return ApiResponse.onSuccess(advice, SuccessStatus.ADVICE_GET_SUCCESS.getCode(), SuccessStatus.ADVICE_GET_SUCCESS.getMessage());
