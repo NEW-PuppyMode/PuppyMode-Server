@@ -35,8 +35,8 @@ public class AdviceQueryServiceImpl implements AdviceQueryService {
                 .map(UserGoalHistory::getMonthlyGoalCount)
                 .orElse(15); // 디폴트값 15
 
-        // 이번 달 실제 음주 기록 횟수
-        long actual = drinkHistoryRepository.countByUserUserIdAndDrinkDateBetween(userId, firstDay, lastDay);
+        // 이번 달 실제 음주 횟수
+        long actual = drinkHistoryRepository.countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(userId, firstDay, lastDay);
 
         // 어제 기록 여부
         boolean recordedYesterday = drinkHistoryRepository.existsByUserUserIdAndDrinkDate(userId, yesterday);
