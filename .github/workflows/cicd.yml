@@ -27,7 +27,7 @@ jobs:
 
       # 빌드 시간 단축을 위한 Gradle 캐싱
       - name: Gradle Caching
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
