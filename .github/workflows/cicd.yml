@@ -50,7 +50,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          role-session-name: ${{ github.repository }}-${{ github.run_id }}
+          role-session-name: PuppyMode-Server-${{ github.run_id }}
           aws-region: ap-northeast-2
 
       # ECR 로그인
