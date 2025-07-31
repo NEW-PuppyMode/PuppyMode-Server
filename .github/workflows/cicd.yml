@@ -42,7 +42,7 @@ jobs:
 
       # IAM 역할을 통한 인증 구성 (OIDC 기반)
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ github.repository }}-${{ github.run_id }}
