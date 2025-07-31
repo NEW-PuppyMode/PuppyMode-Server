@@ -2,7 +2,7 @@ name: Java CI/CD Pipeline with Gradle
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "develop" ]
 
 jobs:
   deploy:
