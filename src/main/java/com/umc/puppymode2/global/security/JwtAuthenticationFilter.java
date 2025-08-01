@@ -29,6 +29,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
+
+        String requestURI = request.getRequestURI();
+
+        // 헬스체크 경로는 필터 자체를 스킵
+        if (requestURI.equals("/actuator/health")) {
+            log.info("[JwtAuthenticationFilter] 요청된 헬스체크(/actuator/health)에 대한 필터 검증을 건너뜁니다.");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         try {
             final String token = getJwtFromRequest(request);
 //            log.debug("Extracted JWT: {}", token);
