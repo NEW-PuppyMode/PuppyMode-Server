@@ -31,6 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
+        log.info("요청 URI: {}", request.getRequestURI());
 
         // 헬스체크 경로는 필터 자체를 스킵
         if (requestURI.equals("/actuator/health")) {
