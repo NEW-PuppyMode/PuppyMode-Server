@@ -15,7 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,7 +29,7 @@ public class KakaoAuthController {
     private final KakaoAuthService kakaoAuthService;
     private final UserAuthService userAuthService;
 
-    @GetMapping("/login")
+    @PostMapping("/login")
     @Operation(summary = "카카오 로그인",
             description = "카카오 서버로부터 발급받은 `Access Token`과 `Refresh Token`을 사용하여,  \n" +
                     "서버에서 JWT를 발급받는 API입니다.  \n" +
