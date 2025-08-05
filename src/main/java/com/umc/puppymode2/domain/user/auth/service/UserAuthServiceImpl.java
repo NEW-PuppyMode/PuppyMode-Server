@@ -1,14 +1,14 @@
-package com.umc.puppymode2.global.auth.service;
+package com.umc.puppymode2.domain.user.auth.service;
 
-import com.umc.puppymode2.domain.user.dto.LoginResponseDTO;
+import com.umc.puppymode2.domain.user.auth.dto.LoginResponseDTO;
 import com.umc.puppymode2.domain.user.entity.SocialAuth;
 import com.umc.puppymode2.domain.user.entity.User;
 import com.umc.puppymode2.domain.user.entity.enums.UserStatus;
 import com.umc.puppymode2.domain.user.repository.SocialAuthRepository;
 import com.umc.puppymode2.domain.user.repository.UserRepository;
 import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
-import com.umc.puppymode2.global.auth.dto.UserAuthInfoDTO;
-import com.umc.puppymode2.global.auth.enums.Provider;
+import com.umc.puppymode2.domain.user.auth.dto.UserAuthInfoDTO;
+import com.umc.puppymode2.domain.user.auth.enums.Provider;
 import com.umc.puppymode2.global.auth.token.JwtTokenProvider;
 import com.umc.puppymode2.global.exception.GeneralException;
 import com.umc.puppymode2.global.security.UserAuthentication;

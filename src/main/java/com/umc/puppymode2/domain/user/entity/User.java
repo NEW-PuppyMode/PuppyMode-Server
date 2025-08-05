@@ -1,7 +1,7 @@
 package com.umc.puppymode2.domain.user.entity;
 
 import com.umc.puppymode2.domain.common.BaseEntity;
-import com.umc.puppymode2.global.auth.enums.Provider;
+import com.umc.puppymode2.domain.user.auth.enums.Provider;
 import com.umc.puppymode2.domain.user.entity.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;

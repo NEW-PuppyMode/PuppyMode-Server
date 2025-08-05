@@ -1,12 +1,12 @@
-package com.umc.puppymode2.global.auth.controller;
+package com.umc.puppymode2.domain.user.auth.controller;
 
-import com.umc.puppymode2.domain.user.dto.LoginResponseDTO;
+import com.umc.puppymode2.domain.user.auth.dto.LoginResponseDTO;
 import com.umc.puppymode2.domain.user.service.KakaoAuthService;
 import com.umc.puppymode2.global.apiPayload.ApiResponse;
 import com.umc.puppymode2.global.apiPayload.code.status.SuccessStatus;
-import com.umc.puppymode2.global.auth.dto.UserAuthInfoDTO;
-import com.umc.puppymode2.global.auth.enums.Provider;
-import com.umc.puppymode2.global.auth.service.UserAuthService;
+import com.umc.puppymode2.domain.user.auth.dto.UserAuthInfoDTO;
+import com.umc.puppymode2.domain.user.auth.enums.Provider;
+import com.umc.puppymode2.domain.user.auth.service.UserAuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

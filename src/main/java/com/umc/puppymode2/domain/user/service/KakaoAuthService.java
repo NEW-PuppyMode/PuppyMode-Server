@@ -2,10 +2,10 @@ package com.umc.puppymode2.domain.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.umc.puppymode2.domain.user.dto.KakaoTokenResponseDTO;
-import com.umc.puppymode2.domain.user.dto.KakaoUserInfoResponseDTO;
+import com.umc.puppymode2.domain.user.auth.dto.KakaoTokenResponseDTO;
+import com.umc.puppymode2.domain.user.auth.dto.KakaoUserInfoResponseDTO;
 import com.umc.puppymode2.domain.user.repository.SocialAuthRepository;
-import com.umc.puppymode2.global.auth.dto.UserAuthInfoDTO;
+import com.umc.puppymode2.domain.user.auth.dto.UserAuthInfoDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;

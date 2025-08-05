@@ -1,4 +1,4 @@
-package com.umc.puppymode2.global.auth.dto;
+package com.umc.puppymode2.domain.user.auth.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

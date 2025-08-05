@@ -1,4 +1,4 @@
-package com.umc.puppymode2.domain.user.dto;
+package com.umc.puppymode2.domain.user.auth.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

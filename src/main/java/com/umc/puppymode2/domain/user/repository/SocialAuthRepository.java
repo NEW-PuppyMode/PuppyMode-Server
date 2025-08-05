@@ -1,7 +1,7 @@
 package com.umc.puppymode2.domain.user.repository;
 
 import com.umc.puppymode2.domain.user.entity.SocialAuth;
-import com.umc.puppymode2.global.auth.enums.Provider;
+import com.umc.puppymode2.domain.user.auth.enums.Provider;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
