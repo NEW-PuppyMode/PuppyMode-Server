@@ -53,7 +53,7 @@ dependencies {
 	// Spring Actuator
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
   
-  // redis
+    // redis
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }
 
