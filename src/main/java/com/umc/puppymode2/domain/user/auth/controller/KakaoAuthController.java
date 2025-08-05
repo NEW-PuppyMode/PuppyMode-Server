@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.user.auth.controller;
 
+import com.umc.puppymode2.domain.user.auth.dto.KakaoLoginRequestDTO;
 import com.umc.puppymode2.domain.user.auth.dto.LoginResponseDTO;
 import com.umc.puppymode2.domain.user.service.KakaoAuthService;
 import com.umc.puppymode2.global.apiPayload.ApiResponse;
@@ -8,57 +9,48 @@ import com.umc.puppymode2.domain.user.auth.dto.UserAuthInfoDTO;
 import com.umc.puppymode2.domain.user.auth.enums.Provider;
 import com.umc.puppymode2.domain.user.auth.service.UserAuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.util.StringUtils;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/auth/kakao")
+@Tag(name = "Kakao Login", description = "카카오 로그인 API")
 public class KakaoAuthController {
 
     private final KakaoAuthService kakaoAuthService;
     private final UserAuthService userAuthService;
 
     @GetMapping("/login")
-    @Operation(summary = "카카오 로그인 API",
+    @Operation(summary = "카카오 로그인",
             description = "카카오 서버로부터 발급받은 `Access Token`과 `Refresh Token`을 사용하여,  \n" +
                     "서버에서 JWT를 발급받는 API입니다.  \n" +
-                    "로그인 및 회원가입 처리를 포함합니다.")
+                    "* 이미 가입된 유저면 로그인 처리  \n" +
+                    "* 신규 유저면 회원가입 후 로그인 처리")
     public ResponseEntity<ApiResponse<LoginResponseDTO>> kakaoLogin(
-            @RequestParam("accessToken") String accessToken,
-            @RequestParam(value = "refreshToken") String refreshToken) {
+            @Valid @RequestBody KakaoLoginRequestDTO request
+    ) {
+        String accessToken = request.accessToken();
+        String refreshToken = request.refreshToken();
+        String fcmToken = request.fcmToken();
 
-        if (!StringUtils.hasText(accessToken)) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.onFailure("VALIDATION_ERROR", "accessToken은 필수입니다.", null));
-        }
+        UserAuthInfoDTO userInfo = kakaoAuthService.getUserInfo(accessToken);
+        LoginResponseDTO loginResponse = userAuthService.createOrUpdateUser(
+                userInfo, Provider.KAKAO, refreshToken
+        );
 
-        if (!StringUtils.hasText(refreshToken)) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.onFailure("VALIDATION_ERROR", "refreshToken은 필수입니다.", null));
-        }
-
-        try {
-            UserAuthInfoDTO userInfo = kakaoAuthService.getUserInfo(accessToken);
-            LoginResponseDTO loginResponse = userAuthService.createOrUpdateUser(userInfo, Provider.KAKAO, refreshToken);
-
-            return ResponseEntity.ok(ApiResponse.of(SuccessStatus.KAKAO_LOGIN_SUCCESS, loginResponse));
-        } catch (IllegalArgumentException e) {
-            log.error("카카오 로그인 유효성 오류: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.onFailure("VALIDATION_ERROR", e.getMessage(), null));
-        } catch (Exception e) {
-            log.error("카카오 로그인 오류 발생: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.onFailure("AUTH_ERROR", "카카오 로그인 오류가 발생했습니다.", null));
-        }
+        return ResponseEntity.ok(ApiResponse.onSuccess(
+                loginResponse,
+                SuccessStatus.AUTH_KAKAO_LOGIN_SUCCESS.getCode(),
+                SuccessStatus.AUTH_KAKAO_LOGIN_SUCCESS.getMessage()
+        ));
     }
 }
