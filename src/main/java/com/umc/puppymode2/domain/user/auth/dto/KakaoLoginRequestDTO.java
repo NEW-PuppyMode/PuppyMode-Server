@@ -12,11 +12,6 @@ public record KakaoLoginRequestDTO(
 
         @NotBlank(message = "refreshToken은 필수입니다.")
         @Schema(description = "카카오 서버에서 발급받은 Refresh Token", example = "eyJhbGciOiJIUzI1NiIs")
-        String refreshToken,
-
-        @NotBlank(message = "fcmToken은 필수입니다.")
-        @Schema(description = "클라이언트의 FCM 토큰 (푸시용)", example = "fcmToken123456abc")
-        String fcmToken
-
+        String refreshToken
 ) {
 }

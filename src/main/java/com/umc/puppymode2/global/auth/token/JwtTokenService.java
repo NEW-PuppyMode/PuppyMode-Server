@@ -30,6 +30,16 @@ public class JwtTokenService {
      * @param refreshToken
      */
     public void saveRefreshToken(Long userId, String refreshToken) {
+
+        if (userId == null) {
+            throw new GeneralException(ErrorStatus.USER_ID_NULL);
+        }
+
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
+            log.warn("[REDIS] No refresh token is null - userId={}", userId);
+            throw new GeneralException(ErrorStatus.AUTH_REFRESH_TOKEN_INVALID);
+        }
+
         String key = buildKey(userId);
 
         redisTemplate.opsForValue().set(key, refreshToken, REFRESH_TOKEN_EXPIRY);
@@ -43,12 +53,17 @@ public class JwtTokenService {
      * @return
      */
     public String getRefreshToken(Long userId) {
+
+        if (userId == null) {
+            throw new GeneralException(ErrorStatus.USER_ID_NULL);
+        }
+
         String key = buildKey(userId);
         String token = redisTemplate.opsForValue().get(key);
 
         if (token == null) {
-            log.warn("[REDIS] No refresh token found - userId={}", userId);
-            throw new GeneralException(ErrorStatus.INVALID_REFRESH_TOKEN); // TODO: InvalidRefreshTokenException 구현
+            log.warn("[REDIS] No refresh token is null - userId={}", userId);
+            throw new GeneralException(ErrorStatus.AUTH_REFRESH_TOKEN_INVALID);
         }
 
         return token;
@@ -61,9 +76,19 @@ public class JwtTokenService {
      *
      * @param userId
      */
-    public void removeRefreshToken(Long userId) {
-        redisTemplate.delete(buildKey(userId));
-        log.info("[REDIS] Removed refresh token - userId={}", userId);
+    public boolean removeRefreshToken(Long userId) {
+
+        if (userId == null) {
+            throw new GeneralException(ErrorStatus.USER_ID_NULL);
+        }
+
+        String key = buildKey(userId);
+        Boolean result = redisTemplate.delete(key);
+
+        boolean isDeleted = Boolean.TRUE.equals(result);
+        log.info("[REDIS] Removed refresh token - result : {} - userId={}", isDeleted, userId);
+
+        return isDeleted;
     }
 
     private String buildKey(Long userId) {

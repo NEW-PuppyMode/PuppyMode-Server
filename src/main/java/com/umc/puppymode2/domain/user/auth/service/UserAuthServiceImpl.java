@@ -108,6 +108,9 @@ public class UserAuthServiceImpl implements UserAuthService {
                 .build();
         socialAuthRepository.save(socialAuth);
 
+        // 인증 객체 등록
+        setAuthentication(user);
+
         return generateLoginResponse(user, isNewUser.get());
     }
 

@@ -18,6 +18,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+
 @Slf4j
 @RequiredArgsConstructor
 @RestController
@@ -45,17 +48,22 @@ public class AuthController {
     )
     @PostMapping("/reissue")
     public ApiResponse<ReissueTokenResponseDTO> reissue(@RequestBody ReissueTokenRequestDTO dto) {
+
         String incomingRefreshToken = dto.refreshToken();
 
         Long userId = userContext.getCurrentUserId();
         String savedRefreshToken = jwtTokenService.getRefreshToken(userId);
 
-        if (savedRefreshToken == null || !savedRefreshToken.equals(incomingRefreshToken)) {
+        // 상수 시간 비교
+        if (savedRefreshToken == null || !MessageDigest.isEqual(
+                savedRefreshToken.getBytes(StandardCharsets.UTF_8), // 인코딩 형식 통일
+                incomingRefreshToken.getBytes(StandardCharsets.UTF_8)
+        )) {
             log.warn("[REISSUE] 유효하지 않은 Refresh Token - userId={}", userId);
-            throw new GeneralException(ErrorStatus.INVALID_REFRESH_TOKEN);
+            throw new GeneralException(ErrorStatus.AUTH_REFRESH_TOKEN_INVALID);
         }
 
-        // refresh token rotation
+        // refresh token 교체
         String newAccessToken = jwtTokenProvider.generateAccessToken(userId);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId);
         jwtTokenService.saveRefreshToken(userId, newRefreshToken);
@@ -79,9 +87,16 @@ public class AuthController {
     )
     @PostMapping("/logout")
     public ApiResponse<Void> logout() {
+
         Long userId = userContext.getCurrentUserId();
-        jwtTokenService.removeRefreshToken(userId);
-        log.info("[LOGOUT] 사용자 로그아웃 - userId={}", userId);
+        boolean result = jwtTokenService.removeRefreshToken(userId);
+
+        if (result) {
+            log.info("[LOGOUT] RefreshToken 삭제 완료 - userId={}", userId);
+        } else {
+            log.info("[LOGOUT] 삭제할 RefreshToken이 없음 - userId={}", userId);
+        }
+
         return ApiResponse.onSuccess(
                 null,
                 SuccessStatus.AUTH_LOGOUT_SUCCESS.getCode(),

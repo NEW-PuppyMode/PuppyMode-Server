@@ -3,6 +3,7 @@ package com.umc.puppymode2.global.auth.token;
 import com.umc.puppymode2.global.security.JwtValidationType;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +22,7 @@ public class JwtTokenProvider {
 
     private static final String USER_ID = "userId";
     private static final Long ACCESS_TOKEN_EXPIRE_TIME = 1000L * 60 * 60; // 1시간
-    private static final Long REFRESH_TOKEN_EXPIRE_TIME = 1000L * 60 * 60 * 24; // 14일
+    private static final Long REFRESH_TOKEN_EXPIRE_TIME = 1000L * 60 * 60 * 24 * 14; // 14일
 
     @Value("${auth.jwt.secret}")
     private String JWT_SECRET;
@@ -30,7 +31,7 @@ public class JwtTokenProvider {
 
     @PostConstruct
     protected void init() {
-        byte[] decodedKey = Base64.getDecoder().decode(JWT_SECRET);
+        byte[] decodedKey = Base64.getUrlDecoder().decode(JWT_SECRET);
         this.signingKey = Keys.hmacShaKeyFor(decodedKey);
         log.debug("[JWT] Signing key initialized (Base64-decoded)");
     }
@@ -74,7 +75,7 @@ public class JwtTokenProvider {
                 .signWith(getSigningKey()) // Signature
                 .compact();
 
-        log.info("[JWT] {} Token 생성 - userId={}, 만료시각={}", tokenType, userId, expiryDate);
+        log.info("[JWT] {} Token 생성 - userId={}, 만료시각: {}", tokenType, userId, expiryDate);
         return jwt;
     }
 
@@ -93,6 +94,8 @@ public class JwtTokenProvider {
         try {
             final Claims claims = getTokenBody(token);
             return JwtValidationType.VALID_JWT;
+        } catch (SignatureException ex) {
+            return JwtValidationType.INVALID_JWT_SIGNATURE;
         } catch (MalformedJwtException ex) {
             return JwtValidationType.INVALID_JWT_TOKEN;
         } catch (ExpiredJwtException ex) {
