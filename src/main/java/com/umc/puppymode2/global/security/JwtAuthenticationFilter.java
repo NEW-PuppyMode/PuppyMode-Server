@@ -14,10 +14,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -25,6 +26,12 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
+
+    private static final List<String> NO_AUTH_URLS = List.of(
+            "/auth/kakao/login/**",
+            "/actuator/health"
+    );
 
     /**
      * JWT 인증 필터 처리 메서드
@@ -47,30 +54,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
         log.info("Request URI: {}", request.getRequestURI());
 
-        String header = request.getHeader("Authorization");
-
-        // 헬스체크 경로는 필터 자체를 스킵
-        if (requestURI.equals("/actuator/health")) {
-            log.info("[JwtAuthenticationFilter] 요청된 헬스체크(/actuator/health)에 대한 필터 검증을 건너뜁니다.");
+        // 인증이 필요 없는 URI 필터 통과
+        if (isExcludedPath(requestURI)) {
+            log.debug("[JWT] 필터 제외 대상: {}", requestURI);
             filterChain.doFilter(request, response);
             return;
         }
 
+        String header = request.getHeader("Authorization");
+        // 401 error
+        if (header == null || !header.startsWith("Bearer ")) {
+            log.warn("[JWT] Authorization 헤더 없음 또는 형식 오류 - IP: {}", request.getRemoteAddr());
+            sendUnauthorized(response);
+            return;
+        }
+
+        // JWT 추출
+        String token = header.substring(7);
+        if (token.isBlank()) {
+            log.warn("[JWT] 토큰이 비어 있음");
+            sendUnauthorized(response);
+            return;
+        }
+
         try {
-            final String token = getJwtFromRequest(request);
 //            log.debug("Extracted JWT: {}", token);
-
-            if (token == null) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-
-            // todo : 401 error custom
-            if (header == null || !header.startsWith("Bearer ")) {
-                log.warn("[JWT] Authorization 헤더 없음 또는 형식 오류 - IP: {}", request.getRemoteAddr());
-                sendUnauthorized(response);
-                return;
-            }
 
             // validate
             JwtValidationType result = jwtTokenProvider.validateToken(token);
@@ -100,23 +108,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * 요청으로부터 JWT를 추출합니다.
+     * URI가 인증 제외 경로인지 확인합니다.
      *
-     * @param request
+     * @param requestURI
      * @return
      */
-    private String getJwtFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-//        log.debug("Authorization Header: {}", bearerToken);
-
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            String token = bearerToken.substring("Bearer ".length());
-//            log.debug("Extracted JWT from request: {}", token);
-            return token;
-        }
-
-        log.warn("Authorization header is missing or invalid");
-        return null;
+    private boolean isExcludedPath(String requestURI) {
+        return NO_AUTH_URLS.stream().anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
     }
 
     /**
