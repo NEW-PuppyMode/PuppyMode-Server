@@ -17,10 +17,25 @@ spring:
         hbm2ddl:
           auto: update
         default_batch_fetch_size: 1000
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: 6379
+      password: ${REDIS_AUTH_TOKEN}
+      timeout: ${REDIS_TIMEOUT:2s}
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info
 
 auth:
   jwt:
     secret: ${JWT_SECRET_KEY}
   kakao:
     rest-api-key: ${KAKAO_REST_API_KEY}
-    redirect-uri: http://localhost:8080/auth/kakao/login
+    redirect-uri: http://localhost:8080/auth/kakao/login/callback

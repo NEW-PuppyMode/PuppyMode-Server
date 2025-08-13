@@ -28,9 +28,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
+    // no auth 허용 url
     private static final List<String> NO_AUTH_URLS = List.of(
             "/auth/kakao/login/**",
-            "/actuator/health"
+            "/actuator/health",
+            "/swagger-ui/**",
+            "/v3/api-docs/**"
     );
 
     /**
