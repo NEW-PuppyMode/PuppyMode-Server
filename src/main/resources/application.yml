@@ -24,15 +24,6 @@ spring:
       password: ${REDIS_AUTH_TOKEN}
       timeout: ${REDIS_TIMEOUT:2s}
 
-management:
-  endpoint:
-    health:
-      show-details: always
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-
 auth:
   jwt:
     secret: ${JWT_SECRET_KEY}
