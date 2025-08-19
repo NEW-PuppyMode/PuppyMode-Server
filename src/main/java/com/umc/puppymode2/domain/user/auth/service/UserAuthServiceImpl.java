@@ -1,20 +1,22 @@
-package com.umc.puppymode2.global.auth.service;
+package com.umc.puppymode2.domain.user.auth.service;
 
-import com.umc.puppymode2.domain.user.dto.LoginResponseDTO;
+import com.umc.puppymode2.domain.user.auth.dto.LoginResponseDTO;
 import com.umc.puppymode2.domain.user.entity.SocialAuth;
 import com.umc.puppymode2.domain.user.entity.User;
 import com.umc.puppymode2.domain.user.entity.enums.UserStatus;
 import com.umc.puppymode2.domain.user.repository.SocialAuthRepository;
 import com.umc.puppymode2.domain.user.repository.UserRepository;
 import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
-import com.umc.puppymode2.global.auth.dto.UserAuthInfoDTO;
-import com.umc.puppymode2.global.auth.enums.Provider;
+import com.umc.puppymode2.domain.user.auth.dto.UserAuthInfoDTO;
+import com.umc.puppymode2.domain.user.auth.enums.Provider;
 import com.umc.puppymode2.global.auth.token.JwtTokenProvider;
+import com.umc.puppymode2.global.auth.token.JwtTokenService;
 import com.umc.puppymode2.global.exception.GeneralException;
 import com.umc.puppymode2.global.security.UserAuthentication;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,7 @@ public class UserAuthServiceImpl implements UserAuthService {
 
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtTokenService jwtTokenService;
     private final SocialAuthRepository socialAuthRepository;
 
     @Transactional
@@ -52,17 +55,22 @@ public class UserAuthServiceImpl implements UserAuthService {
             socialAuth = optionalUserAuth.get();
             user = socialAuth.getUser();
 
+            // refresh token 갱신
             if (refreshToken != null && (socialAuth.getRefreshToken() == null || !refreshToken.equals(socialAuth.getRefreshToken()))) {
                 log.debug("Auth Refresh Token 갱신됨.");
                 socialAuth.setRefreshToken(refreshToken);
                 socialAuthRepository.save(socialAuth);
             }
 
+            // username 변경 처리
             if (newUsername != null && !newUsername.equals(user.getUsername())) {
                 log.debug("username 변경됨.");
                 user.setUsername(newUsername);
                 userRepository.save(user);
             }
+
+            // 인증 객체 등록
+            setAuthentication(user);
 
             return generateLoginResponse(user, false);
         }
@@ -100,16 +108,41 @@ public class UserAuthServiceImpl implements UserAuthService {
                 .build();
         socialAuthRepository.save(socialAuth);
 
+        // 인증 객체 등록
+        setAuthentication(user);
+
         return generateLoginResponse(user, isNewUser.get());
     }
 
     /**
+     * 인증 객체를 설정합니다.
+     *
+     * @param user
+     */
+    private void setAuthentication(User user) {
+        Authentication authentication = new UserAuthentication(user.getUserId(), null, null);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        log.info("[AUTH] SecurityContext에 인증 객체 설정 완료 - userId={}", user.getUserId());
+    }
+
+    /**
      * JWT 발급 및 응답 생성
+     *
+     * @param user
+     * @param isNewUser
+     * @return LoginResponseDTO
      */
     private LoginResponseDTO generateLoginResponse(User user, boolean isNewUser) {
-        // 인증 객체 생성
-        Authentication authentication = new UserAuthentication(user.getUserId(), null, null);
-        String token = jwtTokenProvider.generateToken(authentication);
+        Long userId = user.getUserId();
+
+        String accessToken = jwtTokenProvider.generateAccessToken(userId);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(userId);
+        Long expiresIn = jwtTokenProvider.getAccessTokenExpirySeconds();
+
+        // Redis에 refresh token 저장
+        jwtTokenService.saveRefreshToken(userId, refreshToken);
+
+        log.info("[LOGIN] 토큰 발급 완료 - userId={}", userId);
 
         LoginResponseDTO.LoginUserInfo loginUserInfo = LoginResponseDTO.LoginUserInfo.builder()
                 .userId(user.getUserId())
@@ -118,8 +151,9 @@ public class UserAuthServiceImpl implements UserAuthService {
                 .build();
 
         return LoginResponseDTO.builder()
-                .accessToken(token)
-                .refreshToken(null) // TODO: refresh 구현
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .expiresIn(expiresIn)
                 .userInfo(loginUserInfo)
                 .build();
     }

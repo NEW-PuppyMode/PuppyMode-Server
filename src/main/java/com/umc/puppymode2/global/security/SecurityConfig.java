@@ -18,7 +18,11 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
     private static final String[] AUTH_WHITELIST = {
-            "/auth/kakao/login"
+            "/auth/kakao/login/**"
+    };
+
+    private static final String[] HEALTH_WHITELIST = {
+            "/actuator/health"
     };
 
     private static final String[] SWAGGER_WHITELIST = {
@@ -40,8 +44,8 @@ public class SecurityConfig {
                 })
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(AUTH_WHITELIST).permitAll();
+                    auth.requestMatchers(HEALTH_WHITELIST).permitAll();
                     auth.requestMatchers(SWAGGER_WHITELIST).permitAll();
-                    auth.requestMatchers("/actuator/health").permitAll(); // 헬스체크 경로 허용 (취약점은 추후 고려 예정)
                     auth.anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

@@ -5,7 +5,7 @@ import com.umc.puppymode2.domain.user.entity.User;
 import com.umc.puppymode2.domain.user.entity.enums.UserStatus;
 import com.umc.puppymode2.domain.user.repository.SocialAuthRepository;
 import com.umc.puppymode2.domain.user.repository.UserRepository;
-import com.umc.puppymode2.global.auth.enums.Provider;
+import com.umc.puppymode2.domain.user.auth.enums.Provider;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
