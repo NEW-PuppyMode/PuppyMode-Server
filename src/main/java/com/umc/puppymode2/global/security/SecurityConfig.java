@@ -22,8 +22,7 @@ public class SecurityConfig {
     };
 
     private static final String[] HEALTH_WHITELIST = {
-            "/actuator/health",
-            "/actuator/health/redis"
+            "/actuator/health"
     };
 
     private static final String[] SWAGGER_WHITELIST = {

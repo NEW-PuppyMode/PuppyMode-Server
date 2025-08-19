@@ -1,6 +1,8 @@
 package com.umc.puppymode2.global.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
+import com.umc.puppymode2.global.exception.GeneralException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -34,6 +36,9 @@ public class RedisConfig {
     @Value("${spring.data.redis.timeout}")
     private Duration timeout;
 
+    @Value("${spring.data.redis.ssl:false}")
+    private boolean sslEnabled;
+
     /**
      * LettuceClientFactory 생성
      * - ssl 사용
@@ -52,11 +57,17 @@ public class RedisConfig {
             config.setPassword(password);
         }
 
-        LettuceClientConfiguration clientConfiguration = LettuceClientConfiguration.builder()
-                .commandTimeout(timeout)
-                .shutdownTimeout(Duration.ofMillis(100))
-                .useSsl() // TLS 활성화
-                .build();
+        LettuceClientConfiguration.LettuceClientConfigurationBuilder builder =
+                LettuceClientConfiguration.builder()
+                        .commandTimeout(timeout)
+                        .shutdownTimeout(Duration.ofMillis(100));
+
+        // 환경에 따라 TLS 적용
+        if (sslEnabled) {
+            builder.useSsl();
+        }
+
+        LettuceClientConfiguration clientConfiguration = builder.build();
 
         return new LettuceConnectionFactory(config, clientConfiguration);
     }
@@ -88,5 +99,17 @@ public class RedisConfig {
 
         template.afterPropertiesSet();
         return template;
+    }
+
+    @Bean
+    public CommandLineRunner safeRedisCheck(LettuceConnectionFactory cf) {
+        return args -> {
+            try {
+                log.info("[REDIS] {}", cf.getConnection().ping());
+            } catch (Exception e) {
+                log.warn("[REDIS] 초기 연결 실패 {}", e.getMessage());
+                throw new IllegalStateException("Redis 연결 실패 - 애플리케이션 중단", e);
+            }
+        };
     }
 }

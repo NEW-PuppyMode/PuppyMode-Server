@@ -32,7 +32,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final List<String> NO_AUTH_URLS = List.of(
             "/auth/kakao/login/**",
             "/actuator/health",
-            "/actuator/health/redis",
             "/swagger-ui/**",
             "/v3/api-docs/**"
     );
