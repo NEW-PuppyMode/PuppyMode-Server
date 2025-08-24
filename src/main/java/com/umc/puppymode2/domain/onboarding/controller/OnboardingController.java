@@ -4,6 +4,7 @@ import com.umc.puppymode2.domain.onboarding.dto.OnboardingTestReqDTO;
 import com.umc.puppymode2.domain.onboarding.dto.OnboardingTestResDTO;
 import com.umc.puppymode2.domain.onboarding.service.OnboardingTestService;
 import com.umc.puppymode2.global.apiPayload.ApiResponse;
+import com.umc.puppymode2.global.auth.context.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/onboarding")
 public class OnboardingController {
 
+    private final UserContext userContext;
     private final OnboardingTestService onboardingTestService;
 
     @PostMapping("/test")
@@ -24,6 +26,7 @@ public class OnboardingController {
     public ApiResponse<OnboardingTestResDTO> recommendAndCreatePuppy(
             @Valid @RequestBody OnboardingTestReqDTO onboardingTestReqDTO) {
 
-        return ApiResponse.onSuccess(onboardingTestService.recommendAndCreatePuppy(onboardingTestReqDTO));
+        Long userId = userContext.getCurrentUserId();
+        return ApiResponse.onSuccess(onboardingTestService.recommendAndCreatePuppy(userId, onboardingTestReqDTO));
     }
 }
