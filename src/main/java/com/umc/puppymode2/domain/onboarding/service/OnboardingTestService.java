@@ -8,6 +8,8 @@ import com.umc.puppymode2.domain.puppy.entity.PuppyLevel;
 import com.umc.puppymode2.domain.puppy.entity.PuppyType;
 import com.umc.puppymode2.domain.puppy.repository.PuppyLevelRepository;
 import com.umc.puppymode2.domain.puppy.repository.PuppyRepository;
+import com.umc.puppymode2.domain.user.entity.User;
+import com.umc.puppymode2.domain.user.repository.UserRepository;
 import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
 import com.umc.puppymode2.global.exception.handler.TempHandler;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +26,14 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class OnboardingTestService {
 
+    private final UserRepository userRepository;
     private final PuppyRepository puppyRepository;
     private final PuppyLevelRepository puppyLevelRepository;
 
-    public OnboardingTestResDTO recommendAndCreatePuppy(OnboardingTestReqDTO onboardingTestReqDTO) {
+    public OnboardingTestResDTO recommendAndCreatePuppy(Long userId, OnboardingTestReqDTO onboardingTestReqDTO) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new TempHandler(ErrorStatus.USER_NOT_FOUND));
 
         // 올바른 reqDTO 형식인지 검증 후, 각 유형 점수에 해당하는 변수 초기화
         validOnboardingTestReqDTO(onboardingTestReqDTO);
@@ -70,7 +76,7 @@ public class OnboardingTestService {
 
         // Puppy 객체 생성 및 저장
         Puppy puppy = Puppy.builder()
-//                .user(user)
+                .user(user)
                 .puppyLevel(level1)
                 .puppyName(level1.getPuppyType().getBreed())
                 .puppyExp(0)
