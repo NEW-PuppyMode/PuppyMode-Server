@@ -79,9 +79,13 @@ public class UserAuthServiceImpl implements UserAuthService {
         Optional<User> optionalUser = userRepository.findByEmail(email);
 
         user = optionalUser.map(existingUser -> {
-            // 탈퇴한 회원인 경우
+            // 탈퇴한 회원인 경우 -> 재활성화 처리
             if (existingUser.getStatus() == UserStatus.STOP) {
-                throw new GeneralException(ErrorStatus.USER_ALREADY_WITHDRAWN);
+
+                // 상태를 NORMAL로 복구
+                existingUser.setStatus(UserStatus.NORMAL);
+
+                return userRepository.save(existingUser);
             }
             return existingUser;
         }).orElseGet(() -> {
