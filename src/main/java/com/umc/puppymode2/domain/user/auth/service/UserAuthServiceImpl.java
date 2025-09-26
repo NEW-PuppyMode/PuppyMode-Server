@@ -140,11 +140,11 @@ public class UserAuthServiceImpl implements UserAuthService {
         Long userId = user.getUserId();
 
         String accessToken = jwtTokenProvider.generateAccessToken(userId);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(userId);
+//        String refreshToken = jwtTokenProvider.generateRefreshToken(userId);
         Long expiresIn = jwtTokenProvider.getAccessTokenExpirySeconds();
 
         // Redis에 refresh token 저장
-        jwtTokenService.saveRefreshToken(userId, refreshToken);
+//        jwtTokenService.saveRefreshToken(userId, refreshToken);
 
         log.info("[LOGIN] 토큰 발급 완료 - userId={}", userId);
 
@@ -156,7 +156,7 @@ public class UserAuthServiceImpl implements UserAuthService {
 
         return LoginResponseDTO.builder()
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
+                .refreshToken(null) //todo: refreshtoken으로 변경
                 .expiresIn(expiresIn)
                 .userInfo(loginUserInfo)
                 .build();
