@@ -1,17 +1,15 @@
 package com.umc.puppymode2.domain.user.auth.service;
 
 import com.umc.puppymode2.domain.user.auth.dto.LoginResponseDTO;
+import com.umc.puppymode2.domain.user.auth.dto.UserAuthInfoDTO;
+import com.umc.puppymode2.domain.user.auth.enums.Provider;
 import com.umc.puppymode2.domain.user.entity.SocialAuth;
 import com.umc.puppymode2.domain.user.entity.User;
 import com.umc.puppymode2.domain.user.entity.enums.UserStatus;
 import com.umc.puppymode2.domain.user.repository.SocialAuthRepository;
 import com.umc.puppymode2.domain.user.repository.UserRepository;
-import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
-import com.umc.puppymode2.domain.user.auth.dto.UserAuthInfoDTO;
-import com.umc.puppymode2.domain.user.auth.enums.Provider;
 import com.umc.puppymode2.global.auth.token.JwtTokenProvider;
-import com.umc.puppymode2.global.auth.token.JwtTokenService;
-import com.umc.puppymode2.global.exception.GeneralException;
+//import com.umc.puppymode2.global.auth.token.JwtTokenService;
 import com.umc.puppymode2.global.security.UserAuthentication;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +30,7 @@ public class UserAuthServiceImpl implements UserAuthService {
 
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
-    private final JwtTokenService jwtTokenService;
+//    private final JwtTokenService jwtTokenService;
     private final SocialAuthRepository socialAuthRepository;
 
     @Transactional
