@@ -3,6 +3,7 @@ package com.umc.puppymode2.domain.report.service;
 import com.umc.puppymode2.domain.drinkhistory.repository.DrinkHistoryRepository;
 import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
+import com.umc.puppymode2.domain.advice.repository.AdviceRepository;
 import com.umc.puppymode2.domain.report.converter.DrinkReportConverter;
 import com.umc.puppymode2.domain.report.dto.DrinkReportResponseDTO;
 import jakarta.transaction.Transactional;
@@ -19,6 +20,7 @@ import java.time.YearMonth;
 public class DrinkReportServiceImpl implements DrinkReportService {
     private final UserGoalHistoryRepository userGoalHistoryRepository;
     private final DrinkHistoryRepository drinkHistoryRepository;
+    private final AdviceRepository adviceRepository;
     private final DrinkReportConverter drinkReportConverter;
 
     @Transactional(Transactional.TxType.SUPPORTS)
@@ -28,7 +30,7 @@ public class DrinkReportServiceImpl implements DrinkReportService {
         LocalDate firstDayOfMonth = targetMonth.atDay(1);
         LocalDate lastDayOfMonth = targetMonth.atEndOfMonth();
 
-        // asOf 기준 시간을 LocalDateTime으로 변환 (그 달의 마지막 순간)
+        LocalDateTime startDateTime = firstDayOfMonth.atStartOfDay();
         LocalDateTime asOfDateTime = lastDayOfMonth.atTime(LocalTime.MAX);
 
         int goal = userGoalHistoryRepository
@@ -48,8 +50,8 @@ public class DrinkReportServiceImpl implements DrinkReportService {
             achievementRate = (int) (((double) (goal - drinkDays) / goal) * 100);
         }
 
-        // TODO : 패널티 횟수 -> 한마디 횟수
-        int scoldedCount = 0;
+        int scoldedCount = (int) adviceRepository
+                .countByUserUserIdAndAdvisedAtBetween(userId, startDateTime, asOfDateTime);
 
         DrinkReportResponseDTO dto = drinkReportConverter.toDto(goal, Long.valueOf(drinkRecordCount), Long.valueOf(drinkDays), achievementRate, scoldedCount);
 
