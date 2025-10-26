@@ -8,6 +8,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.umc.puppymode2.domain.advice.entity.Advice;
+import com.umc.puppymode2.domain.advice.repository.AdviceRepository;
+import com.umc.puppymode2.domain.user.entity.User;
+import com.umc.puppymode2.domain.user.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
+import java.time.LocalDateTime;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,6 +29,9 @@ public class AdviceQueryServiceImpl implements AdviceQueryService {
     private final UserGoalHistoryRepository userGoalHistoryRepository;
     private final DrinkHistoryRepository drinkHistoryRepository;
     private final Random random = new Random();
+
+    private final AdviceRepository adviceRepository;
+    private final UserRepository userRepository;
 
     @Override
     public AdviceResponseDTO getAdvice(Long userId) {
@@ -43,6 +53,9 @@ public class AdviceQueryServiceImpl implements AdviceQueryService {
 
         // 조언 메시지 생성
         String advice = getRandomAdvice(goal, actual, recordedYesterday);
+
+        saveAdviceRecord(userId);
+
         return new AdviceResponseDTO(advice);
     }
 
@@ -110,5 +123,18 @@ public class AdviceQueryServiceImpl implements AdviceQueryService {
         // 랜덤 셔플 후 하나 선택
         Collections.shuffle(messages);
         return messages.get(random.nextInt(messages.size()));
+    }
+
+    @Transactional
+    private void saveAdviceRecord(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found for ID: " + userId));
+
+        Advice advice = Advice.builder()
+                .user(user)
+                .advisedAt(LocalDateTime.now()) // 현재 시점 기록
+                .build();
+
+        adviceRepository.save(advice);
     }
 }
