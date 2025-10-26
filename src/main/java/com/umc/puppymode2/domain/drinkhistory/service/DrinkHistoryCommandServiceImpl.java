@@ -2,6 +2,7 @@ package com.umc.puppymode2.domain.drinkhistory.service;
 
 import com.umc.puppymode2.domain.drinkhistory.converter.DrinkHistoryConverter;
 import com.umc.puppymode2.domain.drinkhistory.dto.DrinkHistoryRequestDTO;
+import com.umc.puppymode2.domain.drinkhistory.dto.DrinkHistoryResponseDTO;
 import com.umc.puppymode2.domain.drinkhistory.entity.DrinkHistory;
 import com.umc.puppymode2.domain.drinkhistory.repository.DrinkHistoryRepository;
 import com.umc.puppymode2.domain.puppy.entity.Puppy;
@@ -23,7 +24,7 @@ public class DrinkHistoryCommandServiceImpl implements DrinkHistoryCommandServic
     private final PuppyRepository puppyRepository;
 
     @Override
-    public Long recordDrink(Long userId, DrinkHistoryRequestDTO dto) {
+    public DrinkHistoryResponseDTO recordDrink(Long userId, DrinkHistoryRequestDTO dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
 
@@ -40,6 +41,6 @@ public class DrinkHistoryCommandServiceImpl implements DrinkHistoryCommandServic
 
         puppyRepository.save(puppy);
 
-        return drinkHistory.getDrinkHistoryId();
+        return DrinkHistoryConverter.toResponseDTO(drinkHistory.getDrinkHistoryId(), puppy.getPuppyExp());
     }
 }

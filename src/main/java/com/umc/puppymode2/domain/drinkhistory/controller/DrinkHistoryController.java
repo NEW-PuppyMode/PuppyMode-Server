@@ -1,6 +1,7 @@
 package com.umc.puppymode2.domain.drinkhistory.controller;
 
 import com.umc.puppymode2.domain.drinkhistory.dto.DrinkHistoryRequestDTO;
+import com.umc.puppymode2.domain.drinkhistory.dto.DrinkHistoryResponseDTO;
 import com.umc.puppymode2.domain.drinkhistory.dto.DrinkHistoryStatusDTO;
 import com.umc.puppymode2.domain.drinkhistory.service.DrinkHistoryCommandService;
 import com.umc.puppymode2.domain.drinkhistory.service.DrinkHistoryQueryService;
@@ -28,11 +29,11 @@ public class DrinkHistoryController {
 
     @Operation(summary = "음주 기록 생성 API", description = "새로운 음주 기록을 생성합니다.")
     @PostMapping
-    public ApiResponse<Long> createDrinkHistory(
+    public ApiResponse<DrinkHistoryResponseDTO> createDrinkHistory(
             @RequestBody @Valid DrinkHistoryRequestDTO request) {
         Long userId = userContext.getCurrentUserId();
-        Long drinkHistoryId = drinkHistoryCommandService.recordDrink(userId, request);
-        return ApiResponse.onSuccess(drinkHistoryId, SuccessStatus.DRINK_HISTORY_RECORD_SUCCESS.getCode(), SuccessStatus.DRINK_HISTORY_RECORD_SUCCESS.getMessage());
+        DrinkHistoryResponseDTO drinkHistoryResponseDTO = drinkHistoryCommandService.recordDrink(userId, request);
+        return ApiResponse.onSuccess(drinkHistoryResponseDTO, SuccessStatus.DRINK_HISTORY_RECORD_SUCCESS.getCode(), SuccessStatus.DRINK_HISTORY_RECORD_SUCCESS.getMessage());
     }
 
     @Operation(summary = "음주 기록 상태 조회 API", description = "어제와 오늘의 음주 기록 상태를 조회합니다.")
