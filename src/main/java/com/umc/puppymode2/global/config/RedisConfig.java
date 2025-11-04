@@ -34,7 +34,7 @@ public class RedisConfig {
     @Value("${spring.data.redis.timeout}")
     private Duration timeout;
 
-    @Value("${spring.data.redis.ssl:false}")
+    @Value("${spring.data.redis.ssl-enabled:false}")
     private boolean sslEnabled;
 
     /**
