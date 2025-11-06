@@ -89,6 +89,7 @@ public class UserCommandServiceImpl implements UserCommandService {
             boolean unlinked = kakaoAuthService.disconnectKakao(accessToken);
             if (unlinked) {
                 log.info("[Withdraw] 카카오 연결 해제 성공 - userId: {}", userId);
+                return true;
             }
         }
 
