@@ -1,11 +1,15 @@
 package com.umc.puppymode2.domain.user.entity;
 
+import com.umc.puppymode2.domain.advice.entity.Advice;
 import com.umc.puppymode2.domain.common.BaseEntity;
+import com.umc.puppymode2.domain.drinkhistory.entity.DrinkHistory;
+import com.umc.puppymode2.domain.puppy.entity.Puppy;
 import com.umc.puppymode2.domain.user.auth.enums.Provider;
 import com.umc.puppymode2.domain.user.entity.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,8 +39,19 @@ public class User extends BaseEntity {
     @Column(name = "is_custom_name", nullable = false)
     private boolean isCustomName = false;
 
+    private LocalDateTime withdrawnAt;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SocialAuth> socialAuths = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DrinkHistory> drinkHistories = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Advice> advices = new ArrayList<>();
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Puppy puppy;
 
     public void addSocialAuth(SocialAuth socialAuth) {
         socialAuths.add(socialAuth);
@@ -83,5 +98,21 @@ public class User extends BaseEntity {
     public void setUsername(String username) {
         this.username = username;
         this.isCustomName = true;
+    }
+
+    public void withdraw() {
+        this.status = UserStatus.STOP;
+        this.withdrawnAt = LocalDateTime.now();
+
+        // 개인 정보 마스킹
+        this.email = "withdrawn_" + userId + "@deleted.com";
+        this.username = "탈퇴한 사용자";
+        this.receiveNotifications = false;
+
+        // CASCADE로 자동 삭제
+        this.socialAuths.clear();
+        this.drinkHistories.clear();
+        this.advices.clear();
+        this.puppy = null;
     }
 }
