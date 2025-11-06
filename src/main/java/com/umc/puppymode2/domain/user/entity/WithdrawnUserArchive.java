@@ -33,7 +33,7 @@ public class WithdrawnUserArchive extends BaseEntity {
     public static WithdrawnUserArchive fromUser(User user, Integer totalDrinkDays) {
         return WithdrawnUserArchive.builder()
                 .originalUserId(user.getUserId())
-                .maskedEmail(user.getEmail())
+                .maskedEmail("withdrawn_" + user.getUserId() + "@deleted.com")
                 .provider(user.getProvider())
                 .withdrawnAt(LocalDateTime.now())
                 .signupAt(user.getCreatedAt())
