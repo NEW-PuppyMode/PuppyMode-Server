@@ -9,7 +9,7 @@ import com.umc.puppymode2.domain.user.entity.enums.UserStatus;
 import com.umc.puppymode2.domain.user.repository.SocialAuthRepository;
 import com.umc.puppymode2.domain.user.repository.UserRepository;
 import com.umc.puppymode2.global.auth.token.JwtTokenProvider;
-import com.umc.puppymode2.global.auth.token.JwtTokenService;
+//import com.umc.puppymode2.global.auth.token.JwtTokenService;
 import com.umc.puppymode2.global.security.UserAuthentication;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,7 @@ public class UserAuthServiceImpl implements UserAuthService {
 
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
-    private final JwtTokenService jwtTokenService;
+//    private final JwtTokenService jwtTokenService;
     private final SocialAuthRepository socialAuthRepository;
 
     @Transactional
@@ -138,11 +138,11 @@ public class UserAuthServiceImpl implements UserAuthService {
         Long userId = user.getUserId();
 
         String accessToken = jwtTokenProvider.generateAccessToken(userId);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(userId);
+//        String refreshToken = jwtTokenProvider.generateRefreshToken(userId);
         Long expiresIn = jwtTokenProvider.getAccessTokenExpirySeconds();
 
         // Redis에 refresh token 저장
-        jwtTokenService.saveRefreshToken(userId, refreshToken);
+//        jwtTokenService.saveRefreshToken(userId, refreshToken);
 
         log.info("[LOGIN] 토큰 발급 완료 - userId={}", userId);
 
@@ -154,7 +154,7 @@ public class UserAuthServiceImpl implements UserAuthService {
 
         return LoginResponseDTO.builder()
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
+                .refreshToken(null)
                 .expiresIn(expiresIn)
                 .userInfo(loginUserInfo)
                 .build();
