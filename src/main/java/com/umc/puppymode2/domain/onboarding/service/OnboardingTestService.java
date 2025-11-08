@@ -78,7 +78,7 @@ public class OnboardingTestService {
         Puppy puppy = Puppy.builder()
                 .user(user)
                 .puppyLevel(level1)
-                .puppyName(level1.getPuppyType().getBreed())
+                .puppyName(level1.getPuppyType().getBreedKo())
                 .puppyExp(0)
                 .build();
         puppyRepository.save(puppy);
@@ -86,7 +86,8 @@ public class OnboardingTestService {
         // 온보딩 화면에 검사 결과로 표시될 데이터 DTO 생성 및 반환
         return new OnboardingTestResDTO(
                 type.getType(),
-                type.getBreed(),
+                type.getBreedKo(),
+                type.getBreedEn(),
                 type.getDescription(),
                 type.getImageUrl()
         );
