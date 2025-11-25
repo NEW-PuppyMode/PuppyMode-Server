@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>강아지 모드 - 계정 삭제 안내</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            line-height: 1.6;
+            color: #555555;
+            background: #f8f8f8;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #0FD380;
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.95;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .section {
+            margin-bottom: 35px;
+        }
+
+        .section h2 {
+            color: #0FD380;
+            font-size: 22px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #CBF1D3;
+            font-weight: 600;
+        }
+
+        .section p {
+            font-size: 15px;
+            color: #555555;
+            margin-bottom: 12px;
+        }
+
+        .steps {
+            background: #CBF1D3;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .step:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-number {
+            background: #0FD380;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+            margin-right: 15px;
+            font-size: 16px;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: #555555;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+
+        .step-description {
+            color: #9D9D9D;
+            font-size: 14px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .data-table th {
+            background: #0FD380;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .data-table td {
+            padding: 15px;
+            border-bottom: 1px solid #CBF1D3;
+            font-size: 14px;
+            color: #555555;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover {
+            background: #f0fdf7;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .warning-box strong {
+            color: #856404;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .warning-box p {
+            color: #856404;
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .info-box {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .info-box strong {
+            color: #0c5460;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .info-box p {
+            color: #0c5460;
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .contact {
+            background: #CBF1D3;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .contact h3 {
+            color: #0FD380;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .contact p {
+            color: #555555;
+            font-size: 14px;
+        }
+
+        .contact a {
+            color: #0FD380;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .contact a:hover {
+            text-decoration: underline;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            color: #9D9D9D;
+            font-size: 13px;
+            border-top: 1px solid #C1C1C1;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .content {
+                padding: 25px 20px;
+            }
+
+            .section h2 {
+                font-size: 20px;
+            }
+
+            .data-table {
+                font-size: 13px;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🐶 강아지 모드</h1>
+        <p>계정 삭제 및 데이터 처리 안내</p>
+    </div>
+
+    <div class="content">
+        <div class="section">
+            <h2>📱 계정 삭제 방법</h2>
+            <p>강아지 모드 앱에서 직접 계정을 탈퇴할 수 있습니다. 아래 단계를 따라주세요.</p>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <div class="step-title">강아지 모드 앱 실행</div>
+                        <div class="step-description">앱을 실행하고 로그인된 상태인지 확인해주세요.</div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-title">설정 메뉴 접속</div>
+                        <div class="step-description">앱 내 설정 메뉴로 이동합니다.</div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <div class="step-title">탈퇴하기 선택</div>
+                        <div class="step-description">설정 페이지에서 '탈퇴하기'를 선택하여 탈퇴 페이지로 이동합니다.</div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <div class="step-title">계정 삭제 버튼 선택</div>
+                        <div class="step-description">탈퇴 페이지에서 안내 사항을 확인하고 '계정 삭제' 버튼을 눌러 최종 확인합니다.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ 중요 안내</strong>
+                <p>계정 탈퇴 시 카카오 계정 연동이 해제되며, 모든 데이터가 즉시 삭제됩니다. 이 작업은 되돌릴 수 없으니 신중히 결정해주세요.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🗑️ 삭제되는 데이터</h2>
+            <p>계정 탈퇴 시 다음 데이터가 즉시 삭제됩니다:</p>
+
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>데이터 유형</th>
+                    <th>처리 방식</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><strong>개인정보</strong></td>
+                    <td>이메일, 이름 등 개인정보는 즉시 마스킹 처리됩니다</td>
+                </tr>
+                <tr>
+                    <td><strong>카카오 연동 정보</strong></td>
+                    <td>카카오 계정 연동이 해제되고 관련 정보가 삭제됩니다</td>
+                </tr>
+                <tr>
+                    <td><strong>음주 기록</strong></td>
+                    <td>모든 음주 히스토리가 즉시 삭제됩니다</td>
+                </tr>
+                <tr>
+                    <td><strong>목표 설정 기록</strong></td>
+                    <td>월별 목표 및 달성 기록이 즉시 삭제됩니다</td>
+                </tr>
+                <tr>
+                    <td><strong>조언 기록</strong></td>
+                    <td>받았던 모든 조언 내역이 즉시 삭제됩니다</td>
+                </tr>
+                <tr>
+                    <td><strong>펫 정보</strong></td>
+                    <td>키우던 펫 정보가 즉시 삭제됩니다</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>📦 법적 보관 데이터</h2>
+            <p>관련 법령에 따라 일부 데이터는 최소 기간 동안 보관됩니다:</p>
+
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>보관 항목</th>
+                    <th>보관 기간</th>
+                    <th>보관 목적</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>탈퇴 사실 기록</td>
+                    <td>3개월</td>
+                    <td>부정 이용 방지 및 분쟁 해결</td>
+                </tr>
+                <tr>
+                    <td>가입/탈퇴 일시</td>
+                    <td>3개월</td>
+                    <td>서비스 이용 통계</td>
+                </tr>
+                <tr>
+                    <td>총 음주일수 통계</td>
+                    <td>3개월</td>
+                    <td>서비스 개선 및 통계 분석</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box">
+                <strong>ℹ️ 보관 정보 안내</strong>
+                <p>법적 보관 데이터는 개인을 식별할 수 없도록 처리되며, 보관 기간 종료 후 자동으로 완전히 삭제됩니다. 이메일 등 개인정보는 즉시 마스킹 처리되어 복구가 불가능합니다.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>⏱️ 처리 시간</h2>
+            <p><strong>즉시 처리:</strong> 계정 탈퇴 요청 시 개인정보 마스킹 및 연관 데이터 삭제가 실시간으로 처리됩니다.</p>
+            <p><strong>완전 삭제:</strong> 법적 보관 데이터는 보관 기간(3개월) 종료 후 자동으로 완전히 삭제됩니다.</p>
+        </div>
+
+        <div class="contact">
+            <h3>문의하기</h3>
+            <p>계정 삭제 관련 문의사항이 있으시면 아래로 연락 주세요:</p>
+            <p><a href="mailto:leejingyeong2002@gmail.com">leejingyeong2002@gmail.com</a></p>
+        </div>
+    </div>
+</div>
+</body>
+</html>
