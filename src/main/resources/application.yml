@@ -17,13 +17,13 @@ spring:
         hbm2ddl:
           auto: update
         default_batch_fetch_size: 1000
-#  data:
-#    redis:
-#      host: ${REDIS_HOST}
-#      port: 6379
-#      password: ${REDIS_AUTH_TOKEN}
-#      timeout: ${REDIS_TIMEOUT:2s}
-#      ssl-enabled: ${REDIS_SSL_ENABLED:false}
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: 6379
+      password: ${REDIS_AUTH_TOKEN}
+      timeout: ${REDIS_TIMEOUT:2s}
+      ssl-enabled: ${REDIS_SSL_ENABLED:false}
 
 auth:
   jwt:
