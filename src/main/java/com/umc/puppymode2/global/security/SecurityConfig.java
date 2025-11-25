@@ -30,6 +30,10 @@ public class SecurityConfig {
             "/v3/api-docs/**"
     };
 
+    private static final String[] PUBLIC_WHITELIST = {
+            "/account-deletion"
+    };
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
@@ -46,6 +50,7 @@ public class SecurityConfig {
                     auth.requestMatchers(AUTH_WHITELIST).permitAll();
                     auth.requestMatchers(HEALTH_WHITELIST).permitAll();
                     auth.requestMatchers(SWAGGER_WHITELIST).permitAll();
+                    auth.requestMatchers(PUBLIC_WHITELIST).permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
