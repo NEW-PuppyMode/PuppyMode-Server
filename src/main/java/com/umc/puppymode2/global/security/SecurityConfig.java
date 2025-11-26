@@ -31,7 +31,8 @@ public class SecurityConfig {
     };
 
     private static final String[] PUBLIC_WHITELIST = {
-            "/account-deletion"
+            "/account-deletion",
+            "/privacy-policy"
     };
 
     @Bean

@@ -4,10 +4,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
-public class AccountDeletionController {
+public class StaticPageController {
 
     @GetMapping("/account-deletion")
     public String accountDeletionPage() {
         return "account-deletion";
     }
+
+    @GetMapping("/privacy-policy")
+    public String privacyPolicyPage() { return "privacy-policy"; }
 }
