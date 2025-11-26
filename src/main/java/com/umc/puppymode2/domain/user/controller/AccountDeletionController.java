@@ -10,4 +10,7 @@ public class AccountDeletionController {
     public String accountDeletionPage() {
         return "account-deletion";
     }
+
+    @GetMapping("/privacy-policy")
+    public String privacyPolicyPage() { return "privacy-policy"; }
 }
