@@ -48,6 +48,13 @@ public class RedisConfig {
      */
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
+        // 환경변수 읽기 확인
+        log.info("[REDIS ENV] REDIS_HOST={}", maskHost(redisHost));
+        log.info("[REDIS ENV] REDIS_PORT={}", redisPort);
+        log.info("[REDIS ENV] REDIS_PASSWORD={}", redisPassword != null && !redisPassword.isEmpty() ? "***SET***" : "***EMPTY***");
+        log.info("[REDIS ENV] SSL_ENABLED={}", sslEnabled);
+        log.info("[REDIS ENV] TIMEOUT={}", timeout);
+
         // Redis 서버 설정
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
         config.setHostName(redisHost);
@@ -90,7 +97,7 @@ public class RedisConfig {
         factory.setValidateConnection(true);
 
         log.info("[REDIS CONFIG] Host={}, Port={}, SSL={}, Timeout={}",
-                redisHost, redisPort, sslEnabled, timeout);
+                maskHost(redisHost), redisPort, sslEnabled, timeout);
 
         return factory;
     }
@@ -156,5 +163,24 @@ public class RedisConfig {
                 // 애플리케이션은 계속 실행 (예외 던지지 않음)
             }
         };
+    }
+
+    /**
+     * Redis Host를 마스킹 처리
+     * 예: master.redis-cache.xxx.com -> master.***
+     */
+    private String maskHost(String host) {
+        if (host == null || host.isEmpty()) {
+            return "***EMPTY***";
+        }
+        if (host.equals("localhost") || host.equals("127.0.0.1")) {
+            return host; // 로컬은 그대로
+        }
+        // AWS ElastiCache 호스트 마스킹: 첫 부분만 남김
+        int firstDot = host.indexOf('.');
+        if (firstDot > 0) {
+            return host.substring(0, firstDot) + ".***";
+        }
+        return "***";
     }
 }
