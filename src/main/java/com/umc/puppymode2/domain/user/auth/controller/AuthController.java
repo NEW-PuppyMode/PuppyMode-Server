@@ -9,6 +9,7 @@ import com.umc.puppymode2.global.auth.context.UserContext;
 import com.umc.puppymode2.global.auth.token.JwtTokenProvider;
 import com.umc.puppymode2.global.auth.token.JwtTokenService;
 import com.umc.puppymode2.global.config.RequiresRedis;
+import com.umc.puppymode2.global.config.swagger.ApiErrorCodeExamples;
 import com.umc.puppymode2.global.exception.GeneralException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -49,6 +50,11 @@ public class AuthController {
     )
     @PostMapping("/reissue")
     @RequiresRedis
+    @ApiErrorCodeExamples({
+            ErrorStatus.AUTH_INVALID_TOKEN,
+            ErrorStatus.REDIS_CONNECTION_FAILURE,
+            ErrorStatus.AUTH_REFRESH_TOKEN_INVALID
+    })
     public ApiResponse<ReissueTokenResponseDTO> reissue(@RequestBody ReissueTokenRequestDTO dto) {
 
         String incomingRefreshToken = dto.refreshToken();
@@ -89,6 +95,10 @@ public class AuthController {
     )
     @PostMapping("/logout")
     @RequiresRedis
+    @ApiErrorCodeExamples({
+            ErrorStatus.AUTH_INVALID_TOKEN,
+            ErrorStatus.REDIS_CONNECTION_FAILURE
+    })
     public ApiResponse<Void> logout() {
 
         Long userId = userContext.getCurrentUserId();
