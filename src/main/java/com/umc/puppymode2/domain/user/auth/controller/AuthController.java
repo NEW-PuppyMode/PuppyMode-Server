@@ -8,6 +8,7 @@ import com.umc.puppymode2.global.apiPayload.code.status.SuccessStatus;
 import com.umc.puppymode2.global.auth.context.UserContext;
 import com.umc.puppymode2.global.auth.token.JwtTokenProvider;
 import com.umc.puppymode2.global.auth.token.JwtTokenService;
+import com.umc.puppymode2.global.config.RequiresRedis;
 import com.umc.puppymode2.global.exception.GeneralException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,6 +48,7 @@ public class AuthController {
             description = "Refresh Token을 기반으로 Access/Refresh Token을 재발급합니다."
     )
     @PostMapping("/reissue")
+    @RequiresRedis
     public ApiResponse<ReissueTokenResponseDTO> reissue(@RequestBody ReissueTokenRequestDTO dto) {
 
         String incomingRefreshToken = dto.refreshToken();
@@ -86,6 +88,7 @@ public class AuthController {
             description = "현재 로그인된 사용자의 Refresh Token을 삭제하여 로그아웃 처리합니다."
     )
     @PostMapping("/logout")
+    @RequiresRedis
     public ApiResponse<Void> logout() {
 
         Long userId = userContext.getCurrentUserId();

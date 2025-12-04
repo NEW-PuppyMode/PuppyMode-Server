@@ -17,10 +17,19 @@ spring:
         hbm2ddl:
           auto: update
         default_batch_fetch_size: 1000
-#  data:
-#    redis:
-#      url: rediss://:${REDIS_AUTH_TOKEN}@${REDIS_HOST}:6379
-#      timeout: ${REDIS_TIMEOUT:10s}
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: 6379
+      password: ${REDIS_AUTH_TOKEN}
+      timeout: ${REDIS_TIMEOUT:10s}
+      ssl:
+        enabled: ${SPRING_DATA_REDIS_SSL_ENABLED:true}
+
+management:
+  health:
+    redis:
+      enabled: false  # Graceful Degradation을 위해 비활성화
 
 auth:
   jwt:

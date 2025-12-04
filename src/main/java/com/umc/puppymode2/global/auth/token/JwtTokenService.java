@@ -1,6 +1,7 @@
 package com.umc.puppymode2.global.auth.token;
 
 import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
+import com.umc.puppymode2.global.config.RequiresRedis;
 import com.umc.puppymode2.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class JwtTokenService {
      * @param userId
      * @param refreshToken
      */
+    @RequiresRedis
     public void saveRefreshToken(Long userId, String refreshToken) {
 
         if (userId == null) {
@@ -52,6 +54,7 @@ public class JwtTokenService {
      * @param userId
      * @return
      */
+    @RequiresRedis
     public String getRefreshToken(Long userId) {
 
         if (userId == null) {
@@ -76,6 +79,7 @@ public class JwtTokenService {
      *
      * @param userId
      */
+    @RequiresRedis
     public boolean removeRefreshToken(Long userId) {
 
         if (userId == null) {

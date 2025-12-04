@@ -24,7 +24,7 @@ public enum ErrorStatus implements BaseErrorCode {
     DUPLICATE_QUESTION_ID(HttpStatus.BAD_REQUEST, "ONBOARD4002", "질문 번호에 중복이 존재합니다."),
     MISSING_QUESTION_IDS(HttpStatus.BAD_REQUEST, "ONBOARD4003", "모든 질문(1~6번)에 대한 응답이 필요합니다."),
     INVALID_TRAIT_COMBINATION(HttpStatus.INTERNAL_SERVER_ERROR, "ONBOARD5001", "유효하지 않은 성향 조합입니다."),
-  
+
     // User
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER4041", "해당 사용자가 존재하지 않습니다."),
     USER_ALREADY_WITHDRAWN(HttpStatus.BAD_REQUEST, "USER4001", "이미 탈퇴한 사용자입니다."),
@@ -37,6 +37,9 @@ public enum ErrorStatus implements BaseErrorCode {
     // Auth 관련 에러
     AUTH_REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "AUTH4001", "유효하지 않은 Refresh Token입니다."),
     AUTH_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH4002", "인증 정보가 유효하지 않습니다."),
+
+    // Redis 관련 에러
+    REDIS_CONNECTION_FAILURE(HttpStatus.SERVICE_UNAVAILABLE, "REDIS5031", "Redis 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요."),
     ;
 
     private final HttpStatus httpStatus;
