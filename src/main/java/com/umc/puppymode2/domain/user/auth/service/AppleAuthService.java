@@ -9,6 +9,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,16 +21,14 @@ import java.security.PrivateKey;
 
 /**
  * Apple 로그인 처리 메인 서비스
- *
- * 앱스토어 출시를 위한 완성도 높은 구현:
+ * <p>
  * 1. providerId(sub) 기반 사용자 식별
  * 2. 이메일 제공 동의 없이도 처리 가능
- * 3. 로그아웃/회원탈퇴 지원
+ * 3. 회원탈퇴 지원
  * 4. Refresh Token 관리
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class AppleAuthService {
 
@@ -39,6 +38,20 @@ public class AppleAuthService {
     private final UserAuthService userAuthService;
     private final AppleAuthConfig appleAuthConfig;
 
+    public AppleAuthService(
+            @Qualifier("appleWebClient") WebClient webClient,
+            AppleKeyService appleKeyService,
+            AppleAuthQueryService appleAuthQueryService,
+            UserAuthService userAuthService,
+            AppleAuthConfig appleAuthConfig
+    ) {
+        this.webClient = webClient;
+        this.appleKeyService = appleKeyService;
+        this.appleAuthQueryService = appleAuthQueryService;
+        this.userAuthService = userAuthService;
+        this.appleAuthConfig = appleAuthConfig;
+    }
+
     private static final String APPLE_TOKEN_URL = "https://appleid.apple.com/auth/token";
     private static final String APPLE_REVOKE_URL = "https://appleid.apple.com/auth/revoke";
 
@@ -47,8 +60,8 @@ public class AppleAuthService {
      * providerId(sub)로 사용자를 식별하여 이메일 없이도 로그인 가능합니다.
      *
      * @param authorizationCode Apple Authorization Code
-     * @param identityToken Apple Identity Token (JWT)
-     * @param username 사용자 이름 (선택)
+     * @param identityToken     Apple Identity Token (JWT)
+     * @param username          사용자 이름 (선택)
      * @return 로그인 응답 (JWT 토큰 포함)
      */
     public LoginResponseDTO loginWithApple(String authorizationCode, String identityToken,
