@@ -44,8 +44,8 @@ public class UserAuthServiceImpl implements UserAuthService {
         String email = userInfo.getEmail();
         String newUsername = userInfo.getUsername();
 
-        // TODO: providerId로 조회하여 중복 가입 방지 로직 추가 findByProviderIdAndProvider
-        Optional<SocialAuth> optionalUserAuth = socialAuthRepository.findByUser_EmailAndProvider(email, provider);
+        // providerId로 기존 사용자 조회 (중복 가입 방지)
+        Optional<SocialAuth> optionalUserAuth = socialAuthRepository.findByProviderIdAndProvider(providerId, provider);
 
         SocialAuth socialAuth;
         User user;
@@ -119,6 +119,19 @@ public class UserAuthServiceImpl implements UserAuthService {
     }
 
     /**
+     * Apple Refresh Token을 조회합니다.
+     * 로그아웃 및 회원탈퇴 시 Apple에 토큰 무효화 요청을 위해 사용됩니다.
+     *
+     * @param userId 사용자 ID
+     * @return Apple Refresh Token (없으면 null)
+     */
+    @Override
+    public String getAppleRefreshToken(Long userId) {
+        Optional<SocialAuth> socialAuth = socialAuthRepository.findByUserUserIdAndProvider(userId, Provider.APPLE);
+        return socialAuth.map(SocialAuth::getRefreshToken).orElse(null);
+    }
+
+    /**
      * 인증 객체를 설정합니다.
      *
      * @param user
@@ -168,5 +181,27 @@ public class UserAuthServiceImpl implements UserAuthService {
                 .expiresIn(expiresIn)
                 .userInfo(loginUserInfo)
                 .build();
+    }
+
+    /**
+     * 회원탈퇴 처리
+     * User 엔티티의 withdraw() 메서드를 호출하여 처리합니다.
+     *
+     * @param userId 사용자 ID
+     */
+    @Override
+    @Transactional
+    public void withdrawUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // User 엔티티의 withdraw() 메서드 호출
+        // - 상태를 STOP으로 변경
+        // - 개인정보 마스킹 (이메일, 이름)
+        // - 연관 데이터 CASCADE 삭제 (socialAuths, drinkHistories, advices, puppy)
+        user.withdraw();
+
+        userRepository.save(user);
+        log.info("[Withdraw] 회원탈퇴 처리 완료 - userId: {}", userId);
     }
 }
