@@ -53,15 +53,6 @@ public class AppleAuthController {
                     **앱스토어 가이드라인 준수:**
                     - 이메일 제공 동의 없이도 로그인 가능
                     - Apple Refresh Token 관리
-                    
-                    **요청 예시:**
-                    ```json
-                    {
-                      "authorizationCode": "c1234567890abcdef...",
-                      "identityToken": "eyJhbGciOi...",
-                      "username": "홍길동"
-                    }
-                    ```
                     """
     )
     @ApiErrorCodeExamples({
