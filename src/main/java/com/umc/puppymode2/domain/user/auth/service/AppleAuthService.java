@@ -79,7 +79,7 @@ public class AppleAuthService {
         // 이메일이 없는 경우 더미 이메일 생성 (providerId 기반)
         if (email == null || email.isEmpty()) {
             email = "apple_" + providerId + "@private.com";
-            log.info("[Apple Login] 이메일 미제공 - 더미 이메일 생성: {}", email);
+            log.info("[Apple Login] 이메일 미제공 - 더미 이메일 생성");
         }
 
         // 3. Apple Token 발급 (Refresh Token 포함)

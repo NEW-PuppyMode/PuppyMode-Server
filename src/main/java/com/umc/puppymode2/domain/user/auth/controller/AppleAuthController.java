@@ -6,6 +6,7 @@ import com.umc.puppymode2.domain.user.auth.dto.AppleLoginRequestDTO;
 import com.umc.puppymode2.domain.user.auth.dto.LoginResponseDTO;
 import com.umc.puppymode2.domain.user.auth.service.AppleAuthService;
 import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
+import com.umc.puppymode2.global.auth.context.UserContext;
 import com.umc.puppymode2.global.config.swagger.ApiErrorCodeExamples;
 import com.umc.puppymode2.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +36,7 @@ public class AppleAuthController {
 
     private final AppleAuthService appleAuthService;
     private final ObjectMapper objectMapper;
+    private final UserContext userContext;
 
     /**
      * iOS 앱용 애플 로그인 엔드포인트
@@ -107,7 +109,7 @@ public class AppleAuthController {
     public ResponseEntity<ApiResponse<LoginResponseDTO>> appleWebCallback(
             @RequestParam Map<String, String> formParams) {
         try {
-            log.debug("[Apple Callback] 웹 요청: {}", formParams);
+            log.debug("[Apple Callback] 웹 요청 수신 - params: {}", formParams.keySet());
 
             if (!formParams.containsKey("code") || !formParams.containsKey("id_token")) {
                 log.warn("[Apple Callback] 필수 파라미터 누락: {}", formParams);
@@ -176,7 +178,7 @@ public class AppleAuthController {
                         .body(ApiResponse.onFailure("COMMON401", "인증되지 않은 사용자입니다.", null));
             }
 
-            Long userId = Long.valueOf(authentication.getPrincipal().toString());
+            Long userId = userContext.getCurrentUserId();
 
             // Apple 회원탈퇴 처리 (토큰 무효화 + 사용자 삭제)
             appleAuthService.withdrawAppleUser(userId);

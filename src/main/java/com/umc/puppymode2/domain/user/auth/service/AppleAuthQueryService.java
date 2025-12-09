@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.user.auth.service;
 
+import com.umc.puppymode2.domain.user.auth.config.AppleAuthConfig;
 import com.umc.puppymode2.domain.user.auth.dto.ApplePublicKeysDTO;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -20,13 +21,16 @@ public class AppleAuthQueryService {
 
     private final WebClient webClient;
     private final ApplePublicKeyUtil applePublicKeyUtil;
+    private final AppleAuthConfig appleAuthConfig;
 
     public AppleAuthQueryService(
             @Qualifier("appleWebClient") WebClient webClient,
-            ApplePublicKeyUtil applePublicKeyUtil
+            ApplePublicKeyUtil applePublicKeyUtil,
+            AppleAuthConfig appleAuthConfig
     ) {
         this.webClient = webClient;
         this.applePublicKeyUtil = applePublicKeyUtil;
+        this.appleAuthConfig = appleAuthConfig;
     }
 
     private static final String APPLE_PUBLIC_KEYS_URL = "https://appleid.apple.com/auth/keys";
@@ -63,6 +67,8 @@ public class AppleAuthQueryService {
             // Identity Token 검증 및 Claims 추출
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(publicKey)
+                    .requireIssuer("https://appleid.apple.com")
+                    .requireAudience(appleAuthConfig.getClientId())
                     .build()
                     .parseClaimsJws(identityToken)
                     .getBody();
