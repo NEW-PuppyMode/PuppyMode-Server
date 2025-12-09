@@ -38,6 +38,10 @@ public enum ErrorStatus implements BaseErrorCode {
     AUTH_REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "AUTH4001", "유효하지 않은 Refresh Token입니다."),
     AUTH_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH4002", "인증 정보가 유효하지 않습니다."),
 
+    // Apple 로그인 관련 에러
+    APPLE_AUTH_FAILED(HttpStatus.UNAUTHORIZED, "APPLE4001", "애플 로그인에 실패했습니다. 다시 시도해주세요."),
+    APPLE_MISSING_REQUIRED_FIELD(HttpStatus.BAD_REQUEST, "APPLE4002", "필수 입력값이 누락되었습니다."),
+
     // Redis 관련 에러
     REDIS_CONNECTION_FAILURE(HttpStatus.SERVICE_UNAVAILABLE, "REDIS5031", "Redis 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요."),
     ;
