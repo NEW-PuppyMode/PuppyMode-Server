@@ -5,6 +5,8 @@ import com.umc.puppymode2.domain.user.auth.dto.AppleTokenResponseDTO;
 import com.umc.puppymode2.domain.user.auth.dto.LoginResponseDTO;
 import com.umc.puppymode2.domain.user.auth.dto.UserAuthInfoDTO;
 import com.umc.puppymode2.domain.user.auth.enums.Provider;
+import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
+import com.umc.puppymode2.global.exception.GeneralException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
@@ -69,10 +71,11 @@ public class AppleAuthService {
         // 1. Identity Token 검증 및 사용자 정보 추출
         Claims claims = appleAuthQueryService.verifyIdentityToken(identityToken);
         if (claims == null) {
-            throw new IllegalArgumentException("Invalid Apple Identity Token");
+            log.error("[Apple Login] Identity Token 검증 실패");
+            throw new GeneralException(ErrorStatus.APPLE_AUTH_FAILED);
         }
 
-        // 2. providerId(sub) 추출 - 이것이 Apple의 고유 사용자 식별자
+        // 2. providerId(sub) 추출 - Apple의 고유 사용자 식별자
         String providerId = claims.getSubject();
         String email = claims.get("email", String.class);
 
@@ -252,7 +255,8 @@ public class AppleAuthService {
                     .onStatus(status -> status.isError(), clientResponse ->
                             clientResponse.bodyToMono(String.class)
                                     .doOnNext(errorBody -> log.error("[Apple Revoke] 에러: {}", errorBody))
-                                    .then(Mono.empty())
+                                    .flatMap(errorBody -> Mono.error(new RuntimeException(
+                                            "Apple 토큰 무효화 실패: " + errorBody)))
                     )
                     .bodyToMono(Void.class)
                     .block();

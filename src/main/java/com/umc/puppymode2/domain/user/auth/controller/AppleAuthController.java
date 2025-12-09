@@ -14,9 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -64,27 +62,14 @@ public class AppleAuthController {
     })
     public ResponseEntity<ApiResponse<LoginResponseDTO>> appleLogin(
             @RequestBody @Valid AppleLoginRequestDTO request) {
-        try {
-            LoginResponseDTO response = appleAuthService.loginWithApple(
-                    request.getAuthorizationCode(),
-                    request.getIdentityToken(),
-                    request.getUsername()
-            );
 
-            return ResponseEntity.ok(ApiResponse.onSuccess(response));
+        LoginResponseDTO response = appleAuthService.loginWithApple(
+                request.getAuthorizationCode(),
+                request.getIdentityToken(),
+                request.getUsername()
+        );
 
-        } catch (IllegalArgumentException e) {
-            // 로그에 자세히, 사용자 응답은 간단히
-            log.error("[Apple Login] 인증 실패 - 상세: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.onFailure("APPLE4001", "애플 로그인에 실패했습니다. 다시 시도해주세요.", null));
-
-        } catch (Exception e) {
-            // 로그에 스택트레이스, 응답은 일반
-            log.error("[Apple Login] 로그인 오류 발생", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.onFailure("COMMON500", "로그인 처리 중 오류가 발생했습니다.", null));
-        }
+        return ResponseEntity.ok(ApiResponse.onSuccess(response));
     }
 
     /**
@@ -108,41 +93,28 @@ public class AppleAuthController {
     })
     public ResponseEntity<ApiResponse<LoginResponseDTO>> appleWebCallback(
             @RequestParam Map<String, String> formParams) {
-        try {
-            log.debug("[Apple Callback] 웹 요청 수신 - params: {}", formParams.keySet());
 
-            if (!formParams.containsKey("code") || !formParams.containsKey("id_token")) {
-                log.warn("[Apple Callback] 필수 파라미터 누락: {}", formParams);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.onFailure("APPLE4002",
-                                "필수 입력값이 누락되었습니다.", null));
-            }
+        log.debug("[Apple Callback] 웹 요청 수신 - params: {}", formParams.keySet());
 
-            String authorizationCode = formParams.get("code");
-            String identityToken = formParams.get("id_token");
-            String userJson = formParams.get("user");
-
-            // user JSON에서 이름 추출 (최초 로그인 시에만 제공됨)
-            String username = extractUsername(userJson);
-
-            LoginResponseDTO response = appleAuthService.loginWithApple(
-                    authorizationCode,
-                    identityToken,
-                    username
-            );
-
-            return ResponseEntity.ok(ApiResponse.onSuccess(response));
-
-        } catch (IllegalArgumentException e) {
-            log.error("[Apple Callback] 인증 실패 - 상세: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.onFailure("APPLE4001", "애플 로그인에 실패했습니다. 다시 시도해주세요.", null));
-
-        } catch (Exception e) {
-            log.error("[Apple Callback] 로그인 오류 발생", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.onFailure("COMMON500", "로그인 처리 중 오류가 발생했습니다.", null));
+        if (!formParams.containsKey("code") || !formParams.containsKey("id_token")) {
+            log.warn("[Apple Callback] 필수 파라미터 누락: {}", formParams);
+            throw new IllegalArgumentException("필수 입력값이 누락되었습니다.");
         }
+
+        String authorizationCode = formParams.get("code");
+        String identityToken = formParams.get("id_token");
+        String userJson = formParams.get("user");
+
+        // user JSON에서 이름 추출 (최초 로그인 시에만 제공됨)
+        String username = extractUsername(userJson);
+
+        LoginResponseDTO response = appleAuthService.loginWithApple(
+                authorizationCode,
+                identityToken,
+                username
+        );
+
+        return ResponseEntity.ok(ApiResponse.onSuccess(response));
     }
 
     /**
@@ -171,27 +143,15 @@ public class AppleAuthController {
             ErrorStatus.APPLE_WITHDRAW_FAILED,
             ErrorStatus._INTERNAL_SERVER_ERROR
     })
-    public ResponseEntity<ApiResponse<String>> appleWithdraw(Authentication authentication) {
-        try {
-            if (authentication == null || authentication.getPrincipal() == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.onFailure("COMMON401", "인증되지 않은 사용자입니다.", null));
-            }
+    public ResponseEntity<ApiResponse<String>> appleWithdraw() {
 
-            Long userId = userContext.getCurrentUserId();
+        Long userId = userContext.getCurrentUserId();
 
-            // Apple 회원탈퇴 처리 (토큰 무효화 + 사용자 삭제)
-            appleAuthService.withdrawAppleUser(userId);
+        // Apple 회원탈퇴 처리 (토큰 무효화 + 사용자 삭제)
+        appleAuthService.withdrawAppleUser(userId);
 
-            log.info("[Apple Withdraw] 회원탈퇴 성공 - userId: {}", userId);
-            return ResponseEntity.ok(ApiResponse.onSuccess("회원탈퇴가 완료되었습니다."));
-
-        } catch (Exception e) {
-            // 로그에는 자세히, 사용자에게는 간단히
-            log.error("[Apple Withdraw] 회원탈퇴 실패 - 상세: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.onFailure("APPLE5001", "회원탈퇴 처리 중 오류가 발생했습니다.", null));
-        }
+        log.info("[Apple Withdraw] 회원탈퇴 성공 - userId: {}", userId);
+        return ResponseEntity.ok(ApiResponse.onSuccess("회원탈퇴가 완료되었습니다."));
     }
 
     /**
