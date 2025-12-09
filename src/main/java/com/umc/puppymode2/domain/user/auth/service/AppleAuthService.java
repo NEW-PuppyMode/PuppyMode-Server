@@ -206,32 +206,36 @@ public class AppleAuthService {
 
     /**
      * Apple 회원탈퇴 처리
-     * 앱스토어 가이드라인 준수를 위해 구현
+     * <p>
+     * 사용자 탈퇴 보장
+     * - Apple 토큰 무효화는 best effort로 시도
+     * - revoke 실패 시에도 사용자 삭제는 진행
      *
      * @param userId 사용자 ID
      */
     @Transactional
     public void withdrawAppleUser(Long userId) {
-        try {
-            // 1. Apple Refresh Token 무효화
-            String appleRefreshToken = userAuthService.getAppleRefreshToken(userId);
+        // 1. Apple Refresh Token 무효화 시도
+        String appleRefreshToken = userAuthService.getAppleRefreshToken(userId);
 
-            if (appleRefreshToken != null) {
+        if (appleRefreshToken != null) {
+            try {
                 revokeAppleToken(appleRefreshToken);
                 log.info("[Apple Withdraw] Apple 토큰 무효화 완료 - userId: {}", userId);
-            } else {
-                log.warn("[Apple Withdraw] Apple Refresh Token 없음 - userId: {}", userId);
+            } catch (Exception e) {
+                // Apple 서버 장애 등으로 실패해도 탈퇴는 진행
+                // 토큰은 60일 후 자동 만료, 사용자 데이터 삭제
+                log.error("[Apple Withdraw] Apple 토큰 무효화 실패 (사용자 탈퇴는 진행) - userId: {}, error: {}",
+                        userId, e.getMessage(), e);
             }
-
-            // 2. 사용자 탈퇴 처리 (UserService에서 처리)
-            userAuthService.withdrawUser(userId);
-
-            log.info("[Apple Withdraw] 회원탈퇴 완료 - userId: {}", userId);
-
-        } catch (Exception e) {
-            log.error("[Apple Withdraw] 회원탈퇴 처리 실패 - userId: " + userId, e);
-            throw new RuntimeException("회원탈퇴 처리 중 오류가 발생했습니다.", e);
+        } else {
+            log.warn("[Apple Withdraw] Apple Refresh Token 없음 - userId: {}", userId);
         }
+
+        // 2. 사용자 탈퇴 처리 (반드시 실행됨)
+        userAuthService.withdrawUser(userId);
+
+        log.info("[Apple Withdraw] 회원탈퇴 완료 - userId: {}", userId);
     }
 
     /**
