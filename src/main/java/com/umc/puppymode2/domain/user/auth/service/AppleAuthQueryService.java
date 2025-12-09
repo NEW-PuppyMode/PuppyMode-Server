@@ -129,6 +129,7 @@ public class AppleAuthQueryService {
                     .uri(APPLE_PUBLIC_KEYS_URL)
                     .retrieve()
                     .bodyToMono(ApplePublicKeysDTO.class)
+                    .timeout(java.time.Duration.ofSeconds(15))
                     .block();
 
             if (keys == null || keys.getKeys().isEmpty()) {
@@ -138,8 +139,6 @@ public class AppleAuthQueryService {
 
             return keys;
 
-        } catch (GeneralException e) {
-            throw e;
         } catch (Exception e) {
             log.error("[Apple Auth] Apple 공개키 조회 실패", e);
             throw new GeneralException(ErrorStatus.APPLE_AUTH_FAILED);

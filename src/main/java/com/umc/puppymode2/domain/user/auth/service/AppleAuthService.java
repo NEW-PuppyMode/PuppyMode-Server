@@ -142,6 +142,7 @@ public class AppleAuthService {
                                             ErrorStatus.APPLE_AUTH_FAILED)))
                     )
                     .bodyToMono(AppleTokenResponseDTO.class)
+                    .timeout(java.time.Duration.ofSeconds(30))
                     .block();
 
             if (response == null || response.getAccessToken() == null) {
@@ -262,6 +263,7 @@ public class AppleAuthService {
                                             "Apple 토큰 무효화 실패: " + errorBody)))
                     )
                     .bodyToMono(Void.class)
+                    .timeout(java.time.Duration.ofSeconds(15))
                     .block();
 
             log.info("[Apple Revoke] Apple 토큰 무효화 성공");

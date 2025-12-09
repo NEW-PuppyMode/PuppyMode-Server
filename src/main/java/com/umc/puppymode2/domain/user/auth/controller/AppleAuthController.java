@@ -10,6 +10,7 @@ import com.umc.puppymode2.global.apiPayload.code.status.SuccessStatus;
 import com.umc.puppymode2.global.auth.context.UserContext;
 import com.umc.puppymode2.global.config.swagger.ApiErrorCodeExamples;
 import com.umc.puppymode2.global.apiPayload.ApiResponse;
+import com.umc.puppymode2.global.exception.GeneralException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -102,7 +103,7 @@ public class AppleAuthController {
 
         if (!formParams.containsKey("code") || !formParams.containsKey("id_token")) {
             log.warn("[Apple Callback] 필수 파라미터 누락 - 존재하는 키: {}", formParams.keySet());
-            throw new IllegalArgumentException("필수 입력값이 누락되었습니다.");
+            throw new GeneralException(ErrorStatus.APPLE_MISSING_REQUIRED_FIELD);
         }
 
         String authorizationCode = formParams.get("code");
