@@ -15,6 +15,7 @@ public enum SuccessStatus implements BaseCode {
 
     // 인증 관련 응답
     AUTH_KAKAO_LOGIN_SUCCESS(HttpStatus.OK, "AUTH_KAKAO_200", "카카오 로그인 성공"),
+    AUTH_APPLE_LOGIN_SUCCESS(HttpStatus.OK, "AUTH_APPLE_200", "애플 로그인 성공"),
     AUTH_REISSUE_SUCCESS(HttpStatus.OK, "AUTH_REISSUE_200", "토큰 재발급 성공"),
     AUTH_LOGOUT_SUCCESS(HttpStatus.OK, "AUTH_LOGOUT_200", "로그아웃 성공"),
 
@@ -26,7 +27,7 @@ public enum SuccessStatus implements BaseCode {
 
     // 캘린더 조회
     CALENDAR_GET_SUCCESS(HttpStatus.OK, "CALENDAR200", "캘린더 조회 성공"),
-    
+
     // 한마디 조회
     ADVICE_GET_SUCCESS(HttpStatus.OK, "ADVICE200", "한마디 조회 성공");
 

@@ -9,7 +9,6 @@ import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
 import com.umc.puppymode2.global.exception.GeneralException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -20,6 +19,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.security.PrivateKey;
+import java.util.UUID;
 
 /**
  * Apple 로그인 처리 메인 서비스
@@ -70,18 +70,14 @@ public class AppleAuthService {
                                            String username) {
         // 1. Identity Token 검증 및 사용자 정보 추출
         Claims claims = appleAuthQueryService.verifyIdentityToken(identityToken);
-        if (claims == null) {
-            log.error("[Apple Login] Identity Token 검증 실패");
-            throw new GeneralException(ErrorStatus.APPLE_AUTH_FAILED);
-        }
 
         // 2. providerId(sub) 추출 - Apple의 고유 사용자 식별자
         String providerId = claims.getSubject();
         String email = claims.get("email", String.class);
 
-        // 이메일이 없는 경우 더미 이메일 생성 (providerId 기반)
+        // 이메일이 없는 경우 더미 이메일 생성 (UUID 기반으로 프라이버시 보호)
         if (email == null || email.isEmpty()) {
-            email = "apple_" + providerId + "@private.com";
+            email = "apple_" + UUID.randomUUID().toString() + "@private.com";
             log.info("[Apple Login] 이메일 미제공 - 더미 이메일 생성");
         }
 
@@ -114,7 +110,8 @@ public class AppleAuthService {
      */
     private AppleTokenResponseDTO getAppleTokens(String authorizationCode) {
         if (authorizationCode == null || authorizationCode.trim().isEmpty()) {
-            throw new IllegalArgumentException("Authorization Code가 비어 있습니다.");
+            log.error("[Apple Token] Authorization Code가 비어있음");
+            throw new GeneralException(ErrorStatus.APPLE_MISSING_REQUIRED_FIELD);
         }
 
         // Client Secret 생성
@@ -135,28 +132,31 @@ public class AppleAuthService {
                     .onStatus(status -> status.is4xxClientError(), clientResponse ->
                             clientResponse.bodyToMono(String.class)
                                     .doOnNext(errorBody -> log.error("[Apple Token] 4xx 에러: {}", errorBody))
-                                    .flatMap(errorBody -> Mono.error(new IllegalArgumentException(
-                                            "Apple Token 발급 실패 (4xx): " + errorBody)))
+                                    .flatMap(errorBody -> Mono.error(new GeneralException(
+                                            ErrorStatus.APPLE_AUTH_FAILED)))
                     )
                     .onStatus(status -> status.is5xxServerError(), clientResponse ->
                             clientResponse.bodyToMono(String.class)
                                     .doOnNext(errorBody -> log.error("[Apple Token] 5xx 에러: {}", errorBody))
-                                    .flatMap(errorBody -> Mono.error(new RuntimeException(
-                                            "Apple 서버 오류 (5xx): " + errorBody)))
+                                    .flatMap(errorBody -> Mono.error(new GeneralException(
+                                            ErrorStatus.APPLE_AUTH_FAILED)))
                     )
                     .bodyToMono(AppleTokenResponseDTO.class)
                     .block();
 
             if (response == null || response.getAccessToken() == null) {
-                throw new RuntimeException("Apple Token 발급 실패: 응답 없음");
+                log.error("[Apple Token] 응답이 null이거나 accessToken이 없음");
+                throw new GeneralException(ErrorStatus.APPLE_AUTH_FAILED);
             }
 
             log.info("[Apple Token] 토큰 발급 성공");
             return response;
 
+        } catch (GeneralException e) {
+            throw e;
         } catch (Exception e) {
             log.error("[Apple Token] 토큰 발급 중 예외 발생", e);
-            throw new RuntimeException("Apple Token 발급 실패: " + e.getMessage(), e);
+            throw new GeneralException(ErrorStatus.APPLE_AUTH_FAILED);
         }
     }
 
@@ -200,20 +200,19 @@ public class AppleAuthService {
 
         } catch (Exception e) {
             log.error("[Apple Auth] Client Secret 생성 실패", e);
-            throw new RuntimeException("Apple Client Secret 생성 실패", e);
+            throw new GeneralException(ErrorStatus.APPLE_AUTH_FAILED);
         }
     }
 
     /**
      * Apple 회원탈퇴 처리
      * <p>
-     * 사용자 탈퇴 보장
+     * 탈퇴 보장:
      * - Apple 토큰 무효화는 best effort로 시도
      * - revoke 실패 시에도 사용자 삭제는 진행
      *
      * @param userId 사용자 ID
      */
-    @Transactional
     public void withdrawAppleUser(Long userId) {
         // 1. Apple Refresh Token 무효화 시도
         String appleRefreshToken = userAuthService.getAppleRefreshToken(userId);
@@ -224,7 +223,7 @@ public class AppleAuthService {
                 log.info("[Apple Withdraw] Apple 토큰 무효화 완료 - userId: {}", userId);
             } catch (Exception e) {
                 // Apple 서버 장애 등으로 실패해도 탈퇴는 진행
-                // 토큰은 60일 후 자동 만료, 사용자 데이터 삭제
+                // 토큰은 60일 후 자동 만료, 사용자 데이터 삭제 우선
                 log.error("[Apple Withdraw] Apple 토큰 무효화 실패 (사용자 탈퇴는 진행) - userId: {}, error: {}",
                         userId, e.getMessage(), e);
             }
@@ -232,7 +231,7 @@ public class AppleAuthService {
             log.warn("[Apple Withdraw] Apple Refresh Token 없음 - userId: {}", userId);
         }
 
-        // 2. 사용자 탈퇴 처리 (반드시 실행됨)
+        // 2. 사용자 탈퇴 처리 (항상 실행됨)
         userAuthService.withdrawUser(userId);
 
         log.info("[Apple Withdraw] 회원탈퇴 완료 - userId: {}", userId);

@@ -41,7 +41,6 @@ public enum ErrorStatus implements BaseErrorCode {
     // Apple 로그인 관련 에러
     APPLE_AUTH_FAILED(HttpStatus.UNAUTHORIZED, "APPLE4001", "애플 로그인에 실패했습니다. 다시 시도해주세요."),
     APPLE_MISSING_REQUIRED_FIELD(HttpStatus.BAD_REQUEST, "APPLE4002", "필수 입력값이 누락되었습니다."),
-    APPLE_WITHDRAW_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "APPLE5001", "회원탈퇴 처리 중 오류가 발생했습니다."),
 
     // Redis 관련 에러
     REDIS_CONNECTION_FAILURE(HttpStatus.SERVICE_UNAVAILABLE, "REDIS5031", "Redis 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요."),

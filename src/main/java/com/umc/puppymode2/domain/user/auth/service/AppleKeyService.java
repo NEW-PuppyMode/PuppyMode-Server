@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -36,9 +35,16 @@ public class AppleKeyService {
         try {
             String privateKeyString = appleAuthConfig.getPrivateKey();
 
-            // Base64로 인코딩된 키를 디코딩
-            byte[] keyBytes = Base64.getDecoder().decode(privateKeyString);
+            // PEM 포맷 처리: 헤더/푸터 제거 및 개행 제거
+            String sanitizedKey = privateKeyString
+                    .replace("-----BEGIN PRIVATE KEY-----", "")
+                    .replace("-----END PRIVATE KEY-----", "")
+                    .replaceAll("\\s+", "");  // 모든 공백/개행 제거
 
+            // Base64 디코딩
+            byte[] keyBytes = Base64.getDecoder().decode(sanitizedKey);
+
+            // EC Private Key 생성
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
             KeyFactory keyFactory = KeyFactory.getInstance("EC");
             cachedPrivateKey = keyFactory.generatePrivate(keySpec);

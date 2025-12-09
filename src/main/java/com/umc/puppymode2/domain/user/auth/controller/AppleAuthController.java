@@ -6,6 +6,7 @@ import com.umc.puppymode2.domain.user.auth.dto.AppleLoginRequestDTO;
 import com.umc.puppymode2.domain.user.auth.dto.LoginResponseDTO;
 import com.umc.puppymode2.domain.user.auth.service.AppleAuthService;
 import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
+import com.umc.puppymode2.global.apiPayload.code.status.SuccessStatus;
 import com.umc.puppymode2.global.auth.context.UserContext;
 import com.umc.puppymode2.global.config.swagger.ApiErrorCodeExamples;
 import com.umc.puppymode2.global.apiPayload.ApiResponse;
@@ -22,8 +23,7 @@ import java.util.Map;
 /**
  * Apple 로그인 컨트롤러
  * <p>
- * 1. Apple 소셜 로그인 구현
- * 2. providerId(sub) 기반 사용자 식별
+ * providerId(sub) 기반 사용자 식별로 이메일 제공 동의 없이도 로그인 가능
  */
 @Slf4j
 @RestController
@@ -38,7 +38,6 @@ public class AppleAuthController {
 
     /**
      * iOS 앱용 애플 로그인 엔드포인트
-     * JSON 요청을 받아 처리합니다.
      */
     @PostMapping("/login")
     @Operation(
@@ -53,6 +52,8 @@ public class AppleAuthController {
                     **앱스토어 가이드라인 준수:**
                     - 이메일 제공 동의 없이도 로그인 가능
                     - Apple Refresh Token 관리
+                    
+                    **주의:** Redis 서버 장애 시 refreshToken 없이 로그인됩니다.
                     """
     )
     @ApiErrorCodeExamples({
@@ -69,12 +70,15 @@ public class AppleAuthController {
                 request.getUsername()
         );
 
-        return ResponseEntity.ok(ApiResponse.onSuccess(response));
+        return ResponseEntity.ok(ApiResponse.onSuccess(
+                response,
+                SuccessStatus.AUTH_APPLE_LOGIN_SUCCESS.getCode(),
+                SuccessStatus.AUTH_APPLE_LOGIN_SUCCESS.getMessage()
+        ));
     }
 
     /**
      * 웹 테스트용 애플 로그인 엔드포인트
-     * form_post 방식으로 전달되는 요청을 처리합니다.
      */
     @PostMapping("/callback")
     @Operation(
@@ -97,7 +101,7 @@ public class AppleAuthController {
         log.debug("[Apple Callback] 웹 요청 수신 - params: {}", formParams.keySet());
 
         if (!formParams.containsKey("code") || !formParams.containsKey("id_token")) {
-            log.warn("[Apple Callback] 필수 파라미터 누락: {}", formParams);
+            log.warn("[Apple Callback] 필수 파라미터 누락 - 존재하는 키: {}", formParams.keySet());
             throw new IllegalArgumentException("필수 입력값이 누락되었습니다.");
         }
 
@@ -119,7 +123,7 @@ public class AppleAuthController {
 
     /**
      * 애플 회원탈퇴
-     * Sign in with Apple 제공 시 계정 삭제 기능 필수
+     * 계정 삭제 기능 제공
      */
     @DeleteMapping("/withdraw")
     @Operation(
@@ -130,17 +134,18 @@ public class AppleAuthController {
                     **앱스토어 가이드라인 필수:**
                     - Sign in with Apple 제공 시 계정 삭제 기능 필수
                     - Apple Refresh Token 무효화
-                    - 사용자 데이터 완전 삭제
+                    - 사용자 데이터 완전 삭제 (항상 실행)
                     
                     **처리 내용:**
-                    1. Apple Refresh Token 무효화
-                    2. 개인정보 마스킹
+                    1. Apple Refresh Token 무효화 시도
+                    2. 사용자 데이터 삭제 (항상 실행)
                     3. 연관 데이터 삭제 (CASCADE)
+                    
+                    Apple 서버 장애 시에도 사용자 탈퇴는 정상 처리됩니다.
                     """
     )
     @ApiErrorCodeExamples({
             ErrorStatus._UNAUTHORIZED,
-            ErrorStatus.APPLE_WITHDRAW_FAILED,
             ErrorStatus._INTERNAL_SERVER_ERROR
     })
     public ResponseEntity<ApiResponse<String>> appleWithdraw() {
