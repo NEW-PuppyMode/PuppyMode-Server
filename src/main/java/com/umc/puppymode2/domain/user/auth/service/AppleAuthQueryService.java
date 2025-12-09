@@ -3,8 +3,8 @@ package com.umc.puppymode2.domain.user.auth.service;
 import com.umc.puppymode2.domain.user.auth.dto.ApplePublicKeysDTO;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -16,11 +16,18 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AppleAuthQueryService {
 
     private final WebClient webClient;
     private final ApplePublicKeyUtil applePublicKeyUtil;
+
+    public AppleAuthQueryService(
+            @Qualifier("appleWebClient") WebClient webClient,
+            ApplePublicKeyUtil applePublicKeyUtil
+    ) {
+        this.webClient = webClient;
+        this.applePublicKeyUtil = applePublicKeyUtil;
+    }
 
     private static final String APPLE_PUBLIC_KEYS_URL = "https://appleid.apple.com/auth/keys";
 
