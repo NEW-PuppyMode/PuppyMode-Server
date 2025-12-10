@@ -20,11 +20,11 @@ import jakarta.validation.constraints.NotBlank;
 public class AppleLoginRequestDTO {
 
     @NotBlank(message = "Authorization Code는 필수입니다.")
-    @Schema(description = "애플 Authorization Code", example = "c1234567890abcdef...", required = true)
+    @Schema(description = "애플 Authorization Code", example = "c1234567890abcdef", required = true)
     private String authorizationCode;
 
     @NotBlank(message = "Identity Token은 필수입니다.")
-    @Schema(description = "애플 Identity Token (JWT)", example = "eyJhbGciOi...", required = true)
+    @Schema(description = "애플 Identity Token (JWT)", example = "eyJhbGciOi", required = true)
     private String identityToken;
 
     @Schema(description = "사용자 이름 (선택 사항, 최초 로그인 시에만 제공됨)", example = "홍길동")

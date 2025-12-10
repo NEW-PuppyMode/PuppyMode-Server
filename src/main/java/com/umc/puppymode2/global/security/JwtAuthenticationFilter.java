@@ -31,6 +31,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // no auth 허용 url
     private static final List<String> NO_AUTH_URLS = List.of(
             "/auth/kakao/login/**",
+            "/auth/apple/login/**",
+            "/auth/apple/callback",
+            "/auth/apple/callback/**",
             "/actuator/health",
             "/swagger-ui/**",
             "/v3/api-docs/**",
