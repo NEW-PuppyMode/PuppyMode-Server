@@ -42,5 +42,4 @@ auth:
     client-id: ${APPLE_CLIENT_ID}
     key-id: ${APPLE_KEY_ID}
     private-key: ${APPLE_PRIVATE_KEY}
-
     redirect-uri: "https://puppy-mode.info/auth/apple/callback"
