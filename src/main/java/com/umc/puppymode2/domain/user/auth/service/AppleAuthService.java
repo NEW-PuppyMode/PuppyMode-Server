@@ -70,6 +70,10 @@ public class AppleAuthService {
                                            String username) {
         // 1. Identity Token 검증 및 사용자 정보 추출
         Claims claims = appleAuthQueryService.verifyIdentityToken(identityToken);
+        if (claims == null) {
+        log.error("[Apple Login] Identity Token 검증 실패");
+        throw new GeneralException(ErrorStatus.APPLE_AUTH_FAILED);
+        }
 
         // 2. providerId(sub) 추출 - Apple의 고유 사용자 식별자
         String providerId = claims.getSubject();
@@ -79,6 +83,11 @@ public class AppleAuthService {
         if (email == null || email.isEmpty()) {
             email = "apple_" + UUID.randomUUID().toString() + "@private.com";
             log.info("[Apple Login] 이메일 미제공 - 더미 이메일 생성");
+        }
+
+        // username이 없는 경우 기본값 설정 (신규 회원일 때만)
+        if (username == null || username.trim().isEmpty()) {
+            username = null;  // null로 유지 (기존 회원은 기존 이름 유지됨)
         }
 
         // 3. Apple Token 발급 (Refresh Token 포함)
