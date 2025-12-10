@@ -18,7 +18,10 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
     private static final String[] AUTH_WHITELIST = {
-            "/auth/kakao/login/**"
+            "/auth/kakao/login/**",
+            "/auth/apple/login/**",
+            "/auth/apple/callback",
+            "/auth/apple/callback/**",
     };
 
     private static final String[] HEALTH_WHITELIST = {

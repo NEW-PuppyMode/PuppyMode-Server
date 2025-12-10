@@ -46,12 +46,8 @@ public class AppleAuthController {
             description = """
                     애플 서버로부터 발급받은 Authorization Code와 Identity Token을 사용하여 JWT를 발급받습니다.
                     
-                    **주요 기능:**
-                    - providerId(sub) 기반 사용자 식별 (이메일 미제공 시에도 로그인 가능)
+                    - providerId(sub) 기반 사용자 식별
                     - 로그인 및 회원가입 자동 처리
-                    
-                    **앱스토어 가이드라인 준수:**
-                    - 이메일 제공 동의 없이도 로그인 가능
                     - Apple Refresh Token 관리
                     
                     **주의:** Redis 서버 장애 시 refreshToken 없이 로그인됩니다.
@@ -132,12 +128,6 @@ public class AppleAuthController {
             description = """
                     애플 계정 연결을 해제하고 회원 정보를 삭제합니다.
                     
-                    **앱스토어 가이드라인 필수:**
-                    - Sign in with Apple 제공 시 계정 삭제 기능 필수
-                    - Apple Refresh Token 무효화
-                    - 사용자 데이터 완전 삭제 (항상 실행)
-                    
-                    **처리 내용:**
                     1. Apple Refresh Token 무효화 시도
                     2. 사용자 데이터 삭제 (항상 실행)
                     3. 연관 데이터 삭제 (CASCADE)
