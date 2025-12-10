@@ -92,7 +92,7 @@ public class UserAuthServiceImpl implements UserAuthService {
             // 새 사용자 생성
             isNewUser.set(true);
             User newUser = User.builder()
-                    .username(userInfo.getUsername())
+                    .username(userInfo.getUsername() != null ? userInfo.getUsername() : "Apple 사용자")
                     .email(email)
                     .provider(provider)
                     .receiveNotifications(false)

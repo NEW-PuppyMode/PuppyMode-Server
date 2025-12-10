@@ -70,6 +70,10 @@ public class AppleAuthService {
                                            String username) {
         // 1. Identity Token 검증 및 사용자 정보 추출
         Claims claims = appleAuthQueryService.verifyIdentityToken(identityToken);
+        if (claims == null) {
+        log.error("[Apple Login] Identity Token 검증 실패");
+        throw new GeneralException(ErrorStatus.APPLE_AUTH_FAILED);
+        }
 
         // 2. providerId(sub) 추출 - Apple의 고유 사용자 식별자
         String providerId = claims.getSubject();
