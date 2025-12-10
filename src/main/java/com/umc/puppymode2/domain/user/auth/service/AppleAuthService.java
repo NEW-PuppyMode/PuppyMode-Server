@@ -85,11 +85,6 @@ public class AppleAuthService {
             log.info("[Apple Login] 이메일 미제공 - 더미 이메일 생성");
         }
 
-        // username이 없는 경우 기본값 설정 (신규 회원일 때만)
-        if (username == null || username.trim().isEmpty()) {
-            username = null;  // null로 유지 (기존 회원은 기존 이름 유지됨)
-        }
-
         // 3. Apple Token 발급 (Refresh Token 포함)
         AppleTokenResponseDTO appleTokens = getAppleTokens(authorizationCode);
         String appleRefreshToken = appleTokens.getRefreshToken();
