@@ -33,7 +33,7 @@ public class SocialAuth extends BaseEntity {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private Provider provider;
 
     private String providerId;
