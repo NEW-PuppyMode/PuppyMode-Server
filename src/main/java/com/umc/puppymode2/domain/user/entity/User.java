@@ -29,7 +29,7 @@ public class User extends BaseEntity {
     private String email;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "VARCHAR(20)")
+    @Column(nullable = false, length = 20)
     private Provider provider;
 
     private Boolean receiveNotifications;
