@@ -60,6 +60,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
+
+        // actuator 로그 제외
+        if (requestURI.startsWith("/actuator")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         log.info("Request URI: {}", request.getRequestURI());
 
         // 인증이 필요 없는 URI 필터 통과
