@@ -64,8 +64,10 @@ public class ApiErrorCodeExampleCustomizer implements OperationCustomizer {
             MediaType mediaType = content.get("application/json");
             if (mediaType == null) {
                 mediaType = new MediaType();
-                // ApiResponse 스키마 참조
-                mediaType.setSchema(new Schema<>().$ref("#/components/schemas/ApiResponse"));
+                // 제네릭 없이 raw 타입 Schema 생성 후 $ref 설정 -> 스웨거가 components/schemas/ApiResponse 정상 참조
+                Schema schema = new Schema();
+                schema.set$ref("#/components/schemas/ApiResponse");
+                mediaType.setSchema(schema);
                 content.addMediaType("application/json", mediaType);
             }
 

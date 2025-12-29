@@ -1,8 +1,13 @@
 package com.umc.puppymode2.global.config.swagger;
 
+import com.umc.puppymode2.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.media.BooleanSchema;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
@@ -31,8 +36,16 @@ public class SwaggerConfig {
                 .scheme("bearer")
                 .bearerFormat("JWT");
 
+        // ApiResponse 스키마 수동 등록
+        Schema<?> apiResponseSchema = new ObjectSchema()
+                .addProperty("isSuccess", new BooleanSchema().description("성공 여부").example(false))
+                .addProperty("code", new StringSchema().description("응답 코드").example("COMMON500"))
+                .addProperty("message", new StringSchema().description("응답 메시지").example("서버 에러"))
+                .addProperty("result", new ObjectSchema().nullable(true).description("응답 데이터"));
+
         Components components = new Components()
-                .addSecuritySchemes(SECURITY_SCHEME_NAME, securityScheme);
+                .addSecuritySchemes(SECURITY_SCHEME_NAME, securityScheme)
+                .addSchemas("ApiResponse", apiResponseSchema);
 
         return new OpenAPI()
                 .addServersItem(new Server().url("/"))
