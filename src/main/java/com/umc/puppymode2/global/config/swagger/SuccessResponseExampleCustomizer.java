@@ -15,8 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @ApiSuccessResponseExample 어노테이션을 읽어서 Swagger에 성공 응답 예시를 자동으로 생성
@@ -129,7 +128,7 @@ public class SuccessResponseExampleCustomizer implements OperationCustomizer {
     private Object generateExampleFromDTO(Class<?> dtoClass) {
         try {
             Map<String, Object> example = new HashMap<>();
-            Field[] fields = dtoClass.getDeclaredFields();
+            List<Field> fields = getAllFields(dtoClass);
 
             for (Field field : fields) {
                 // @Schema 어노테이션 확인
@@ -184,6 +183,26 @@ public class SuccessResponseExampleCustomizer implements OperationCustomizer {
                 return Integer.parseInt(exampleValue);
             }
 
+            // Double
+            if (fieldType == Double.class || fieldType == double.class) {
+                return Double.parseDouble(exampleValue);
+            }
+
+            // Float
+            if (fieldType == Float.class || fieldType == float.class) {
+                return Float.parseFloat(exampleValue);
+            }
+
+            // Short
+            if (fieldType == Short.class || fieldType == short.class) {
+                return Short.parseShort(exampleValue);
+            }
+
+            // Byte
+            if (fieldType == Byte.class || fieldType == byte.class) {
+                return Byte.parseByte(exampleValue);
+            }
+
             // String (기본값)
             return exampleValue;
 
@@ -207,5 +226,17 @@ public class SuccessResponseExampleCustomizer implements OperationCustomizer {
                 type == Character.class ||
                 type == Byte.class ||
                 type == Short.class;
+    }
+
+    /**
+     * 상속된 필드를 포함한 모든 필드 반환
+     */
+    private List<Field> getAllFields(Class<?> clazz) {
+        List<Field> fields = new ArrayList<>();
+        while (clazz != null && clazz != Object.class) {
+            fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
+            clazz = clazz.getSuperclass();
+        }
+        return fields;
     }
 }
