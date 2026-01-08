@@ -128,11 +128,6 @@ public class SuccessResponseExampleCustomizer implements OperationCustomizer {
      */
     private Object generateExampleFromDTO(Class<?> dtoClass) {
         try {
-            // String 타입은 그대로 반환
-            if (dtoClass.equals(String.class)) {
-                return "회원탈퇴가 완료되었습니다.";
-            }
-
             Map<String, Object> example = new HashMap<>();
             Field[] fields = dtoClass.getDeclaredFields();
 

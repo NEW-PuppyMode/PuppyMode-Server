@@ -211,8 +211,8 @@ public class AppleAuthController {
                     """
     )
     @ApiSuccessResponseExample(
-            status = SuccessStatus._OK,
-            responseType = String.class
+            status = SuccessStatus.AUTH_WITHDRAW_SUCCESS,
+            responseType = Void.class
     )
     @ApiErrorCodeExamples({
             ErrorStatus._UNAUTHORIZED,
