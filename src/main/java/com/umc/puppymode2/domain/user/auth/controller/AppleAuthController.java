@@ -218,7 +218,7 @@ public class AppleAuthController {
             ErrorStatus._UNAUTHORIZED,
             ErrorStatus._INTERNAL_SERVER_ERROR
     })
-    public ResponseEntity<ApiResponse<String>> appleWithdraw() {
+    public ResponseEntity<ApiResponse<Void>> appleWithdraw() {
 
         Long userId = userContext.getCurrentUserId();
 
@@ -226,7 +226,11 @@ public class AppleAuthController {
         appleAuthService.withdrawAppleUser(userId);
 
         log.info("[Apple Withdraw] 회원탈퇴 성공 - userId: {}", userId);
-        return ResponseEntity.ok(ApiResponse.onSuccess("회원탈퇴가 완료되었습니다."));
+        return ResponseEntity.ok(ApiResponse.onSuccess(
+                null,
+                SuccessStatus.AUTH_WITHDRAW_SUCCESS.getCode(),
+                SuccessStatus.AUTH_WITHDRAW_SUCCESS.getMessage()
+        ));
     }
 
     /**
