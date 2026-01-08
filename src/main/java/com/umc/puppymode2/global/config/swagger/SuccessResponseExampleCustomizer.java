@@ -108,11 +108,9 @@ public class SuccessResponseExampleCustomizer implements OperationCustomizer {
         exampleResponse.put("code", status.getCode());
         exampleResponse.put("message", status.getMessage());
 
-        // result 필드 생성 (Void가 아닌 경우에만)
+        // Void가 아닌 경우에만 result 필드 추가
         if (!responseType.equals(Void.class)) {
             exampleResponse.put("result", generateExampleFromDTO(responseType));
-        } else {
-            exampleResponse.put("result", null);
         }
 
         Example example = new Example();
@@ -126,7 +124,7 @@ public class SuccessResponseExampleCustomizer implements OperationCustomizer {
     /**
      * DTO 클래스의 @Schema 어노테이션에서 example 값을 추출하여 예시 생성 (리플렉션)
      *
-     * <p>이 메서드가 핵심! DTO만 수정하면 자동으로 예시가 업데이트됨</p>
+     * <p>DTO 수정 시 자동으로 예시 업데이트됨</p>
      */
     private Object generateExampleFromDTO(Class<?> dtoClass) {
         try {
