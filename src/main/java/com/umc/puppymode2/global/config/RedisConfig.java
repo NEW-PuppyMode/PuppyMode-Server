@@ -65,24 +65,12 @@ public class RedisConfig {
         }
 
         // ClientOptions 생성
-        ClientOptions.Builder clientOptionsBuilder = ClientOptions.builder()
+        ClientOptions clientOptions = ClientOptions.builder()
                 .socketOptions(SocketOptions.builder()
                         .connectTimeout(timeout)
                         .keepAlive(true)
-                        .build());
-
-        // SSL 설정
-        if (sslEnabled) {
-            // AWS ElastiCache용 SSL 설정: 인증서 검증 비활성화
-            io.lettuce.core.SslOptions sslOptions = io.lettuce.core.SslOptions.builder()
-                    .jdkSslProvider()
-                    .build();
-
-            clientOptionsBuilder.sslOptions(sslOptions);
-            log.info("[REDIS SSL] Enabled with peer verification disabled (safe for AWS VPC)");
-        }
-
-        ClientOptions clientOptions = clientOptionsBuilder.build();
+                        .build())
+                .build();
 
         // LettuceClientConfiguration 빌더
         LettuceClientConfiguration.LettuceClientConfigurationBuilder clientConfigBuilder =
@@ -92,12 +80,15 @@ public class RedisConfig {
 
         // SSL 활성화
         if (sslEnabled) {
-            clientConfigBuilder.useSsl().disablePeerVerification();
+            clientConfigBuilder
+                    .useSsl()
+                    .disablePeerVerification();
+            log.info("[REDIS SSL] TLS enabled (AWS ElastiCache compatible)");
         }
 
-        LettuceClientConfiguration clientConfig = clientConfigBuilder.build();
+        LettuceConnectionFactory factory =
+                new LettuceConnectionFactory(config, clientConfigBuilder.build());
 
-        LettuceConnectionFactory factory = new LettuceConnectionFactory(config, clientConfig);
         factory.setValidateConnection(false);
 
         log.info("[REDIS CONFIG] Host={}, Port={}, SSL={}, Timeout={}",
