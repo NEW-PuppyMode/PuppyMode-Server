@@ -14,10 +14,11 @@ public enum SuccessStatus implements BaseCode {
     _OK(HttpStatus.OK, "COMMON200", "성공입니다."),
 
     // 인증 관련 응답
-    AUTH_KAKAO_LOGIN_SUCCESS(HttpStatus.OK, "AUTH_KAKAO_200", "카카오 로그인 성공"),
-    AUTH_APPLE_LOGIN_SUCCESS(HttpStatus.OK, "AUTH_APPLE_200", "애플 로그인 성공"),
-    AUTH_REISSUE_SUCCESS(HttpStatus.OK, "AUTH_REISSUE_200", "토큰 재발급 성공"),
-    AUTH_LOGOUT_SUCCESS(HttpStatus.OK, "AUTH_LOGOUT_200", "로그아웃 성공"),
+    AUTH_KAKAO_LOGIN_SUCCESS(HttpStatus.OK, "AUTH_KAKAO200", "카카오 로그인 성공"),
+    AUTH_APPLE_LOGIN_SUCCESS(HttpStatus.OK, "AUTH_APPLE200", "애플 로그인 성공"),
+    AUTH_REISSUE_SUCCESS(HttpStatus.OK, "AUTH_REISSUE200", "토큰 재발급 성공"),
+    AUTH_LOGOUT_SUCCESS(HttpStatus.OK, "AUTH_LOGOUT200", "로그아웃 성공"),
+    AUTH_WITHDRAW_SUCCESS(HttpStatus.OK, "AUTH_WITHDRAW200", "회원탈퇴 성공"),
 
     // 음주 기록
     DRINK_HISTORY_RECORD_SUCCESS(HttpStatus.OK, "DRINK_HISTORY200", "음주 기록 성공"),
