@@ -19,8 +19,6 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.stereotype.Component;
 
-import java.net.InetAddress;
-import java.util.Arrays;
 import java.time.Duration;
 
 @Slf4j
@@ -82,11 +80,9 @@ public class RedisConfig {
 
         // SSL 활성화 (AWS ElastiCache용)
         if (sslEnabled) {
-            // disablePeerVerification(): AWS ElastiCache TLS 연결에 필요
             clientConfigBuilder
-                    .useSsl()
-                    .disablePeerVerification();
-            log.info("[REDIS SSL] TLS enabled with peer verification disabled (safe for AWS VPC)");
+                    .useSsl();
+            log.info("[REDIS SSL] TLS enabled");
         }
 
         LettuceConnectionFactory factory =
@@ -151,18 +147,11 @@ public class RedisConfig {
             RedisHealthIndicator healthIndicator) {
         return args -> {
             try {
-                try {
-                    InetAddress[] addrs = InetAddress.getAllByName(redisHost);
-                    log.info("[REDIS DNS] {} -> {}", redisHost, Arrays.toString(addrs));
-                } catch (Exception ex) {
-                    log.error("[REDIS DNS] FAILED to resolve host={}", redisHost, ex);
-                }
-
                 String result = cf.getConnection().ping();
                 log.info("[REDIS] 연결 성공! PING={}", result);
                 healthIndicator.setAvailable(true);
             } catch (Exception e) {
-                log.error("[REDIS] 연결 실패 - Redis 없이 애플리케이션 실행", e);
+                log.error("[REDIS] 연결 실패: {} - Redis 없이 애플리케이션 실행", e.getMessage());
                 log.warn("[REDIS] Redis 관련 API는 사용 불가능합니다");
                 healthIndicator.setAvailable(false);
                 // 애플리케이션은 계속 실행 (예외 던지지 않음)
