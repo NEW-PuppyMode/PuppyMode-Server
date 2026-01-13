@@ -81,8 +81,6 @@ public class RedisConfig {
         // SSL 활성화 (AWS ElastiCache용)
         if (sslEnabled) {
             // disablePeerVerification(): AWS ElastiCache TLS 연결에 필요
-            // - Amazon Root CA가 Docker/ECS 기본 신뢰 저장소에 없을 수 있음
-            // - VPC 내부 통신이므로 보안상 안전 (보안그룹으로 접근 제어, TLS 암호화 유지)
             clientConfigBuilder
                     .useSsl()
                     .disablePeerVerification();
