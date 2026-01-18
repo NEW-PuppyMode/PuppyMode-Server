@@ -66,8 +66,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        
-        log.info("Request URI: {}", request.getRequestURI());
 
         // 인증이 필요 없는 URI 필터 통과
         if (isExcludedPath(requestURI)) {
@@ -79,7 +77,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
         // 401 error
         if (header == null || !header.startsWith("Bearer ")) {
-            log.warn("[JWT] Authorization 헤더 없음 또는 형식 오류 - IP: {}", request.getRemoteAddr());
+            log.warn("[JWT] Unauthorized access - URI: {}, IP: {}", requestURI, getClientIp(request));
             sendUnauthorized(response);
             return;
         }
@@ -87,37 +85,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // JWT 추출
         String token = header.substring(7);
         if (token.isBlank()) {
-            log.warn("[JWT] 토큰이 비어 있음");
+            log.warn("[JWT] Empty token - URI: {}, IP: {}", requestURI, getClientIp(request));
             sendUnauthorized(response);
             return;
         }
 
         try {
-//            log.debug("Extracted JWT: {}", token);
-
-            // validate
             JwtValidationType result = jwtTokenProvider.validateToken(token);
 
             if (result != JwtValidationType.VALID_JWT) {
                 // Invalid token 관련 디테일 로그
-                log.warn("[JWT] 인증 실패 - validationType: {}, user-agent: {}", result.name(), request.getHeader("User-Agent"));
+                log.warn("[JWT] Invalid token - Type: {}, URI: {}, IP: {}",
+                        result.name(), requestURI, getClientIp(request));
                 throw new GeneralException(ErrorStatus.AUTH_INVALID_TOKEN);
             }
 
             Long userId = jwtTokenProvider.parseUserId(token);
-            // authentication 생성 -> principal에 userId 저장
             UserAuthentication authentication = new UserAuthentication(userId, null, null);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
+            // 성공한 요청 로그
+            log.info("[JWT] Authenticated request - UserId: {}, URI: {}", userId, requestURI);
+
             filterChain.doFilter(request, response);
 
         } catch (GeneralException exception) {
-            // Invalid token 관련 응답 통일
             sendUnauthorized(response);
         } catch (Exception exception) {
-            log.error("JWT 처리 중 알 수 없는 에러: {}", exception.getMessage(), exception);
-            // Invalid token 관련 응답 통일
+            log.error("[JWT] Unexpected error - URI: {}, Error: {}", requestURI, exception.getMessage());
             sendUnauthorized(response);
         }
     }
@@ -132,6 +128,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return NO_AUTH_URLS.stream().anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
     }
 
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip != null ? ip : "unknown";
+    }
+
     /**
      * 인증 실패 응답을 클라이언트에 전송합니다.
      * <p>
@@ -141,7 +151,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * @throws IOException
      */
     private void sendUnauthorized(HttpServletResponse response) throws IOException {
-        SecurityContextHolder.clearContext(); // 인증 정보 제거
+        SecurityContextHolder.clearContext();
         ErrorResponseUtil.writeErrorResponse(response, ErrorStatus.AUTH_INVALID_TOKEN);
     }
 }
