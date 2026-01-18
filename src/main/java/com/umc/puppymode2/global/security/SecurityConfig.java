@@ -51,6 +51,15 @@ public class SecurityConfig {
                     exception.accessDeniedHandler(customAccessDeniedHandler);
                 })
                 .authorizeHttpRequests(auth -> {
+                    // 공격 패턴 차단
+                    auth.requestMatchers("/**/*.php").denyAll();
+                    auth.requestMatchers("/**/*.asp", "/**/*.aspx").denyAll();
+                    auth.requestMatchers("/wp-admin/**", "/wp-content/**", "/wp-includes/**").denyAll();
+                    auth.requestMatchers("/phpMyAdmin/**", "/phpmyadmin/**").denyAll();
+                    auth.requestMatchers("/**/.env", "/**/.git/**", "/**/.svn/**").denyAll();
+                    auth.requestMatchers("/vendor/**").denyAll();
+
+                    // 정상 경로
                     auth.requestMatchers(AUTH_WHITELIST).permitAll();
                     auth.requestMatchers(HEALTH_WHITELIST).permitAll();
                     auth.requestMatchers(SWAGGER_WHITELIST).permitAll();
