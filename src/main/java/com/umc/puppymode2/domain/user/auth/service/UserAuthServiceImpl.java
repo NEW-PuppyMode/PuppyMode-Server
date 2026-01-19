@@ -139,7 +139,7 @@ public class UserAuthServiceImpl implements UserAuthService {
     private void setAuthentication(User user) {
         Authentication authentication = new UserAuthentication(user.getUserId(), null, null);
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        log.info("[AUTH] SecurityContext에 인증 객체 설정 완료 - userId={}", user.getUserId());
+        log.debug("[AUTH] SecurityContext에 인증 객체 설정 완료 - userId={}", user.getUserId());
     }
 
     /**
@@ -161,13 +161,13 @@ public class UserAuthServiceImpl implements UserAuthService {
             jwtTokenService.saveRefreshToken(userId, refreshToken);
             log.info("[LOGIN] Refresh Token 발급 및 저장 완료 - userId={}", userId);
         } else {
-            log.warn("[LOGIN] Redis 미사용 가능 - Refresh Token 없이 로그인 처리 - userId={}", userId);
+            log.debug("[LOGIN] Redis 미사용 가능 - Refresh Token 없이 로그인 처리 - userId={}", userId);
         }
 
         Long expiresIn = jwtTokenProvider.getAccessTokenExpirySeconds();
 
 
-        log.info("[LOGIN] 토큰 발급 완료 - userId={}", userId);
+        log.debug("[LOGIN] 토큰 발급 완료 - userId={}", userId);
 
         LoginResponseDTO.LoginUserInfo loginUserInfo = LoginResponseDTO.LoginUserInfo.builder()
                 .userId(user.getUserId())

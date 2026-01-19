@@ -38,6 +38,18 @@ public enum ErrorStatus implements BaseErrorCode {
     AUTH_REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "AUTH4001", "유효하지 않은 Refresh Token입니다."),
     AUTH_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH4002", "인증 정보가 유효하지 않습니다."),
 
+    // Kakao 로그인 관련 에러
+    KAKAO_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "KAKAO4001", "카카오 인증 정보가 유효하지 않습니다. 다시 로그인해주세요."),
+    KAKAO_RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "KAKAO4002", "카카오 인증 요청이 많습니다. 잠시 후 다시 시도해주세요."),
+    KAKAO_SERVER_ERROR(HttpStatus.BAD_GATEWAY, "KAKAO4003", "카카오 서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."),
+    KAKAO_API_ERROR(HttpStatus.BAD_GATEWAY, "KAKAO4004", "카카오 서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."),
+    KAKAO_TOKEN_REFRESH_FAILED(HttpStatus.UNAUTHORIZED, "KAKAO4005", "카카오 인증 갱신에 실패했습니다. 다시 로그인해주세요."),
+    KAKAO_USER_INFO_INVALID(HttpStatus.BAD_REQUEST, "KAKAO4006", "카카오 사용자 정보가 올바르지 않습니다. 카카오 계정 설정을 확인해주세요."),
+    KAKAO_FORBIDDEN(HttpStatus.FORBIDDEN, "KAKAO4007", "카카오 권한/설정이 부족합니다. 동의 항목 및 앱 설정을 확인해주세요."),
+    KAKAO_BAD_REQUEST(HttpStatus.BAD_REQUEST, "KAKAO4008", "카카오 요청 값이 올바르지 않습니다."),
+    KAKAO_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "KAKAO4009", "카카오 서비스 점검 중입니다. 잠시 후 다시 시도해주세요."),
+    KAKAO_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "KAKAO4010", "카카오 요청 처리 중 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
+
     // Apple 로그인 관련 에러
     APPLE_AUTH_FAILED(HttpStatus.UNAUTHORIZED, "APPLE4001", "애플 로그인에 실패했습니다. 다시 시도해주세요."),
     APPLE_MISSING_REQUIRED_FIELD(HttpStatus.BAD_REQUEST, "APPLE4002", "필수 입력값이 누락되었습니다."),
