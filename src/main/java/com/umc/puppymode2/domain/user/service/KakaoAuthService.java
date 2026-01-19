@@ -239,6 +239,7 @@ public class KakaoAuthService {
         if (FORBIDDEN_CODES.contains(code)) return new GeneralException(ErrorStatus.KAKAO_FORBIDDEN);
         if (code == -603) return new GeneralException(ErrorStatus.KAKAO_TIMEOUT);
         if (code == -9798) return new GeneralException(ErrorStatus.KAKAO_SERVICE_UNAVAILABLE);
+        if (code == -10) return new GeneralException(ErrorStatus.KAKAO_RATE_LIMITED);
 
         return new GeneralException(ErrorStatus.KAKAO_API_ERROR);
     }
