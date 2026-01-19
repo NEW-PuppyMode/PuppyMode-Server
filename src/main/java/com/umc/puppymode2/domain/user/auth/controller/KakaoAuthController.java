@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -96,7 +97,17 @@ public class KakaoAuthController {
     )
     @ApiErrorCodeExamples({
             ErrorStatus._BAD_REQUEST,
-            ErrorStatus.AUTH_INVALID_TOKEN
+            ErrorStatus.AUTH_INVALID_TOKEN,
+            ErrorStatus.KAKAO_TOKEN_INVALID,
+            ErrorStatus.KAKAO_RATE_LIMITED,
+            ErrorStatus.KAKAO_SERVER_ERROR,
+            ErrorStatus.KAKAO_API_ERROR,
+            ErrorStatus.KAKAO_TOKEN_REFRESH_FAILED,
+            ErrorStatus.KAKAO_USER_INFO_INVALID,
+            ErrorStatus.KAKAO_FORBIDDEN,
+            ErrorStatus.KAKAO_BAD_REQUEST,
+            ErrorStatus.KAKAO_SERVICE_UNAVAILABLE,
+            ErrorStatus.KAKAO_TIMEOUT
     })
     public ResponseEntity<ApiResponse<LoginResponseDTO>> kakaoLogin(
             @Valid @RequestBody KakaoLoginRequestDTO request
