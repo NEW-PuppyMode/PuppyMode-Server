@@ -13,29 +13,34 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 @EnableWebSecurity
 public class SecurityConfig {
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomJwtAuthenticationEntryPoint customJwtAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
-    private static final String[] AUTH_WHITELIST = {
+    public static final String[] AUTH_WHITELIST = {
             "/auth/kakao/login/**",
             "/auth/apple/login/**",
             "/auth/apple/callback",
-            "/auth/apple/callback/**",
+            "/auth/apple/callback/**"
     };
 
-    private static final String[] HEALTH_WHITELIST = {
+    public static final String[] HEALTH_WHITELIST = {
             "/actuator/health"
     };
 
-    private static final String[] SWAGGER_WHITELIST = {
+    public static final String[] SWAGGER_WHITELIST = {
             "/swagger-ui/**",
             "/v3/api-docs/**"
     };
 
-    private static final String[] PUBLIC_WHITELIST = {
+    public static final String[] PUBLIC_WHITELIST = {
             "/account-deletion",
             "/privacy-policy"
+    };
+
+    public static final String[] SYSTEM_WHITELIST = {
+            "/version/check"
     };
 
     @Bean
@@ -52,18 +57,22 @@ public class SecurityConfig {
                 })
                 .authorizeHttpRequests(auth -> {
                     // 공격 패턴 차단
-                    auth.requestMatchers("/**/*.php").denyAll();
-                    auth.requestMatchers("/**/*.asp", "/**/*.aspx").denyAll();
-                    auth.requestMatchers("/wp-admin/**", "/wp-content/**", "/wp-includes/**").denyAll();
+                    auth.requestMatchers("/wp-admin/**").denyAll();
+                    auth.requestMatchers("/wp-content/**").denyAll();
+                    auth.requestMatchers("/wp-includes/**").denyAll();
                     auth.requestMatchers("/phpMyAdmin/**", "/phpmyadmin/**").denyAll();
-                    auth.requestMatchers("/**/.env", "/**/.git/**", "/**/.svn/**").denyAll();
-                    auth.requestMatchers("/vendor/**").denyAll();
+                    auth.requestMatchers("/.env", "/.env/**").denyAll();
+                    auth.requestMatchers("/.git", "/.git/**").denyAll();
+                    auth.requestMatchers("/.svn", "/.svn/**").denyAll();
+                    auth.requestMatchers("/vendor", "/vendor/**").denyAll();
 
                     // 정상 경로
                     auth.requestMatchers(AUTH_WHITELIST).permitAll();
                     auth.requestMatchers(HEALTH_WHITELIST).permitAll();
                     auth.requestMatchers(SWAGGER_WHITELIST).permitAll();
                     auth.requestMatchers(PUBLIC_WHITELIST).permitAll();
+                    auth.requestMatchers(SYSTEM_WHITELIST).permitAll();
+
                     auth.anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
