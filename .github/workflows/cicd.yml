@@ -7,11 +7,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
-    permissions:
-      id-token: write
-      contents: read
-
     steps:
 
       #------------------- CI --------------------
@@ -45,50 +40,31 @@ jobs:
       - name: Spring Boot Build
         run: ./gradlew clean build -x test
 
-      # IAM 역할을 통한 인증 구성 (OIDC 기반)
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      # DockerHub 로그인
+      - name: docker login
+        uses: docker/login-action@v3
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          role-session-name: PuppyMode-Server-${{ github.run_id }}
-          aws-region: ap-northeast-2
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # ECR 로그인
-      - name: Login to ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      # Docker 이미지 빌드 후 ECR에 푸시
-      - name: Build and Push Docker image to ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: puppy-mode
-          IMAGE_TAG: ${{ github.sha }}
+      # Docker 이미지 빌드/푸시
+      - name: Build/Push Docker Image
         run: |
-          docker build --build-arg JAR_FILE=build/libs/puppymode2-0.0.1-SNAPSHOT.jar -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_IMAGENAME }} .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_IMAGENAME }}
 
       #------------------- CD --------------------
 
-      #  ECS Task Definition 다운로드 후 JSON 파일로 저장
-      - name: Download ECS task definition
-        run: |
-          aws ecs describe-task-definition --task-definition ${{ secrets.ECS_TASK_DEFINITION }} --query taskDefinition > task-definition.json
-
-      # 다운로드한 Task Definition에 새 이미지 태그 적용
-      - name: Fill in the new image ID in the task definition
-        id: update-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
+      # EC2 접속 후 서버 배포
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master
         with:
-          task-definition: task-definition.json
-          container-name: puppy-mode-ecs-container
-          image: ${{ secrets.ECR_URI }}:${{ github.sha }}
-
-      # ECS에 새 Task Definition 배포 후 안정화까지 대기
-      - name: Deploy to ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          service: puppy-mode-ecs-service
-          cluster: puppy-mode-cluster
-          task-definition: ${{ steps.update-task-def.outputs.task-definition }}
-          wait-for-service-stability: true
+          username: ubuntu
+          host: ${{ secrets.EC2_HOST }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            printf "%s\n" "${{ secrets.APPLICATION_YML }}" | sudo tee /home/ubuntu/application.yml > /dev/null
+            sudo docker compose down
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_IMAGENAME }}
+            sudo docker compose up -d
+            sudo docker image prune -f
