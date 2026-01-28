@@ -23,6 +23,9 @@ public class AppleAuthConfig {
     @Value("${auth.apple.client-id}")
     private String clientId;
 
+    @Value("${auth.apple.audience}")
+    private String audience;
+
     @Value("${auth.apple.key-id}")
     private String keyId;
 
@@ -48,6 +51,10 @@ public class AppleAuthConfig {
             throw new IllegalStateException("Apple Client ID가 설정되지 않았습니다. auth.apple.client-id를 확인하세요.");
         }
 
+        if (isBlank(audience)) {
+            throw new IllegalStateException("Apple Audience가 설정되지 않았습니다. auth.apple.audience를 확인하세요.");
+        }
+
         if (isBlank(keyId)) {
             throw new IllegalStateException("Apple Key ID가 설정되지 않았습니다. auth.apple.key-id를 확인하세요.");
         }
@@ -60,8 +67,11 @@ public class AppleAuthConfig {
             throw new IllegalStateException("Apple Redirect URI가 설정되지 않았습니다. auth.apple.redirect-uri를 확인하세요.");
         }
 
-        log.info("[Apple Config] Apple 인증 설정 검증 완료 - Team: {}, Client: {}, Key: {}",
-                maskString(teamId), maskString(clientId), maskString(keyId));
+        log.info("[Apple Config] Apple 인증 설정 검증 완료 - Team: {}, Client(Service): {}, Audience(App): {}, Key: {}",
+                maskString(teamId),
+                maskString(clientId),
+                maskString(audience),
+                maskString(keyId));
     }
 
     /**
