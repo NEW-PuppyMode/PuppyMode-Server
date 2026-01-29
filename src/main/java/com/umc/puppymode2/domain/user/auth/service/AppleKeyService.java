@@ -38,8 +38,8 @@ public class AppleKeyService {
             PrivateKey testKey = getPrivateKey();
 
             log.info("[Apple Key Service] Private Key 로드 테스트 성공");
-            log.debug("[Apple Key Service] - Key Algorithm: {}", testKey.getAlgorithm());
-            log.debug("[Apple Key Service] - Key Format: {}", testKey.getFormat());
+            log.info("[Apple Key Service] - Key Algorithm: {}", testKey.getAlgorithm());
+            log.info("[Apple Key Service] - Key Format: {}", testKey.getFormat());
 
         } catch (Exception e) {
             log.error("[Apple Key Service] Private Key 로드 실패 - 애플리케이션 시작 중단", e);
@@ -58,7 +58,7 @@ public class AppleKeyService {
      */
     public PrivateKey getPrivateKey() {
         if (cachedPrivateKey != null) {
-            log.debug("[Apple Key Service] 캐시된 Private Key 반환");
+            log.info("[Apple Key Service] 캐시된 Private Key 반환");
             return cachedPrivateKey;
         }
 
@@ -90,11 +90,11 @@ public class AppleKeyService {
      * @throws Exception 파싱 실패 시
      */
     private PrivateKey parsePrivateKey(List<String> keyLines) throws Exception {
-        log.debug("[Apple Key Service] - Private Key 줄 수: {}", keyLines.size());
+        log.info("[Apple Key Service] - Private Key 줄 수: {}", keyLines.size());
 
         // 각 라인 결합
         String combinedKey = String.join("", keyLines);
-        log.debug("[Apple Key Service] - 결합 후 총 길이: {} 문자", combinedKey.length());
+        log.info("[Apple Key Service] - 결합 후 총 길이: {} 문자", combinedKey.length());
 
         // PEM 헤더/푸터 제거 및 공백 제거
         String sanitizedKey = combinedKey
@@ -102,8 +102,8 @@ public class AppleKeyService {
                 .replace("-----END PRIVATE KEY-----", "")
                 .replaceAll("\\s+", "");
 
-        log.debug("[Apple Key Service] - 정제 후 길이: {} 문자", sanitizedKey.length());
-        log.debug("[Apple Key Service] - 시작 부분: {}...",
+        log.info("[Apple Key Service] - 정제 후 길이: {} 문자", sanitizedKey.length());
+        log.info("[Apple Key Service] - 시작 부분: {}...",
                 sanitizedKey.substring(0, Math.min(20, sanitizedKey.length())));
 
         // Base64 형식 검증
@@ -115,19 +115,19 @@ public class AppleKeyService {
             throw new IllegalArgumentException("Private Key contains invalid Base64 characters");
         }
 
-        log.debug("[Apple Key Service] Base64 형식 검증 완료");
+        log.info("[Apple Key Service] Base64 형식 검증 완료");
 
         // Base64 디코딩
         byte[] keyBytes = Base64.getDecoder().decode(sanitizedKey);
-        log.debug("[Apple Key Service] - 디코딩된 바이트 크기: {} bytes", keyBytes.length);
+        log.info("[Apple Key Service] - 디코딩된 바이트 크기: {} bytes", keyBytes.length);
 
         // EC Private Key 생성
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
         KeyFactory keyFactory = KeyFactory.getInstance("EC");
         PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
 
-        log.debug("[Apple Key Service] - Key Algorithm: {}", privateKey.getAlgorithm());
-        log.debug("[Apple Key Service] - Key Format: {}", privateKey.getFormat());
+        log.info("[Apple Key Service] - Key Algorithm: {}", privateKey.getAlgorithm());
+        log.info("[Apple Key Service] - Key Format: {}", privateKey.getFormat());
 
         return privateKey;
     }
