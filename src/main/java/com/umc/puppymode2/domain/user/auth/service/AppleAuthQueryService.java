@@ -78,7 +78,7 @@ public class AppleAuthQueryService {
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(publicKey)
                     .requireIssuer("https://appleid.apple.com")
-                    .requireAudience(appleAuthConfig.getClientId())
+                    .requireAudience(appleAuthConfig.getAudience())
                     .build()
                     .parseClaimsJws(identityToken)
                     .getBody();
