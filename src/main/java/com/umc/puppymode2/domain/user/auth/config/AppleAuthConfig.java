@@ -21,8 +21,7 @@ import java.util.List;
 public class AppleAuthConfig {
 
     private String teamId;
-    private String clientId;
-    private String audience;
+    private String clientId; // App Bundle ID
     private String keyId;
     private List<String> privateKeyLines;
     private String redirectUri;
@@ -38,8 +37,7 @@ public class AppleAuthConfig {
 
         log.info("[Apple Config] Apple 인증 설정 검증 완료");
         log.info("[Apple Config] - Team ID: {}", maskString(teamId));
-        log.info("[Apple Config] - Client(Service) ID: {}", maskString(clientId));
-        log.info("[Apple Config] - Audience(App) ID: {}", maskString(audience));
+        log.info("[Apple Config] - Client(Bundle) ID: {}", maskString(clientId));
         log.info("[Apple Config] - Key ID: {}", maskString(keyId));
         log.info("[Apple Config] - Private Key Lines: {} 줄",
                 privateKeyLines != null ? privateKeyLines.size() : 0);
@@ -55,10 +53,6 @@ public class AppleAuthConfig {
 
         if (isBlank(clientId)) {
             throw new IllegalStateException("Apple Client ID가 설정되지 않았습니다. auth.apple.client-id를 확인하세요.");
-        }
-
-        if (isBlank(audience)) {
-            throw new IllegalStateException("Apple Audience가 설정되지 않았습니다. auth.apple.audience를 확인하세요.");
         }
 
         if (isBlank(keyId)) {
