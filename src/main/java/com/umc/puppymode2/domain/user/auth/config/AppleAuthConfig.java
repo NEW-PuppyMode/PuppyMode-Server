@@ -37,7 +37,7 @@ public class AppleAuthConfig {
 
         log.info("[Apple Config] Apple 인증 설정 검증 완료");
         log.info("[Apple Config] - Team ID: {}", maskString(teamId));
-        log.info("[Apple Config] - Client(Bundle) ID: {}", maskString(clientId));
+        log.info("[Apple Config] - Client(Bundle) ID: {}", clientId);
         log.info("[Apple Config] - Key ID: {}", maskString(keyId));
         log.info("[Apple Config] - Private Key Lines: {} 줄",
                 privateKeyLines != null ? privateKeyLines.size() : 0);
