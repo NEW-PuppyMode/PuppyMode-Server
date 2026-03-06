@@ -46,16 +46,9 @@ public class OnboardingTestService {
             int a = answer.answer();
 
             switch (q) {
-                case 1, 2 -> { // E or I
+                case 1, 2, 5 -> { // E or I
                     if (a == 1) eScore++;
                     else iScore++;
-                }
-                case 5 -> { // E/F or I/T
-                    if (a == 1) {
-                        eScore++; fScore++;
-                    } else {
-                        iScore++; tScore++;
-                    }
                 }
                 case 3, 4, 6 -> { // F or T
                     if (a == 1) fScore++;
@@ -66,8 +59,8 @@ public class OnboardingTestService {
         }
 
         // 두 유형 중 어느쪽에 해당하는지 판별 후 강아지 종 매칭
-        String eOrI = (eScore >= iScore) ? "E" : "I";
-        String fOrT = (fScore >= tScore) ? "F" : "T";
+        String eOrI = (eScore > iScore) ? "E" : "I";
+        String fOrT = (fScore > tScore) ? "F" : "T";
         PuppyType type = getDogTypeByTrait(eOrI, fOrT);
 
         // 해당 강아지 타입의 Level 1 찾기
