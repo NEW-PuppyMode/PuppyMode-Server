@@ -1,6 +1,5 @@
 package com.umc.puppymode2.domain.goal.service;
 
-import com.umc.puppymode2.domain.drinkhistory.repository.DrinkHistoryRepository;
 import com.umc.puppymode2.domain.goal.converter.UserGoalHistoryConverter;
 import com.umc.puppymode2.domain.goal.dto.GoalPostRequestDTO;
 import com.umc.puppymode2.domain.goal.dto.GoalPostResponseDTO;
@@ -8,6 +7,8 @@ import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -16,59 +17,87 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommandService {
+
     private final UserGoalHistoryRepository repository;
     private final UserGoalHistoryConverter converter;
-    private final DrinkHistoryRepository drinkHistoryRepository;
 
     @Transactional
     @Override
     public GoalPostResponseDTO postGoal(Long userId, GoalPostRequestDTO dto) {
 
         LocalDate now = LocalDate.now();
-        LocalDate firstDayOfMonth = now.withDayOfMonth(1);
-        LocalDate lastDayOfMonth = now.withDayOfMonth(now.lengthOfMonth());
+        LocalDate goalMonth = now.withDayOfMonth(1);
+        LocalDateTime goalSetAt = LocalDateTime.now();
+        int maxGoal = now.lengthOfMonth();
 
-        Long actualDrinkCount = drinkHistoryRepository.countByUserUserIdAndDrinkDateBetween(userId, firstDayOfMonth, lastDayOfMonth);
+        try {
 
-        if (Boolean.TRUE.equals(dto.getIsNew())) {
+            // 새로운 목표 설정
+            if (Boolean.TRUE.equals(dto.getIsNew())) {
 
-            if (dto.getGoal() == null) {
-                throw new IllegalArgumentException("새로운 목표 설정 시 goal 값은 필수입니다.");
+                if (dto.getGoal() == null) {
+                    throw new IllegalArgumentException("새로운 목표 설정 시 goal 값은 필수입니다.");
+                }
+
+                if (dto.getGoal() <= 0 || dto.getGoal() > maxGoal) {
+                    throw new IllegalArgumentException("목표는 1 이상 " + maxGoal + " 이하여야 합니다.");
+                }
+
+                if (repository.existsByUserIdAndGoalMonth(userId, goalMonth)) {
+                    throw new IllegalStateException("이미 이번 달 목표가 설정되어 있습니다.");
+                }
+
+                UserGoalHistory newGoal = converter.toEntity(dto, userId, goalMonth, goalSetAt);
+
+                repository.saveAndFlush(newGoal);
+
+                return GoalPostResponseDTO.builder()
+                        .isSuccess(true)
+                        .code("POST_GOAL_SUCCESS")
+                        .message("목표 설정 성공")
+                        .build();
             }
-            if (dto.getGoal() < 0 || dto.getGoal() > 30) {
-                throw new IllegalArgumentException("목표는 0 이상 30 이하여야 합니다.");
-            }
 
-            UserGoalHistory newGoal = converter.toEntity(dto, userId, actualDrinkCount);
-            repository.save(newGoal);
-
-            return GoalPostResponseDTO.builder()
-                    .isSuccess(true)
-                    .code("POST_GOAL_SUCCESS")
-                    .message("목표 설정 성공")
-                    .build();
-        } else {
             // 기존 목표 유지
-            UserGoalHistory lastGoal = repository.findTopByUserIdOrderByGoalSetAtDesc(userId)
+            UserGoalHistory lastGoal = repository.findTopByUserIdOrderByGoalMonthDesc(userId)
                     .orElseThrow(() -> new IllegalArgumentException("기존 목표가 없습니다."));
+
+            if (repository.existsByUserIdAndGoalMonth(userId, goalMonth)) {
+                throw new IllegalStateException("이미 이번 달 목표가 설정되어 있습니다.");
+            }
+
+            int adjustedGoal = Math.min(lastGoal.getMonthlyGoalCount(), maxGoal);
+
             UserGoalHistory copiedGoal = UserGoalHistory.builder()
                     .userId(userId)
-                    .monthlyGoalCount(lastGoal.getMonthlyGoalCount())
-                    .monthlyActualCount(actualDrinkCount)
-                    .isGoalExceeded(false)
-                    .goalSetAt(LocalDateTime.now())
-                    .createdAt(LocalDateTime.now())
-                    .updatedAt(LocalDateTime.now())
+                    .goalMonth(goalMonth)
+                    .monthlyGoalCount(adjustedGoal)
+                    .goalSetAt(goalSetAt)
                     .build();
 
-            repository.save(copiedGoal);
+            repository.saveAndFlush(copiedGoal);
 
             return GoalPostResponseDTO.builder()
                     .isSuccess(true)
                     .code("MAINTAIN_GOAL_SUCCESS")
                     .message("기존 목표 유지 성공")
                     .build();
+
+        } catch (DataIntegrityViolationException e) {
+
+            // DB UNIQUE(user_id, goal_month) 제약 위반
+            Throwable cause = e;
+
+            while (cause != null) {
+                if (cause instanceof ConstraintViolationException constraintException) {
+                    if ("uk_user_goal_month".equals(constraintException.getConstraintName())) {
+                        throw new IllegalStateException("이미 이번 달 목표가 설정되어 있습니다.");
+                    }
+                }
+                cause = cause.getCause();
+            }
+
+            throw e;
         }
     }
 }
-
