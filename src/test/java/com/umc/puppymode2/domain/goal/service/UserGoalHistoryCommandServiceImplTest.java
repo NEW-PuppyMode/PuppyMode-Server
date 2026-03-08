@@ -52,7 +52,7 @@ class UserGoalHistoryCommandServiceImplTest {
         var result = service.postGoal(userId, dto);
 
         assertTrue(result.isSuccess());
-        verify(repository).save(entity);
+        verify(repository).saveAndFlush(entity);
     }
 
     @Test
@@ -93,7 +93,7 @@ class UserGoalHistoryCommandServiceImplTest {
         assertThrows(IllegalStateException.class,
                 () -> service.postGoal(userId, dto));
 
-        verify(repository, never()).save(any());
+        verify(repository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -116,7 +116,7 @@ class UserGoalHistoryCommandServiceImplTest {
         var result = service.postGoal(userId, dto);
 
         assertTrue(result.isSuccess());
-        verify(repository).save(any());
+        verify(repository).saveAndFlush(any());
     }
 
     @Test
@@ -150,7 +150,7 @@ class UserGoalHistoryCommandServiceImplTest {
 
         service.postGoal(userId, dto);
 
-        verify(repository).save(argThat(goal ->
+        verify(repository).saveAndFlush(argThat(goal ->
                 goal.getMonthlyGoalCount() ==
                         Math.min(31, LocalDate.now().lengthOfMonth())
         ));
