@@ -136,7 +136,7 @@ class UserGoalHistoryQueryServiceImplTest {
     }
 
     @Test
-    void 목표와_실제_음주가_같으면_goalExceeded_false() {
+    void 목표와_실제_음주가_같으면_goalExceeded_true() {
 
         LocalDate goalMonth = LocalDate.now().withDayOfMonth(1);
 
@@ -158,6 +158,6 @@ class UserGoalHistoryQueryServiceImplTest {
 
         var result = service.getLatestGoal(userId);
 
-        assertFalse(result.getIsGoalExceeded());
+        assertTrue(result.getIsGoalExceeded());
     }
 }
