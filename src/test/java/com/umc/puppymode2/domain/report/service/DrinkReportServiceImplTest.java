@@ -1,0 +1,297 @@
+package com.umc.puppymode2.domain.report.service;
+
+import com.umc.puppymode2.domain.advice.repository.AdviceRepository;
+import com.umc.puppymode2.domain.drinkhistory.repository.DrinkHistoryRepository;
+import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
+import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
+import com.umc.puppymode2.domain.report.converter.DrinkReportConverter;
+import com.umc.puppymode2.domain.report.dto.DrinkReportResponseDTO;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.util.Optional;
+
+import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.*;
+
+@ExtendWith(MockitoExtension.class)
+class DrinkReportServiceImplTest {
+
+    @Mock
+    private UserGoalHistoryRepository userGoalHistoryRepository;
+
+    @Mock
+    private DrinkHistoryRepository drinkHistoryRepository;
+
+    @Mock
+    private AdviceRepository adviceRepository;
+
+    @Mock
+    private DrinkReportConverter drinkReportConverter;
+
+    @InjectMocks
+    private DrinkReportServiceImpl drinkReportService;
+
+    private Long userId;
+    private YearMonth targetMonth;
+
+    @BeforeEach
+    void setUp() {
+        userId = 1L;
+        targetMonth = YearMonth.of(2024, 3);
+    }
+
+    @Test
+    void 월간_음주_리포트_정상조회() {
+
+        // given
+        int goal = 15;
+        long drinkDays = 5L;
+        long drinkRecordCount = 8L;
+        int scoldedCount = 3;
+
+        UserGoalHistory goalHistory = mock(UserGoalHistory.class);
+        when(goalHistory.getMonthlyGoalCount()).thenReturn(goal);
+
+        when(userGoalHistoryRepository
+                .findTopByUserIdAndGoalSetAtLessThanEqualOrderByGoalSetAtDesc(
+                        eq(userId), any(LocalDateTime.class)))
+                .thenReturn(Optional.of(goalHistory));
+
+        when(drinkHistoryRepository
+                .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(
+                        eq(userId), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(drinkDays);
+
+        when(drinkHistoryRepository
+                .countByUserUserIdAndDrinkDateBetween(
+                        eq(userId), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(drinkRecordCount);
+
+        when(adviceRepository
+                .countByUserUserIdAndAdvisedAtBetween(
+                        eq(userId), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn((long) scoldedCount);
+
+        DrinkReportResponseDTO dto = mock(DrinkReportResponseDTO.class);
+
+        when(drinkReportConverter.toDto(
+                eq(goal),
+                eq(drinkRecordCount),
+                eq(drinkDays),
+                anyInt(),
+                eq(scoldedCount)
+        )).thenReturn(dto);
+
+        // when
+        DrinkReportResponseDTO result =
+                drinkReportService.drinkReport(userId, targetMonth);
+
+        // then
+        assertThat(result).isEqualTo(dto);
+
+        verify(userGoalHistoryRepository, times(1))
+                .findTopByUserIdAndGoalSetAtLessThanEqualOrderByGoalSetAtDesc(any(), any());
+
+        verify(drinkHistoryRepository, times(1))
+                .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(any(), any(), any());
+
+        verify(drinkHistoryRepository, times(1))
+                .countByUserUserIdAndDrinkDateBetween(any(), any(), any());
+
+        verify(adviceRepository, times(1))
+                .countByUserUserIdAndAdvisedAtBetween(any(), any(), any());
+
+        verify(drinkReportConverter, times(1))
+                .toDto(eq(goal), eq(drinkRecordCount), eq(drinkDays), anyInt(), eq(scoldedCount));
+    }
+
+    @Test
+    void 목표가_없는_경우_기본값_15로_설정된다() {
+
+        // given
+        long drinkDays = 2L;
+        long drinkRecordCount = 5L;
+        int scoldedCount = 1;
+
+        when(userGoalHistoryRepository
+                .findTopByUserIdAndGoalSetAtLessThanEqualOrderByGoalSetAtDesc(
+                        eq(userId), any(LocalDateTime.class)))
+                .thenReturn(Optional.empty());
+
+        when(drinkHistoryRepository
+                .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(
+                        eq(userId), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(drinkDays);
+
+        when(drinkHistoryRepository
+                .countByUserUserIdAndDrinkDateBetween(
+                        eq(userId), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(drinkRecordCount);
+
+        when(adviceRepository
+                .countByUserUserIdAndAdvisedAtBetween(
+                        eq(userId), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn((long) scoldedCount);
+
+        DrinkReportResponseDTO dto = mock(DrinkReportResponseDTO.class);
+
+        when(drinkReportConverter.toDto(
+                eq(15), // 기본 목표값
+                eq(drinkRecordCount),
+                eq(drinkDays),
+                anyInt(),
+                eq(scoldedCount)
+        )).thenReturn(dto);
+
+        // when
+        DrinkReportResponseDTO result =
+                drinkReportService.drinkReport(userId, targetMonth);
+
+        // then
+        assertThat(result).isEqualTo(dto);
+
+        verify(drinkReportConverter).toDto(
+                eq(15),
+                eq(drinkRecordCount),
+                eq(drinkDays),
+                anyInt(),
+                eq(scoldedCount)
+        );
+    }
+
+    /**
+     * 목표보다 적게 마신 경우 → achievementRate 정상 계산
+     */
+    @Test
+    void 음주일이_목표보다_적은_경우() {
+
+        int goal = 10;
+        long drinkDays = 2L;
+        long drinkRecordCount = 5L;
+
+        UserGoalHistory goalHistory = mock(UserGoalHistory.class);
+        when(goalHistory.getMonthlyGoalCount()).thenReturn(goal);
+
+        when(userGoalHistoryRepository
+                .findTopByUserIdAndGoalSetAtLessThanEqualOrderByGoalSetAtDesc(eq(userId), any(LocalDateTime.class)))
+                .thenReturn(Optional.of(goalHistory));
+
+        when(drinkHistoryRepository
+                .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(drinkDays);
+
+        when(drinkHistoryRepository
+                .countByUserUserIdAndDrinkDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(drinkRecordCount);
+
+        when(adviceRepository
+                .countByUserUserIdAndAdvisedAtBetween(eq(userId), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(0L);
+
+        DrinkReportResponseDTO dto = mock(DrinkReportResponseDTO.class);
+
+        when(drinkReportConverter.toDto(goal, drinkRecordCount, drinkDays, 80, 0))
+                .thenReturn(dto);
+
+        DrinkReportResponseDTO result = drinkReportService.drinkReport(userId, targetMonth);
+
+        assertThat(result).isEqualTo(dto);
+    }
+
+    /**
+     *  음주일이 목표보다 많은 경우 → achievementRate = 0
+     */
+    @Test
+    void 음주일이_목표보다_많은_경우() {
+
+        int goal = 5;
+        long drinkDays = 8L;
+        long drinkRecordCount = 10L;
+
+        UserGoalHistory goalHistory = mock(UserGoalHistory.class);
+        when(goalHistory.getMonthlyGoalCount()).thenReturn(goal);
+
+        when(userGoalHistoryRepository
+                .findTopByUserIdAndGoalSetAtLessThanEqualOrderByGoalSetAtDesc(eq(userId), any(LocalDateTime.class)))
+                .thenReturn(Optional.of(goalHistory));
+
+        when(drinkHistoryRepository
+                .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(drinkDays);
+
+        when(drinkHistoryRepository
+                .countByUserUserIdAndDrinkDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(drinkRecordCount);
+
+        when(adviceRepository
+                .countByUserUserIdAndAdvisedAtBetween(eq(userId), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(0L);
+
+        DrinkReportResponseDTO dto = mock(DrinkReportResponseDTO.class);
+
+        when(drinkReportConverter.toDto(goal, drinkRecordCount, drinkDays, 0, 0))
+                .thenReturn(dto);
+
+        DrinkReportResponseDTO result = drinkReportService.drinkReport(userId, targetMonth);
+
+        assertThat(result).isEqualTo(dto);
+    }
+
+    /**
+     * 목표가 0인 경우 → achievementRate = 0
+     */
+    @Test
+    void 목표가_0이면_달성률은_0이다() {
+
+        int goal = 0;
+        long drinkDays = 3L;
+        long drinkRecordCount = 5L;
+
+        UserGoalHistory goalHistory = mock(UserGoalHistory.class);
+        when(goalHistory.getMonthlyGoalCount()).thenReturn(goal);
+
+        when(userGoalHistoryRepository
+                .findTopByUserIdAndGoalSetAtLessThanEqualOrderByGoalSetAtDesc(eq(userId), any(LocalDateTime.class)))
+                .thenReturn(Optional.of(goalHistory));
+
+        when(drinkHistoryRepository
+                .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(drinkDays);
+
+        when(drinkHistoryRepository
+                .countByUserUserIdAndDrinkDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(drinkRecordCount);
+
+        when(adviceRepository
+                .countByUserUserIdAndAdvisedAtBetween(eq(userId), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(0L);
+
+        DrinkReportResponseDTO dto = mock(DrinkReportResponseDTO.class);
+
+        when(drinkReportConverter.toDto(goal, drinkRecordCount, drinkDays, 0, 0))
+                .thenReturn(dto);
+
+        // when
+        DrinkReportResponseDTO result =
+                drinkReportService.drinkReport(userId, targetMonth);
+
+        // then
+        assertThat(result).isEqualTo(dto);
+
+        verify(drinkReportConverter).toDto(
+                goal,
+                drinkRecordCount,
+                drinkDays,
+                0,
+                0
+        );
+    }
+}
