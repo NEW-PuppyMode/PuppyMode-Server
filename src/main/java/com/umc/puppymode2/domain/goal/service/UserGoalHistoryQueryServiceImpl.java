@@ -9,36 +9,46 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 
 @Service
 @RequiredArgsConstructor
 public class UserGoalHistoryQueryServiceImpl implements UserGoalHistoryQueryService {
+
     private final UserGoalHistoryRepository repository;
     private final UserGoalHistoryConverter converter;
     private final DrinkHistoryRepository drinkHistoryRepository;
 
-
     @Override
     public GoalInfoResponseDTO getLatestGoal(Long userId) {
-        UserGoalHistory latest = repository.findTopByUserIdOrderByGoalSetAtDesc(userId)
+
+        LocalDate now = LocalDate.now();
+        LocalDate goalMonth = now.withDayOfMonth(1); // 이번 달 기준
+
+        // 이번 달 목표 조회
+        UserGoalHistory goal = repository
+                .findByUserIdAndGoalMonth(userId, goalMonth)
                 .orElse(null);
 
-        if (latest == null) return null;
+        if (goal == null) return null;
 
-        LocalDate firstDay = LocalDate.now().withDayOfMonth(1);
-        LocalDate lastDay = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
-        long actualCount = drinkHistoryRepository.countByUserUserIdAndDrinkDateBetween(userId, firstDay, lastDay);
+        // 이번 달 음주 횟수 계산
+        LocalDate firstDay = goalMonth;
+        LocalDate lastDay = goalMonth.withDayOfMonth(goalMonth.lengthOfMonth());
 
-        return converter.toDto(latest, actualCount);
+        long actualCount =
+                drinkHistoryRepository.countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(
+                        userId, firstDay, lastDay
+                );
+
+        return converter.toDto(goal, actualCount);
     }
 
     @Override
     public boolean isMoreThan30DayPassed(Long userId) {
-        return repository.findTopByUserIdOrderByGoalSetAtDesc(userId)
-                .map(goal -> ChronoUnit.DAYS.between(goal.getGoalSetAt(), LocalDateTime.now()) >= 30)
-                .orElse(true);
 
+        LocalDate goalMonth = LocalDate.now().withDayOfMonth(1);
+
+        // 이번 달 목표 존재 여부 확인
+        return repository.findByUserIdAndGoalMonth(userId, goalMonth).isEmpty();
     }
 }
