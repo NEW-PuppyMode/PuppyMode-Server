@@ -46,7 +46,7 @@ class UserGoalHistoryCommandServiceImplTest {
         when(repository.existsByUserIdAndGoalMonth(anyLong(), any()))
                 .thenReturn(false);
 
-        when(converter.toEntity(dto, userId))
+        when(converter.toEntity(eq(dto), eq(userId), any(LocalDate.class), any(LocalDateTime.class)))
                 .thenReturn(entity);
 
         var result = service.postGoal(userId, dto);

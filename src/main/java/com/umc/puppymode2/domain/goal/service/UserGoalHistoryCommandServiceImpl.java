@@ -26,6 +26,7 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
 
         LocalDate now = LocalDate.now();
         LocalDate goalMonth = now.withDayOfMonth(1);
+        LocalDateTime goalSetAt = LocalDateTime.now();
         int maxGoal = now.lengthOfMonth();
 
         try {
@@ -45,7 +46,7 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
                     throw new IllegalStateException("이미 이번 달 목표가 설정되어 있습니다.");
                 }
 
-                UserGoalHistory newGoal = converter.toEntity(dto, userId);
+                UserGoalHistory newGoal = converter.toEntity(dto, userId, goalMonth, goalSetAt);
 
                 repository.save(newGoal);
 
@@ -70,7 +71,7 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
                     .userId(userId)
                     .goalMonth(goalMonth)
                     .monthlyGoalCount(adjustedGoal)
-                    .goalSetAt(LocalDateTime.now())
+                    .goalSetAt(goalSetAt)
                     .build();
 
             repository.save(copiedGoal);
