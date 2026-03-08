@@ -50,14 +50,14 @@ public class UserGoalHistoryController {
         );
     }
 
-    // 3. 목표 설정 후 30일 경과 여부
+    // 3. 이번 달 목표 설정 여부
     @GetMapping("/check-30days")
-    @Operation(summary = "목표 설정 후 30일 경과 여부 API", description = "목표 설정 후 30일 경과 여부 API 입니다.")
+    @Operation(summary = "이번 달 목표 설정 여부 API", description = "이번 달 목표가 설정되어 있는지 확인합니다.")
     public ResponseEntity<ApiResponse<Boolean>> check30Days() {
         Long userId = getCurrentUserId();
         boolean isPassed = queryService.isMoreThan30DayPassed(userId);
         return ResponseEntity.ok(
-                ApiResponse.onSuccess(isPassed, "GOAL200", "목표 설정 후 30일 경과 여부 조회 성공")
+                ApiResponse.onSuccess(isPassed, "GOAL200", "이번 달 목표 설정 여부 조회 성공")
         );
     }
 }
