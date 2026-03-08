@@ -18,6 +18,7 @@ import java.time.YearMonth;
 @Service
 @RequiredArgsConstructor
 public class DrinkReportServiceImpl implements DrinkReportService {
+
     private final UserGoalHistoryRepository userGoalHistoryRepository;
     private final DrinkHistoryRepository drinkHistoryRepository;
     private final AdviceRepository adviceRepository;
@@ -27,34 +28,62 @@ public class DrinkReportServiceImpl implements DrinkReportService {
     @Override
     public DrinkReportResponseDTO drinkReport(Long userId, YearMonth targetMonth) {
 
-        LocalDate firstDayOfMonth = targetMonth.atDay(1);
-        LocalDate lastDayOfMonth = targetMonth.atEndOfMonth();
+        LocalDate startDate = targetMonth.atDay(1);
+        LocalDate endDate = targetMonth.atEndOfMonth();
 
-        LocalDateTime startDateTime = firstDayOfMonth.atStartOfDay();
-        LocalDateTime asOfDateTime = lastDayOfMonth.atTime(LocalTime.MAX);
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
 
         int goal = userGoalHistoryRepository
-                .findTopByUserIdAndGoalSetAtLessThanEqualOrderByGoalSetAtDesc(userId, asOfDateTime)
+                .findTopByUserIdAndGoalSetAtLessThanEqualOrderByGoalSetAtDesc(userId, endDateTime)
                 .map(UserGoalHistory::getMonthlyGoalCount)
-                .orElse(15); // 기본값 15
+                .orElse(15);
 
-        long drinkRecordCount = drinkHistoryRepository.countByUserUserIdAndDrinkDateBetween(userId, firstDayOfMonth, lastDayOfMonth);
+        // 술을 정말 마신 날 (isDrink = True)
+        long drinkDays = drinkHistoryRepository
+                .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(
+                        userId,
+                        startDate,
+                        endDate
+                );
+        // 사용자의 해당 월 기록 횟수 (true, false 모두)
+        long drinkRecordCount = drinkHistoryRepository
+                .countByUserUserIdAndDrinkDateBetween(
+                        userId,
+                        startDate,
+                        endDate
+                );
 
-        long drinkDays = drinkHistoryRepository.countDistinctDrinkDates(userId, firstDayOfMonth, lastDayOfMonth);
-
-        // 절주 목표 유지율! (마신 비율이 아니라, 목표대비 안마신 비율!) 최대한 안마시는게 목표
-        int achievementRate;
-        if (goal <= 0 || drinkDays >= goal) {
-            achievementRate = 0;
-        } else {
-            achievementRate = (int) (((double) (goal - drinkDays) / goal) * 100);
-        }
+        int achievementRate = calculateAchievementRate(goal, drinkDays);
 
         int scoldedCount = (int) adviceRepository
-                .countByUserUserIdAndAdvisedAtBetween(userId, startDateTime, asOfDateTime);
+                .countByUserUserIdAndAdvisedAtBetween(
+                        userId,
+                        startDateTime,
+                        endDateTime
+                );
 
-        DrinkReportResponseDTO dto = drinkReportConverter.toDto(goal, Long.valueOf(drinkRecordCount), Long.valueOf(drinkDays), achievementRate, scoldedCount);
+        return drinkReportConverter.toDto(
+                goal,
+                drinkRecordCount,
+                drinkDays,
+                achievementRate,
+                scoldedCount
+        );
+    }
 
-        return dto;
+    /**
+     * 절주 목표 달성률 계산
+     * 목표 대비 실제 음주일이 얼마나 적은지 계산
+     */
+    private int calculateAchievementRate(int goal, long drinkDays) {
+
+        if (goal <= 0) {
+            return 0;
+        }
+
+        double rate = ((double) (goal - drinkDays) / goal) * 100;
+
+        return (int) Math.max(rate, 0);
     }
 }
