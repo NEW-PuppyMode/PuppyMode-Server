@@ -28,7 +28,7 @@ public class UserGoalHistoryConverter {
 
     public GoalInfoResponseDTO toDto(UserGoalHistory entity, Long monthlyActualCount) {
 
-        boolean exceeded = monthlyActualCount > entity.getMonthlyGoalCount();
+        boolean exceeded = monthlyActualCount >= entity.getMonthlyGoalCount();
 
         return GoalInfoResponseDTO.builder()
                 .monthlyGoalCount(entity.getMonthlyGoalCount())
