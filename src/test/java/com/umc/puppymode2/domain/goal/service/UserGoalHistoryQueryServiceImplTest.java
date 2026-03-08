@@ -112,7 +112,7 @@ class UserGoalHistoryQueryServiceImplTest {
     @Test
     void 목표보다_실제_음주가_많으면_goalExceeded_true() {
 
-        LocalDate goalMonth = LocalDate.of(2025,3,1);
+        LocalDate goalMonth = LocalDate.now().withDayOfMonth(1);
 
         UserGoalHistory goal = UserGoalHistory.builder()
                 .userId(userId)
