@@ -5,37 +5,62 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_goal_history")
+@Table(
+        name = "user_goal_history",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        // 한 유저는 한 달에 목표 하나만 생성 가능
+                        name = "uk_user_goal_month",
+                        columnNames = {"user_id", "goal_month"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_user_goal_user", columnList = "user_id")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class UserGoalHistory {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "goal_id")
     private Long goalId;
 
+    // FK 컬럼 명확히 지정
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    private Integer monthlyGoalCount;  // 이번 달 목표 음주 횟수
+    // 목표가 적용되는 월 (항상 해당 월의 1일 저장)
+    @Column(name = "goal_month", nullable = false)
+    private LocalDate goalMonth;
 
-    private Long monthlyActualCount; // 이번 달 실제 음주 횟수
+    // 이번 달 목표 음주 횟수
+    @Column(name = "monthly_goal_count", nullable = false)
+    private Integer monthlyGoalCount;
 
-    private Boolean isGoalExceeded;
-
+    // 목표 설정 시간
+    @Column(name = "goal_set_at", nullable = false)
     private LocalDateTime goalSetAt;
 
+    // 마지막 GPT 코멘트 전송 시간
+    @Column(name = "last_gpt_comment_sent_at")
     private LocalDateTime lastGptCommentSentAt;
 
+    // 생성 시간
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    // 수정 시간
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
 }
