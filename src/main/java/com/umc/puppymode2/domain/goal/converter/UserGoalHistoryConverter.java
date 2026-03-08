@@ -6,33 +6,34 @@ import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Component
-@RequiredArgsConstructor
 public class UserGoalHistoryConverter {
 
-    public UserGoalHistory toEntity(GoalPostRequestDTO dto, Long userId, Long monthlyActualCount) {
+    public UserGoalHistory toEntity(GoalPostRequestDTO dto, Long userId) {
 
-        if (dto.getGoal() == null) {
-            throw new IllegalArgumentException("목표 값은 null일 수 없습니다.");
-        }
+        int goal = dto.getGoal();
+        LocalDate now = LocalDate.now();
+        LocalDate goalMonth = now.withDayOfMonth(1);
 
         return UserGoalHistory.builder()
                 .userId(userId)
-                .monthlyGoalCount(dto.getGoal())
-                .monthlyActualCount(monthlyActualCount)
-                .isGoalExceeded(false)
+                .goalMonth(goalMonth)
+                .monthlyGoalCount(goal)
                 .goalSetAt(LocalDateTime.now())
                 .build();
     }
 
-
     public GoalInfoResponseDTO toDto(UserGoalHistory entity, Long monthlyActualCount) {
+
+        boolean exceeded = monthlyActualCount > entity.getMonthlyGoalCount();
+
         return GoalInfoResponseDTO.builder()
                 .monthlyGoalCount(entity.getMonthlyGoalCount())
                 .monthlyActualCount(monthlyActualCount)
-                .isGoalExceeded(entity.getIsGoalExceeded())
+                .isGoalExceeded(exceeded)
                 .goalSetAt(entity.getGoalSetAt())
                 .build();
     }
