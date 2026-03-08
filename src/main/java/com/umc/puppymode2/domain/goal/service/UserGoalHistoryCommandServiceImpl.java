@@ -20,6 +20,8 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
     private final UserGoalHistoryConverter converter;
     private final DrinkHistoryRepository drinkHistoryRepository;
 
+    private static final int MAX_GOAL = 31;
+
     @Transactional
     @Override
     public GoalPostResponseDTO postGoal(Long userId, GoalPostRequestDTO dto) {
@@ -35,8 +37,10 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
             if (dto.getGoal() == null) {
                 throw new IllegalArgumentException("새로운 목표 설정 시 goal 값은 필수입니다.");
             }
-            if (dto.getGoal() < 0 || dto.getGoal() > 30) {
-                throw new IllegalArgumentException("목표는 0 이상 30 이하여야 합니다.");
+
+            // 기준 : 오늘부터 30일의 목표
+            if (dto.getGoal() < 0 || dto.getGoal() > MAX_GOAL) {
+                throw new IllegalArgumentException("목표는 0 이상 " + MAX_GOAL + " 이하여야 합니다.");
             }
 
             UserGoalHistory newGoal = converter.toEntity(dto, userId, actualDrinkCount);
