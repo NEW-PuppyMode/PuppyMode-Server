@@ -7,6 +7,7 @@ import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -48,7 +49,7 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
 
                 UserGoalHistory newGoal = converter.toEntity(dto, userId, goalMonth, goalSetAt);
 
-                repository.save(newGoal);
+                repository.saveAndFlush(newGoal);
 
                 return GoalPostResponseDTO.builder()
                         .isSuccess(true)
@@ -74,7 +75,7 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
                     .goalSetAt(goalSetAt)
                     .build();
 
-            repository.save(copiedGoal);
+            repository.saveAndFlush(copiedGoal);
 
             return GoalPostResponseDTO.builder()
                     .isSuccess(true)
@@ -85,7 +86,18 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
         } catch (DataIntegrityViolationException e) {
 
             // DB UNIQUE(user_id, goal_month) 제약 위반
-            throw new IllegalStateException("이미 이번 달 목표가 설정되어 있습니다.");
+            Throwable cause = e;
+
+            while (cause != null) {
+                if (cause instanceof ConstraintViolationException constraintException) {
+                    if ("uk_user_goal_month".equals(constraintException.getConstraintName())) {
+                        throw new IllegalStateException("이미 이번 달 목표가 설정되어 있습니다.");
+                    }
+                }
+                cause = cause.getCause();
+            }
+
+            throw e;
         }
     }
 }
