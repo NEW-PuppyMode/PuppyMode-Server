@@ -65,10 +65,13 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
             throw new IllegalStateException("이미 이번 달 목표가 설정되어 있습니다.");
         }
 
+        // 이전 목표가 이번 달 최대 일수보다 크면 보정
+        int adjustedGoal = Math.min(lastGoal.getMonthlyGoalCount(), now.lengthOfMonth());
+
         UserGoalHistory copiedGoal = UserGoalHistory.builder()
                 .userId(userId)
                 .goalMonth(goalMonth)
-                .monthlyGoalCount(lastGoal.getMonthlyGoalCount())
+                .monthlyGoalCount(adjustedGoal)
                 .goalSetAt(LocalDateTime.now())
                 .build();
 
