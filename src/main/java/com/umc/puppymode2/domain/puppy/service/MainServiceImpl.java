@@ -33,9 +33,7 @@ public class MainServiceImpl implements MainService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
-
-        // Puppy puppy = puppyRepository.findByUser_UserId(userId).orElseThrow(() -> new GeneralException(ErrorStatus.PUPPY_NOT_FOUND));
-
+        
         Optional<Puppy> puppyOpt = puppyRepository.findByUser_UserId(userId);
 
         // 온보딩 미완료
