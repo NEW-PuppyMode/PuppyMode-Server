@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,10 +33,18 @@ public class MainServiceImpl implements MainService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
+        
+        Optional<Puppy> puppyOpt = puppyRepository.findByUser_UserId(userId);
 
-        Puppy puppy = puppyRepository.findByUser_UserId(userId)
-                .orElseThrow(() -> new GeneralException(ErrorStatus.PUPPY_NOT_FOUND));
+        // 온보딩 미완료
+        if (puppyOpt.isEmpty()) {
+            return MainResponseDto.builder()
+                    .isOnboarded(false)
+                    .build();
+        }
 
+        // 온보딩 완료
+        Puppy puppy = puppyOpt.get();
         PuppyLevel level = puppy.getPuppyLevel();
 
         int percent = calculateExp(puppy, level);
@@ -55,6 +64,7 @@ public class MainServiceImpl implements MainService {
         boolean didRecordToday = drinkHistoryRepository.existsByUserUserIdAndDrinkDate(userId, today);
 
         return MainResponseDto.builder()
+                .isOnboarded(true)
                 .puppyLevel(level.getPuppyLevel())
                 .puppyLevelName(level.getLevelName())
                 .puppyLevelPercent(percent)
