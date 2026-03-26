@@ -24,4 +24,6 @@ public class MainResponseDto {
 
     private boolean didRecordYesterday; // 어제 기록 완료 여부
     private boolean didRecordToday;  // 오늘 기록 완료 여부
+
+    private boolean isOnboarded; // 온보딩 테스트 완료 여부
 }
