@@ -4,9 +4,7 @@ import com.umc.puppymode2.domain.onboarding.dto.OnboardingTestAnswerDTO;
 import com.umc.puppymode2.domain.onboarding.dto.OnboardingTestReqDTO;
 import com.umc.puppymode2.domain.onboarding.dto.OnboardingTestResDTO;
 import com.umc.puppymode2.domain.puppy.entity.Puppy;
-import com.umc.puppymode2.domain.puppy.entity.PuppyLevel;
 import com.umc.puppymode2.domain.puppy.entity.PuppyType;
-import com.umc.puppymode2.domain.puppy.repository.PuppyLevelRepository;
 import com.umc.puppymode2.domain.puppy.repository.PuppyRepository;
 import com.umc.puppymode2.domain.user.entity.User;
 import com.umc.puppymode2.domain.user.repository.UserRepository;
@@ -28,7 +26,6 @@ public class OnboardingTestService {
 
     private final UserRepository userRepository;
     private final PuppyRepository puppyRepository;
-    private final PuppyLevelRepository puppyLevelRepository;
 
     public OnboardingTestResDTO recommendAndCreatePuppy(Long userId, OnboardingTestReqDTO onboardingTestReqDTO) {
 
@@ -63,15 +60,11 @@ public class OnboardingTestService {
         String fOrT = (fScore > tScore) ? "F" : "T";
         PuppyType type = getDogTypeByTrait(eOrI, fOrT);
 
-        // 해당 강아지 타입의 Level 1 찾기
-        PuppyLevel level1 = puppyLevelRepository.findByPuppyTypeAndPuppyLevel(type, 1)
-                .orElseThrow(() -> new TempHandler(ErrorStatus.PUPPY_LEVEL_NOT_FOUND));
-
         // Puppy 객체 생성 및 저장
         Puppy puppy = Puppy.builder()
                 .user(user)
-                .puppyLevel(level1)
-                .puppyName(level1.getPuppyType().getBreedKo())
+                .puppyType(type)
+                .puppyName(type.getBreedKo())
                 .puppyExp(0)
                 .build();
         puppyRepository.save(puppy);
