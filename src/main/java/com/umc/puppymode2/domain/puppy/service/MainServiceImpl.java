@@ -5,7 +5,6 @@ import com.umc.puppymode2.domain.puppy.dto.MainResponseDto;
 import com.umc.puppymode2.domain.puppy.entity.*;
 import com.umc.puppymode2.domain.puppy.repository.LevelExpRepository;
 import com.umc.puppymode2.domain.puppy.repository.PuppyAppearanceRepository;
-import com.umc.puppymode2.domain.puppy.repository.PuppyLevelRepository;
 import com.umc.puppymode2.domain.puppy.repository.PuppyRepository;
 import com.umc.puppymode2.domain.drinkhistory.repository.DrinkHistoryRepository;
 import com.umc.puppymode2.domain.user.entity.User;
@@ -28,7 +27,6 @@ public class MainServiceImpl implements MainService {
     private final DrinkHistoryRepository drinkHistoryRepository;
     private final UserGoalHistoryRepository userGoalHistoryRepository;
     private final LevelExpRepository levelExpRepository;
-    private final PuppyLevelRepository puppyLevelRepository;
     private final UserContext userContext;
     private final PuppyAppearanceRepository puppyAppearanceRepository;
 
