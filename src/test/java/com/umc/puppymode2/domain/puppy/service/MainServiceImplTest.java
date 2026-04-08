@@ -3,8 +3,9 @@ package com.umc.puppymode2.domain.puppy.service;
 import com.umc.puppymode2.domain.drinkhistory.repository.DrinkHistoryRepository;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
 import com.umc.puppymode2.domain.puppy.dto.MainResponseDto;
-import com.umc.puppymode2.domain.puppy.entity.Puppy;
-import com.umc.puppymode2.domain.puppy.entity.PuppyLevel;
+import com.umc.puppymode2.domain.puppy.entity.*;
+import com.umc.puppymode2.domain.puppy.repository.LevelExpRepository;
+import com.umc.puppymode2.domain.puppy.repository.PuppyAppearanceRepository;
 import com.umc.puppymode2.domain.puppy.repository.PuppyRepository;
 import com.umc.puppymode2.domain.user.entity.User;
 import com.umc.puppymode2.domain.user.repository.UserRepository;
@@ -34,6 +35,10 @@ class MainServiceImplTest {
     @Mock
     private UserGoalHistoryRepository userGoalHistoryRepository;
     @Mock
+    private LevelExpRepository levelExpRepository;
+    @Mock
+    private PuppyAppearanceRepository puppyAppearanceRepository;
+    @Mock
     private UserContext userContext;
 
     @InjectMocks
@@ -62,21 +67,26 @@ class MainServiceImplTest {
         // given
         User user = mock(User.class);
 
-        PuppyLevel level = PuppyLevel.builder()
-                .puppyLevel(1)
-                .levelMinExp(0L)
-                .levelMaxExp(100L)
-                .build();
-
         Puppy puppy = Puppy.builder()
-                .puppyLevel(level)
+                .puppyType(PuppyType.BICHON)
                 .puppyExp(50)
                 .puppyName("테스트강아지")
                 .build();
 
+        LevelExp levelExp = mock(LevelExp.class);
+        when(levelExp.getLevel()).thenReturn(1);
+
+        PuppyAppearance appearance = mock(PuppyAppearance.class);
+        when(appearance.getStage()).thenReturn(1);
+        when(appearance.getStageName()).thenReturn("눈송이 비숑");
+        when(appearance.getImageUrl()).thenReturn("url");
+
         when(userContext.getCurrentUserId()).thenReturn(userId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(puppyRepository.findByUser_UserId(userId)).thenReturn(Optional.of(puppy));
+        when(levelExpRepository.findByExp(50)).thenReturn(Optional.of(levelExp));
+        when(puppyAppearanceRepository.findByPuppyTypeAndLevel(PuppyType.BICHON, 1))
+                .thenReturn(Optional.of(appearance));
         when(userGoalHistoryRepository.findTopByUserIdOrderByGoalSetAtDesc(userId))
                 .thenReturn(Optional.empty());
 
