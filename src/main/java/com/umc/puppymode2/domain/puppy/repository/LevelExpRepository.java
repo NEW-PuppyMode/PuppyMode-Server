@@ -10,6 +10,6 @@ import java.util.Optional;
 public interface LevelExpRepository extends JpaRepository<LevelExp, Long> {
 
     @Query("SELECT l FROM LevelExp l " +
-            "WHERE l.minExp <= :exp AND l.maxExp >= :exp")
+            "WHERE l.minExp <= :exp AND :exp < l.maxExp")
     Optional<LevelExp> findByExp(@Param("exp") int exp);
 }

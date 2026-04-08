@@ -33,6 +33,8 @@ public enum ErrorStatus implements BaseErrorCode {
     // Puppy 관련 에러
     PUPPY_LEVEL_NOT_FOUND(HttpStatus.NOT_FOUND, "PUPPY4041", "해당 강아지 레벨 정보가 존재하지 않습니다."),
     PUPPY_NOT_FOUND(HttpStatus.NOT_FOUND, "PUPPY4042", "해당 유저의 강아지 정보가 존재하지 않습니다."),
+    LEVEL_NOT_FOUND(HttpStatus.NOT_FOUND, "PUPPY4043", "해당 경험치에 맞는 레벨 정보가 존재하지 않습니다."),
+    APPEARANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "PUPPY4044", "해당 강아지 외형 정보가 존재하지 않습니다."),
 
     // Auth 관련 에러
     AUTH_REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "AUTH4001", "유효하지 않은 Refresh Token입니다."),
