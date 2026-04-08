@@ -13,7 +13,13 @@ public class LevelExp {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "level", nullable = false)
     private int level;
+
+    @Column(name = "min_exp", nullable = false)
     private int minExp;
+
+    @Column(name = "max_exp", nullable = false)
     private int maxExp;
 }
