@@ -68,7 +68,7 @@ public class MainServiceImpl implements MainService {
 
         return MainResponseDto.builder()
                 .isOnboarded(true)
-                .puppyLevel(currentLevel)
+                .puppyLevel(appearance.getStage())
                 .puppyLevelName(appearance.getStageName())
                 .puppyLevelPercent(percent)
                 .puppyImageUrl(appearance.getImageUrl())
