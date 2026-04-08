@@ -23,9 +23,9 @@ public class Puppy extends BaseEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "puppy_level_id")
-    private PuppyLevel puppyLevel;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "puppy_type", nullable = false)
+    private PuppyType puppyType;
 
     @Column(name = "puppy_name", nullable = false)
     private String puppyName;
