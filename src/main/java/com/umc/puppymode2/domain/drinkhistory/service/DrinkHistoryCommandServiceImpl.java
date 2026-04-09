@@ -5,6 +5,8 @@ import com.umc.puppymode2.domain.drinkhistory.dto.DrinkHistoryRequestDTO;
 import com.umc.puppymode2.domain.drinkhistory.dto.DrinkHistoryResponseDTO;
 import com.umc.puppymode2.domain.drinkhistory.entity.DrinkHistory;
 import com.umc.puppymode2.domain.drinkhistory.repository.DrinkHistoryRepository;
+import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
+import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
 import com.umc.puppymode2.domain.puppy.entity.Puppy;
 import com.umc.puppymode2.domain.puppy.repository.PuppyRepository;
 import com.umc.puppymode2.domain.user.entity.User;
@@ -15,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -22,6 +26,7 @@ public class DrinkHistoryCommandServiceImpl implements DrinkHistoryCommandServic
     private final UserRepository userRepository;
     private final DrinkHistoryRepository drinkHistoryRepository;
     private final PuppyRepository puppyRepository;
+    private final UserGoalHistoryRepository userGoalHistoryRepository;
 
     @Override
     public DrinkHistoryResponseDTO recordDrink(Long userId, DrinkHistoryRequestDTO dto) {
@@ -36,8 +41,28 @@ public class DrinkHistoryCommandServiceImpl implements DrinkHistoryCommandServic
 
         Puppy puppy = puppyRepository.findByUser_UserId(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.PUPPY_NOT_FOUND));
-        int updatedExp = puppy.getPuppyExp() + 10;
-        puppy.setPuppyExp(updatedExp);
+
+        // 음주 기록 경험치
+        int drinkExp = 10;
+
+        // 월간 목표 달성 여부 체크 -> 달성시 300 exp 추가 지급 (중복 지급x)
+        LocalDate today = dto.getDrinkDate();
+        LocalDate firstDay = today.withDayOfMonth(1);
+        LocalDate lastDay = today.withDayOfMonth(today.lengthOfMonth());
+
+        UserGoalHistory goal = userGoalHistoryRepository.findByUserIdAndGoalMonth(userId, firstDay).orElse(null);
+
+        if (goal != null && !goal.isRewarded() && Boolean.FALSE.equals(dto.getIsDrink())) {
+            long nonDrinkCount = drinkHistoryRepository
+                    .countByUserUserIdAndIsDrinkFalseAndDrinkDateBetween(userId, firstDay, lastDay);
+
+            if (nonDrinkCount >= goal.getMonthlyGoalCount()) {
+                drinkExp += 300;
+                goal.markRewarded();
+            }
+        }
+
+        puppy.setPuppyExp(puppy.getPuppyExp() + drinkExp);
 
         puppyRepository.save(puppy);
 

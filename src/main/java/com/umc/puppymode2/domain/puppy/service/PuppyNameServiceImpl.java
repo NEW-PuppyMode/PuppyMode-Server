@@ -25,6 +25,10 @@ public class PuppyNameServiceImpl implements PuppyNameService {
         Puppy puppy = puppyRepository.findByUser_UserId(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.PUPPY_NOT_FOUND));
 
+        if (!puppy.isCustomName()) {
+            puppy.setPuppyExp(puppy.getPuppyExp() + 10);
+        }
+
         puppy.setPuppyName(requestDto.getPuppyName());
     }
 }
