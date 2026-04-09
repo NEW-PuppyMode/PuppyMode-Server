@@ -63,4 +63,13 @@ public class UserGoalHistory {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // 월간 목표 달성 경험치 지급 여부
+    @Column(name = "is_rewarded", nullable = false)
+    private boolean rewarded = false;
+
+    // 목표 달성 경험치 지급 처리
+    public void markRewarded() {
+        this.rewarded = true;
+    }
 }

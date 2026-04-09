@@ -21,4 +21,7 @@ public interface DrinkHistoryRepository extends JpaRepository<DrinkHistory, Long
                                  @Param("end") LocalDate end);
     long countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(Long userId, LocalDate start, LocalDate end);
     long countByUserUserIdAndIsDrinkTrue(Long userId);
+
+    // 월간 목표 달성 체크 - 음주 안 한 날(isDrink=false) 카운트
+    long countByUserUserIdAndIsDrinkFalseAndDrinkDateBetween(Long userId, LocalDate start, LocalDate end);
 }
