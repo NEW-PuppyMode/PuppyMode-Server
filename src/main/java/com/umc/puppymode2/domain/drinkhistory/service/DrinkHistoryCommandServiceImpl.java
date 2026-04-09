@@ -46,7 +46,7 @@ public class DrinkHistoryCommandServiceImpl implements DrinkHistoryCommandServic
         int drinkExp = 10;
 
         // 월간 목표 달성 여부 체크 -> 달성시 300 exp 추가 지급 (중복 지급x)
-        LocalDate today = LocalDate.now();
+        LocalDate today = dto.getDrinkDate();
         LocalDate firstDay = today.withDayOfMonth(1);
         LocalDate lastDay = today.withDayOfMonth(today.lengthOfMonth());
 
