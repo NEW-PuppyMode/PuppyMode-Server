@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface PuppyRepository extends JpaRepository<Puppy, Long> {
     Optional<Puppy> findByUser_UserId(Long userId);
+
+    boolean existsByUser_UserId(Long userId);
 }
