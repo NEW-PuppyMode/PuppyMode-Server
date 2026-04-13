@@ -1,7 +1,7 @@
 package com.umc.puppymode2.domain.user.auth.controller;
 
-import com.umc.puppymode2.domain.user.auth.dto.ReissueTokenRequestDTO;
-import com.umc.puppymode2.domain.user.auth.dto.ReissueTokenResponseDTO;
+import com.umc.puppymode2.domain.user.auth.dto.*;
+import com.umc.puppymode2.domain.user.auth.service.UserAuthService;
 import com.umc.puppymode2.global.apiPayload.ApiResponse;
 import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
 import com.umc.puppymode2.global.apiPayload.code.status.SuccessStatus;
@@ -16,18 +16,16 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 /**
  * 인증 관련 API 컨트롤러
- *
- * <p>토큰 재발급 및 로그아웃 기능을 제공합니다.</p>
+ * <p>
+ * 토큰 재발급 및 로그아웃, 사용자 상태 조회 기능을 제공합니다.
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -39,18 +37,17 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtTokenService jwtTokenService;
     private final UserContext userContext;
+    private final UserAuthService userAuthService;
 
     /**
      * Refresh Token 기반 토큰 재발급
-     *
-     * <p>만료된 Access Token을 갱신하기 위해 Refresh Token을 사용합니다.</p>
-     *
-     * <h6>처리 과정:</h6>
-     * <ol>
-     *   <li>요청된 Refresh Token과 Redis에 저장된 토큰 비교 (상수 시간 비교)</li>
-     *   <li>일치할 경우 새로운 Access Token과 Refresh Token 발급</li>
-     *   <li>기존 Refresh Token 무효화, 새 토큰으로 교체</li>
-     * </ol>
+     * <p>
+     * 만료된 Access Token을 갱신하기 위해 Refresh Token을 사용합니다.
+     * <p>
+     * 처리 과정:
+     * - 요청된 Refresh Token과 Redis에 저장된 토큰 비교 (상수 시간 비교)
+     * - 일치할 경우 새로운 Access Token과 Refresh Token 발급
+     * - 기존 Refresh Token 무효화, 새 토큰으로 교체
      *
      * @param dto Refresh Token을 포함한 요청 DTO
      * @return 새로운 Access Token과 Refresh Token
@@ -115,17 +112,15 @@ public class AuthController {
 
     /**
      * 로그아웃
-     *
-     * <p>Redis에 저장된 Refresh Token을 삭제하여 로그아웃 처리합니다.</p>
-     *
-     * <h6>처리 과정:</h6>
-     * <ol>
-     *   <li>현재 사용자의 userId 추출 (Access Token에서)</li>
-     *   <li>Redis에서 해당 userId의 Refresh Token 삭제</li>
-     *   <li>삭제 결과 로깅</li>
-     * </ol>
-     *
-     * <p><strong>참고:</strong> Access Token은 클라이언트에서 폐기해야 합니다.</p>
+     * <p>
+     * Redis에 저장된 Refresh Token을 삭제하여 로그아웃 처리합니다.
+     * <p>
+     * 처리 과정:
+     * - 현재 사용자의 userId 추출 (Access Token에서)
+     * - Redis에서 해당 userId의 Refresh Token 삭제
+     * - 삭제 결과 로깅
+     * <p>
+     * 참고: Access Token은 클라이언트에서 폐기해야 합니다.
      */
     @Operation(
             summary = "로그아웃",
@@ -169,5 +164,42 @@ public class AuthController {
                 SuccessStatus.AUTH_LOGOUT_SUCCESS.getCode(),
                 SuccessStatus.AUTH_LOGOUT_SUCCESS.getMessage()
         );
+    }
+
+    /**
+     * 사용자 정보 조회
+     * <p>
+     * - 토큰이 유효한지 확인합니다.
+     * - 온보딩 여부를 반환합니다. (puppy 존재 여부로 판단)
+     */
+    @Operation(
+            summary = "현재 사용자 상태 조회",
+            description = """
+                    현재 사용자의 상태를 조회합니다.
+                    - 온보딩 여부
+                    - 토큰이 유효하지 않은 경우 401 반환
+                    """
+    )
+    @GetMapping("/me")
+    @ApiSuccessResponseExample(
+            status = SuccessStatus.AUTH_ME_SUCCESS,
+            responseType = AuthMeResponseDTO.class
+    )
+    @ApiErrorCodeExamples({
+            ErrorStatus.AUTH_INVALID_TOKEN,
+            ErrorStatus.USER_NOT_FOUND,
+            ErrorStatus._INTERNAL_SERVER_ERROR
+    })
+    public ResponseEntity<ApiResponse<AuthMeResponseDTO>> me() {
+
+        Long userId = userContext.getCurrentUserId();
+
+        AuthMeResponseDTO response = userAuthService.getAuthMe(userId);
+
+        return ResponseEntity.ok(ApiResponse.onSuccess(
+                response,
+                SuccessStatus.AUTH_ME_SUCCESS.getCode(),
+                SuccessStatus.AUTH_ME_SUCCESS.getMessage()
+        ));
     }
 }

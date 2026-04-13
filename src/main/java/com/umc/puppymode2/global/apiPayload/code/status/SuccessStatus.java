@@ -19,6 +19,7 @@ public enum SuccessStatus implements BaseCode {
     AUTH_REISSUE_SUCCESS(HttpStatus.OK, "AUTH_REISSUE200", "토큰 재발급 성공"),
     AUTH_LOGOUT_SUCCESS(HttpStatus.OK, "AUTH_LOGOUT200", "로그아웃 성공"),
     AUTH_WITHDRAW_SUCCESS(HttpStatus.OK, "AUTH_WITHDRAW200", "회원탈퇴 성공"),
+    AUTH_ME_SUCCESS(HttpStatus.OK, "AUTH_ME200", "사용자 정보 조회 성공"),
 
     // 음주 기록
     DRINK_HISTORY_RECORD_SUCCESS(HttpStatus.OK, "DRINK_HISTORY200", "음주 기록 성공"),

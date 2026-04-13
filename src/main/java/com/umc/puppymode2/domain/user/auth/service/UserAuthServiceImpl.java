@@ -1,5 +1,7 @@
 package com.umc.puppymode2.domain.user.auth.service;
 
+import com.umc.puppymode2.domain.puppy.repository.PuppyRepository;
+import com.umc.puppymode2.domain.user.auth.dto.AuthMeResponseDTO;
 import com.umc.puppymode2.domain.user.auth.dto.LoginResponseDTO;
 import com.umc.puppymode2.domain.user.auth.dto.UserAuthInfoDTO;
 import com.umc.puppymode2.domain.user.auth.enums.Provider;
@@ -8,9 +10,11 @@ import com.umc.puppymode2.domain.user.entity.User;
 import com.umc.puppymode2.domain.user.entity.enums.UserStatus;
 import com.umc.puppymode2.domain.user.repository.SocialAuthRepository;
 import com.umc.puppymode2.domain.user.repository.UserRepository;
+import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
 import com.umc.puppymode2.global.auth.token.JwtTokenProvider;
 import com.umc.puppymode2.global.auth.token.JwtTokenService;
 import com.umc.puppymode2.global.config.RedisConfig;
+import com.umc.puppymode2.global.exception.GeneralException;
 import com.umc.puppymode2.global.security.UserAuthentication;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +38,7 @@ public class UserAuthServiceImpl implements UserAuthService {
     private final JwtTokenService jwtTokenService;
     private final SocialAuthRepository socialAuthRepository;
     private final RedisConfig.RedisHealthIndicator redisHealthIndicator;
+    private final PuppyRepository puppyRepository;
 
     @Transactional
     @Override
@@ -203,5 +208,23 @@ public class UserAuthServiceImpl implements UserAuthService {
 
         userRepository.save(user);
         log.info("[Withdraw] 회원탈퇴 처리 완료 - userId: {}", userId);
+    }
+
+    /**
+     * 사용자의 온보딩 완료 여부를 조회합니다.
+     * - puppy 존재 여부를 기준으로 판단
+     *
+     * @param userId 사용자 ID
+     * @return 사용자 상태 조회 응답 DTO
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public AuthMeResponseDTO getAuthMe(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
+
+        boolean isOnboarded = puppyRepository.existsByUser_UserId(user.getUserId());
+
+        return new AuthMeResponseDTO(isOnboarded);
     }
 }
