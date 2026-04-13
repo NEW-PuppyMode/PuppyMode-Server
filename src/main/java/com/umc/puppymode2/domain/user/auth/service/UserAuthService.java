@@ -10,7 +10,7 @@ import com.umc.puppymode2.domain.user.auth.enums.Provider;
 public interface UserAuthService {
 
     /**
-     * 새로운 회윈을 생성 또는 갱신합니다.
+     * 새로운 회원을 생성 또는 갱신합니다.
      */
     LoginResponseDTO createOrUpdateUser(UserAuthInfoDTO userInfo, Provider authProvider, String refreshToken);
 

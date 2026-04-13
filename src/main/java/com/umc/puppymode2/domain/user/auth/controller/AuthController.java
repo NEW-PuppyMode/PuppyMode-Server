@@ -25,7 +25,7 @@ import java.security.MessageDigest;
 /**
  * 인증 관련 API 컨트롤러
  * <p>
- * 토큰 재발급 및 로그아웃 기능을 제공합니다.
+ * 토큰 재발급 및 로그아웃, 사용자 상태 조회 기능을 제공합니다.
  */
 @Slf4j
 @RequiredArgsConstructor
