@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Date;
 
@@ -21,8 +22,8 @@ import java.util.Date;
 public class JwtTokenProvider {
 
     private static final String USER_ID = "userId";
-    private static final Long ACCESS_TOKEN_EXPIRE_TIME = 1000L * 60 * 60; // 1시간
-    private static final Long REFRESH_TOKEN_EXPIRE_TIME = 1000L * 60 * 60 * 24 * 14; // 14일
+    private static final Duration ACCESS_TOKEN_EXPIRE_TIME = Duration.ofHours(1);
+    private static final Duration REFRESH_TOKEN_EXPIRE_TIME = Duration.ofDays(14);
 
     @Value("${auth.jwt.secret}")
     private String JWT_SECRET;
@@ -54,13 +55,13 @@ public class JwtTokenProvider {
      * JWT를 생성합니다.
      *
      * @param userId
-     * @param expiryMillis
+     * @param expiry
      * @param tokenType
      * @return
      */
-    public String generateToken(Long userId, long expiryMillis, String tokenType) {
+    public String generateToken(Long userId, Duration expiry, String tokenType) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + expiryMillis);
+        Date expiryDate = new Date(now.getTime() + expiry.toMillis());
 
         final Claims claims = Jwts.claims()
                 .setIssuedAt(now)
@@ -116,12 +117,17 @@ public class JwtTokenProvider {
         }
 
         Claims claims = getTokenBody(token);
-        Object userIdObj = claims.get(USER_ID);
+        return extractUserId(claims);
+    }
 
+    /**
+     * userId 를 파싱합니다.
+     */
+    private Long extractUserId(Claims claims) {
+        Object userIdObj = claims.get(USER_ID);
         if (userIdObj == null) {
             throw new IllegalArgumentException("Invalid JWT: missing userId");
         }
-
         try {
             return Long.parseLong(userIdObj.toString());
         } catch (NumberFormatException e) {
@@ -144,7 +150,7 @@ public class JwtTokenProvider {
      * 액세스 토큰 만료 시간을 초 단위로 반환합니다.
      */
     public Long getAccessTokenExpirySeconds() {
-        return ACCESS_TOKEN_EXPIRE_TIME / 1000L;
+        return ACCESS_TOKEN_EXPIRE_TIME.toSeconds();
     }
 
 }
