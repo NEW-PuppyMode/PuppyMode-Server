@@ -70,7 +70,6 @@ public class AuthController {
             responseType = ReissueTokenResponseDTO.class
     )
     @ApiErrorCodeExamples({
-            ErrorStatus.AUTH_INVALID_TOKEN,
             ErrorStatus.REDIS_CONNECTION_FAILURE,
             ErrorStatus.AUTH_REFRESH_TOKEN_INVALID
     })
