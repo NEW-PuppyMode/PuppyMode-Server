@@ -22,7 +22,8 @@ public class SecurityConfig {
             "/auth/kakao/login/**",
             "/auth/apple/login/**",
             "/auth/apple/callback",
-            "/auth/apple/callback/**"
+            "/auth/apple/callback/**",
+            "/auth/reissue"
     };
 
     public static final String[] HEALTH_WHITELIST = {

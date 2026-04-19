@@ -12,6 +12,7 @@ import com.umc.puppymode2.global.config.RequiresRedis;
 import com.umc.puppymode2.global.config.swagger.ApiErrorCodeExamples;
 import com.umc.puppymode2.global.config.swagger.ApiSuccessResponseExample;
 import com.umc.puppymode2.global.exception.GeneralException;
+import com.umc.puppymode2.global.security.JwtValidationType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -42,15 +43,8 @@ public class AuthController {
     /**
      * Refresh Token 기반 토큰 재발급
      * <p>
-     * 만료된 Access Token을 갱신하기 위해 Refresh Token을 사용합니다.
-     * <p>
-     * 처리 과정:
-     * - 요청된 Refresh Token과 Redis에 저장된 토큰 비교 (상수 시간 비교)
-     * - 일치할 경우 새로운 Access Token과 Refresh Token 발급
-     * - 기존 Refresh Token 무효화, 새 토큰으로 교체
-     *
-     * @param dto Refresh Token을 포함한 요청 DTO
-     * @return 새로운 Access Token과 Refresh Token
+     * RT 에서 userId 파싱
+     * redis RT와 상수 시간 일치 여부로 검증합니다.
      */
     @Operation(
             summary = "토큰 재발급",
@@ -58,14 +52,15 @@ public class AuthController {
                     Refresh Token을 기반으로 Access Token과 Refresh Token을 재발급합니다.
                     
                     **처리 과정:**
-                    1. Refresh Token 검증 (상수 시간 비교로 타이밍 공격 방지)
-                    2. 새로운 Access/Refresh Token 생성
-                    3. 기존 Refresh Token 무효화
+                    1. RT 서명 및 만료 검증
+                    2. RT에서 userId 추출
+                    3. Redis 저장 RT와 상수 시간 비교
+                    4. 새로운 AT/RT 발급 및 RT 교체
                     
                     **주의:**
                     - Redis 연결 필수
-                    - Refresh Token이 만료되었거나 일치하지 않으면 실패
-                    - 보안을 위해 Refresh Token도 갱신됨
+                    - RT가 만료되었거나 불일치하면 실패
+                    - 보안을 위해 RT도 갱신됨 (RTR 방식)
                     """
     )
     @PostMapping("/reissue")
@@ -79,29 +74,38 @@ public class AuthController {
             ErrorStatus.REDIS_CONNECTION_FAILURE,
             ErrorStatus.AUTH_REFRESH_TOKEN_INVALID
     })
-    public ApiResponse<ReissueTokenResponseDTO> reissue(@RequestBody ReissueTokenRequestDTO dto) {
+    public ApiResponse<ReissueTokenResponseDTO> reissue(
+            @RequestBody ReissueTokenRequestDTO dto) {
 
         String incomingRefreshToken = dto.refreshToken();
 
-        Long userId = userContext.getCurrentUserId();
-        String savedRefreshToken = jwtTokenService.getRefreshToken(userId);
+        // RT 서명 및 만료 검증
+        JwtValidationType validationType = jwtTokenProvider.validateToken(incomingRefreshToken);
+        if (validationType != JwtValidationType.VALID_JWT) {
+            log.warn("[REISSUE] 유효하지 않은 RT - type={}", validationType);
+            throw new GeneralException(ErrorStatus.AUTH_REFRESH_TOKEN_INVALID);
+        }
 
-        // 상수 시간 비교 (타이밍 공격 방지)
+        // RT에서 userId 파싱
+        Long userId = jwtTokenProvider.parseUserId(incomingRefreshToken);
+
+        // Redis 저장 RT와 상수 시간 비교
+        String savedRefreshToken = jwtTokenService.getRefreshToken(userId);
         if (savedRefreshToken == null || !MessageDigest.isEqual(
                 savedRefreshToken.getBytes(StandardCharsets.UTF_8),
                 incomingRefreshToken.getBytes(StandardCharsets.UTF_8)
         )) {
-            log.warn("[REISSUE] 유효하지 않은 Refresh Token - userId={}", userId);
+            log.warn("[REISSUE] RT 불일치 - userId={}", userId);
             throw new GeneralException(ErrorStatus.AUTH_REFRESH_TOKEN_INVALID);
         }
 
-        // Refresh Token 교체
+        // 토큰 교체
         String newAccessToken = jwtTokenProvider.generateAccessToken(userId);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId);
         jwtTokenService.saveRefreshToken(userId, newRefreshToken);
 
         Long expiresIn = jwtTokenProvider.getAccessTokenExpirySeconds();
-        log.info("[REISSUE] Refresh Token 재발급 완료 - userId={}", userId);
+        log.info("[REISSUE] 토큰 재발급 완료 - userId={}", userId);
 
         return ApiResponse.onSuccess(
                 new ReissueTokenResponseDTO(newAccessToken, newRefreshToken, expiresIn),
@@ -130,12 +134,10 @@ public class AuthController {
                     **처리 과정:**
                     1. Access Token에서 userId 추출
                     2. Redis에서 Refresh Token 삭제
-                    3. 삭제 결과 반환
                     
                     **주의:**
                     - Redis 연결 필수
                     - Access Token은 클라이언트에서 폐기 필요
-                    - 이미 로그아웃된 상태여도 성공 처리
                     """
     )
     @PostMapping("/logout")
@@ -193,7 +195,6 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthMeResponseDTO>> me() {
 
         Long userId = userContext.getCurrentUserId();
-
         AuthMeResponseDTO response = userAuthService.getAuthMe(userId);
 
         return ResponseEntity.ok(ApiResponse.onSuccess(
