@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.time.LocalDate;
 
@@ -30,4 +31,8 @@ public interface UserGoalHistoryRepository extends JpaRepository<UserGoalHistory
     @Modifying
     @Query("DELETE FROM UserGoalHistory ugh WHERE ugh.userId = :userId")
     void deleteAllByUserId(@Param("userId") Long userId);
+
+    // 이번 달 보상 미지급 목록 조회
+    List<UserGoalHistory> findAllByGoalMonthAndRewardedFalse(LocalDate goalMonth);
+
 }

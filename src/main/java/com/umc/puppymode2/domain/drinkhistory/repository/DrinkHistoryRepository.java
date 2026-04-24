@@ -22,6 +22,19 @@ public interface DrinkHistoryRepository extends JpaRepository<DrinkHistory, Long
     long countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(Long userId, LocalDate start, LocalDate end);
     long countByUserUserIdAndIsDrinkTrue(Long userId);
 
-    // 월간 목표 달성 체크 - 음주 안 한 날(isDrink=false) 카운트
-    long countByUserUserIdAndIsDrinkFalseAndDrinkDateBetween(Long userId, LocalDate start, LocalDate end);
+    // 유저별 이번 달 전체 음주 기록 수 + 음주 횟수
+    @Query("""
+        SELECT d.user.userId AS userId,
+               COUNT(d) AS totalCount,
+               SUM(CASE WHEN d.isDrink = true THEN 1 ELSE 0 END) AS drinkCount
+        FROM DrinkHistory d
+        WHERE d.user.userId IN :userIds
+          AND d.drinkDate BETWEEN :firstDay AND :lastDay
+        GROUP BY d.user.userId
+    """)
+    List<UserDrinkCountProjection> countMonthlyDrinkByUserIds(
+            @Param("userIds") List<Long> userIds,
+            @Param("firstDay") LocalDate firstDay,
+            @Param("lastDay") LocalDate lastDay
+    );
 }
