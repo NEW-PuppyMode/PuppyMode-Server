@@ -30,6 +30,7 @@ public class MonthlyGoalScheduler {
      * 매월 마지막 날 23:59에 실행되는 월간 목표 달성 보상 스케줄러
      * 이번 달 음주 기록이 있고 실제 음주 횟수가 목표 이하인 유저에게 경험치 300 지급
      */
+    // TODO: 멀티 인스턴스 배포 시 중복 실행 방지를 위해 ShedLock 적용 필요
     @Scheduled(cron = "0 59 23 L * *", zone = "Asia/Seoul")
     @Transactional
     public void evaluateMonthlyGoals() {
