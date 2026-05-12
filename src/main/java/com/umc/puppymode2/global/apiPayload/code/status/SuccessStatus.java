@@ -31,7 +31,11 @@ public enum SuccessStatus implements BaseCode {
     CALENDAR_GET_SUCCESS(HttpStatus.OK, "CALENDAR200", "캘린더 조회 성공"),
 
     // 한마디 조회
-    ADVICE_GET_SUCCESS(HttpStatus.OK, "ADVICE200", "한마디 조회 성공");
+    ADVICE_GET_SUCCESS(HttpStatus.OK, "ADVICE200", "한마디 조회 성공"),
+
+    // FCM 토큰
+    FCM_TOKEN_REGISTER_SUCCESS(HttpStatus.OK, "FCM200", "FCM 토큰이 등록되었습니다."),
+    FCM_TOKEN_DELETE_SUCCESS(HttpStatus.OK, "FCM201", "FCM 토큰이 삭제되었습니다.");
 
 
     private final HttpStatus httpStatus;

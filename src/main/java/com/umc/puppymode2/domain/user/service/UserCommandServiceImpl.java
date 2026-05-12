@@ -2,6 +2,7 @@ package com.umc.puppymode2.domain.user.service;
 
 import com.umc.puppymode2.domain.drinkhistory.repository.DrinkHistoryRepository;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
+import com.umc.puppymode2.domain.notification.repository.FcmTokenRepository;
 import com.umc.puppymode2.domain.user.entity.SocialAuth;
 import com.umc.puppymode2.domain.user.entity.User;
 import com.umc.puppymode2.domain.user.entity.WithdrawnUserArchive;
@@ -26,6 +27,7 @@ public class UserCommandServiceImpl implements UserCommandService {
     private final UserGoalHistoryRepository userGoalHistoryRepository;
     private final WithDrawnUserArchiveRepository withdrawnUserArchiveRepository;
     private final DrinkHistoryRepository drinkHistoryRepository;
+    private final FcmTokenRepository fcmTokenRepository;
 
     @Override
     @Transactional
@@ -60,7 +62,15 @@ public class UserCommandServiceImpl implements UserCommandService {
             throw new RuntimeException("탈퇴 처리 중 오류가 발생했습니다.", e);
         }
 
-        // 6. User 탈퇴 처리 (CASCADE로 연관 데이터를 자동 삭제함)
+        // 6. FCM 토큰 삭제
+        try {
+            fcmTokenRepository.deleteAllByUserUserId(userId);
+            log.info("[Withdraw] FCM 토큰 삭제 완료 - userId: {}", userId);
+        } catch (Exception e) {
+            log.error("[Withdraw] FCM 토큰 삭제 실패 - userId: {}", userId, e);
+        }
+
+        // 7. User 탈퇴 처리 (CASCADE로 연관 데이터를 자동 삭제함)
         user.withdraw();
         userRepository.save(user);
 

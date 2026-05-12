@@ -40,3 +40,6 @@ out/
 /src/main/resources/application.yml
 /src/test/resources/application-test.yml
 /src/main/resources/application-local.yml
+
+### Firebase ###
+src/main/resources/firebase-service-account.json
