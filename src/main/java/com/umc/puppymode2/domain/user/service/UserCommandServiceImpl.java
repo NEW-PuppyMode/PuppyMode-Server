@@ -48,7 +48,6 @@ public class UserCommandServiceImpl implements UserCommandService {
         Integer totalDrinkDays = getTotalDrinkDays(userId);
         WithdrawnUserArchive archive = WithdrawnUserArchive.fromUser(user, totalDrinkDays);
         withdrawnUserArchiveRepository.save(archive);
-        log.info("[Withdraw] 법적 보관 데이터 생성 완료 - userId: {}", userId);
 
         // 4. 카카오 연결 끊기
         boolean unlinked = disconnectKakao(userId, socialAuth);
@@ -56,7 +55,6 @@ public class UserCommandServiceImpl implements UserCommandService {
         // 5. UserGoalHistory 삭제
         try {
             userGoalHistoryRepository.deleteAllByUserId(userId);
-            log.info("[Withdraw] 목표 히스토리 삭제 완료 - userId: {}", userId);
         } catch (Exception e) {
             log.error("[Withdraw] 목표 히스토리 삭제 실패 - userId: {}", userId, e);
             throw new RuntimeException("탈퇴 처리 중 오류가 발생했습니다.", e);
@@ -65,7 +63,6 @@ public class UserCommandServiceImpl implements UserCommandService {
         // 6. FCM 토큰 삭제
         try {
             fcmTokenRepository.deleteAllByUserUserId(userId);
-            log.info("[Withdraw] FCM 토큰 삭제 완료 - userId: {}", userId);
         } catch (Exception e) {
             log.error("[Withdraw] FCM 토큰 삭제 실패 - userId: {}", userId, e);
         }
@@ -73,8 +70,6 @@ public class UserCommandServiceImpl implements UserCommandService {
         // 7. User 탈퇴 처리 (CASCADE로 연관 데이터를 자동 삭제함)
         user.withdraw();
         userRepository.save(user);
-
-        log.info("[Withdraw] 탈퇴 완료 - userId: {}, kakaoUnlinked: {}", userId, unlinked);
     }
 
     /**
@@ -97,10 +92,7 @@ public class UserCommandServiceImpl implements UserCommandService {
         // User Access Token으로 연결 해제 시도
         if (accessToken != null) {
             boolean unlinked = kakaoAuthService.disconnectKakao(accessToken);
-            if (unlinked) {
-                log.info("[Withdraw] 카카오 연결 해제 성공 - userId: {}", userId);
-                return true;
-            }
+            if (unlinked) return true;
         }
 
         // 카카오 연결 해제 실패 - 서비스 내 탈퇴는 진행함
