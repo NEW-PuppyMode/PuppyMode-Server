@@ -3,10 +3,10 @@ package com.umc.puppymode2.global.config;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.PostConstruct;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +35,7 @@ public class FcmConfig {
                 InputStream stream = getClass().getClassLoader().getResourceAsStream("firebase-service-account.json");
 
                 if (stream == null) {
+                    log.warn("[FCM] 서비스 계정 키 없음. 초기화 스킵");
                     return;
                 }
 
