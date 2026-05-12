@@ -10,28 +10,29 @@ import org.springframework.context.annotation.Configuration;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 @Slf4j
 @Configuration
 public class FcmConfig {
 
-    @Value("${firebase.credentials-json:}")
-    private String credentialsJson;
+    @Value("${firebase.credentials-base64:}")
+    private String credentialsBase64;
 
     @PostConstruct
     public void initFirebase() {
         if (!FirebaseApp.getApps().isEmpty()) return;
 
-        if (credentialsJson == null || credentialsJson.isBlank()) {
+        if (credentialsBase64 == null || credentialsBase64.isBlank()) {
             log.warn("[FCM] 서비스 계정 키 없음. 초기화 스킵");
             return;
         }
 
         try {
+            byte[] decoded = Base64.getDecoder().decode(credentialsBase64);
             GoogleCredentials credentials = GoogleCredentials.fromStream(
-                    new ByteArrayInputStream(credentialsJson.getBytes(StandardCharsets.UTF_8))
+                    new ByteArrayInputStream(decoded)
             );
-
             FirebaseApp.initializeApp(FirebaseOptions.builder()
                     .setCredentials(credentials)
                     .build());
