@@ -32,7 +32,8 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 20)
     private Provider provider;
 
-    private Boolean receiveNotifications;
+    @Column(nullable = false)
+    private boolean receiveNotifications;
 
     @Enumerated(EnumType.STRING)
     private UserStatus status;
@@ -68,7 +69,7 @@ public class User extends BaseEntity {
     public User(String username,
                 String email,
                 Provider provider,
-                Boolean receiveNotifications,
+                boolean receiveNotifications,
                 UserStatus status,
                 boolean isCustomName) {
 
@@ -80,9 +81,6 @@ public class User extends BaseEntity {
         }
         if (provider == null) {
             throw new IllegalArgumentException("Provider는 필수입니다.");
-        }
-        if (receiveNotifications == null) {
-            throw new IllegalArgumentException("알림 수신 여부는 필수입니다.");
         }
         if (status == null) {
             throw new IllegalArgumentException("상태 값은 필수입니다.");
@@ -115,5 +113,9 @@ public class User extends BaseEntity {
         this.drinkHistories.clear();
         this.advices.clear();
         this.puppy = null;
+    }
+
+    public void updateNotificationSetting(boolean receiveNotifications) {
+        this.receiveNotifications = receiveNotifications;
     }
 }

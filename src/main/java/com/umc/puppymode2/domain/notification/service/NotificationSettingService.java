@@ -19,6 +19,14 @@ public class NotificationSettingService {
     public NotificationSettingResponseDTO getStatus(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
-        return new NotificationSettingResponseDTO(Boolean.TRUE.equals(user.getReceiveNotifications()));
+        return new NotificationSettingResponseDTO(user.isReceiveNotifications());
+    }
+
+    @Transactional
+    public NotificationSettingResponseDTO update(Long userId, boolean receiveNotifications) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
+        user.updateNotificationSetting(receiveNotifications);
+        return new NotificationSettingResponseDTO(user.isReceiveNotifications());
     }
 }

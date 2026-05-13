@@ -38,7 +38,8 @@ public enum SuccessStatus implements BaseCode {
     FCM_TOKEN_DELETE_SUCCESS(HttpStatus.OK, "FCM201", "FCM 토큰이 삭제되었습니다."),
 
     // 알림 수신
-    NOTIFICATION_STATUS_SUCCESS(HttpStatus.OK, "NOTIFICATION200", "알림 수신 여부 조회 성공");
+    NOTIFICATION_STATUS_SUCCESS(HttpStatus.OK, "NOTIFICATION200", "알림 수신 여부 조회 성공"),
+    NOTIFICATION_UPDATE_SUCCESS(HttpStatus.OK, "NOTIFICATION201", "알림 수신 여부 변경 성공");
 
 
     private final HttpStatus httpStatus;
