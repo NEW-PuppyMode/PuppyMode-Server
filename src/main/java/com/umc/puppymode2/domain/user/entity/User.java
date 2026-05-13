@@ -33,7 +33,7 @@ public class User extends BaseEntity {
     private Provider provider;
 
     @Column(nullable = false)
-    private boolean receiveNotifications;
+    private boolean receiveNotifications = false;
 
     @Enumerated(EnumType.STRING)
     private UserStatus status;
