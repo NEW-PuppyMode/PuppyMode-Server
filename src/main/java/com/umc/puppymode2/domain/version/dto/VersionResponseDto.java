@@ -10,4 +10,6 @@ import lombok.Getter;
 public class VersionResponseDto {
     private String latestVersion;
     private String updateUrl;
+    private boolean updateRequired;
+    private boolean updateAvailable;
 }

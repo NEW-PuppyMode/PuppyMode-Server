@@ -58,6 +58,9 @@ public enum ErrorStatus implements BaseErrorCode {
 
     // Redis 관련 에러
     REDIS_CONNECTION_FAILURE(HttpStatus.SERVICE_UNAVAILABLE, "REDIS5031", "Redis 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요."),
+
+    // Version 관련 에러
+    UNSUPPORTED_OS_TYPE(HttpStatus.BAD_REQUEST, "VERSION4001", "지원하지 않는 OS 타입입니다."),
     ;
 
     private final HttpStatus httpStatus;
