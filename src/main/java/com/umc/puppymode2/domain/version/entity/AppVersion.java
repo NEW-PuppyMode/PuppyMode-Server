@@ -21,14 +21,19 @@ public class AppVersion extends BaseEntity {
     @Column(nullable = false)
     private String latestVersion;
 
+    @Column(nullable = false)
+    private String minVersion;
+
     private String updateUrl;
 
     @Builder
     public AppVersion(String osType,
                       String latestVersion,
+                      String minVersion,
                       String updateUrl) {
         this.osType = osType;
         this.latestVersion = latestVersion;
+        this.minVersion = minVersion;
         this.updateUrl = updateUrl;
     }
 }
