@@ -5,6 +5,7 @@ import com.umc.puppymode2.domain.version.entity.AppVersion;
 import com.umc.puppymode2.domain.version.repository.AppVersionRepository;
 import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
 import com.umc.puppymode2.global.exception.GeneralException;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,7 +35,13 @@ public class VersionQueryServiceImpl implements VersionQueryService {
                 .build();
     }
 
+    private static final Pattern VERSION_PATTERN = Pattern.compile("^\\d+\\.\\d+\\.\\d+$");
+
     private boolean isLowerVersion(String current, String target) {
+        if (!VERSION_PATTERN.matcher(current).matches() || !VERSION_PATTERN.matcher(target).matches()) {
+            throw new GeneralException(ErrorStatus.INVALID_VERSION_FORMAT);
+        }
+
         String[] currentParts = current.split("\\.");
         String[] targetParts = target.split("\\.");
 

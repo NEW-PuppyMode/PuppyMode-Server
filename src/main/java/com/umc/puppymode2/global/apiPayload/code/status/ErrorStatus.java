@@ -61,6 +61,7 @@ public enum ErrorStatus implements BaseErrorCode {
 
     // Version 관련 에러
     UNSUPPORTED_OS_TYPE(HttpStatus.BAD_REQUEST, "VERSION4001", "지원하지 않는 OS 타입입니다."),
+    INVALID_VERSION_FORMAT(HttpStatus.BAD_REQUEST, "VERSION4002", "올바르지 않은 버전 형식입니다."),
     ;
 
     private final HttpStatus httpStatus;
