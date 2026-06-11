@@ -35,4 +35,6 @@ public interface FcmTokenRepository extends JpaRepository<FcmToken, Long> {
           )
         """)
     List<DrinkReminderTarget> findTargetsForDrinkReminder(@Param("today") LocalDate today);
+
+    List<FcmToken> findByUserUserId(Long userId);
 }
