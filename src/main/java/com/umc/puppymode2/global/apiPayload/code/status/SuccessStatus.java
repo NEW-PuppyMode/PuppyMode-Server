@@ -40,6 +40,7 @@ public enum SuccessStatus implements BaseCode {
     // 알림 수신
     NOTIFICATION_STATUS_SUCCESS(HttpStatus.OK, "NOTIFICATION200", "알림 수신 여부 조회 성공"),
     NOTIFICATION_UPDATE_SUCCESS(HttpStatus.OK, "NOTIFICATION201", "알림 수신 여부 변경 성공"),
+    NOTIFICATION_TEST_SEND_SUCCESS(HttpStatus.OK, "NOTIFICATION202", "알림 발송 성공"),
 
     // 버전
     VERSION_CHECK_SUCCESS(HttpStatus.OK, "VERSION200", "버전 정보 조회 성공"),
