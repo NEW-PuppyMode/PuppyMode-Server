@@ -29,6 +29,8 @@ public class FcmSender {
     public void sendPersonalized(List<DrinkReminderTarget> targets) {
         if (targets.isEmpty()) return;
 
+        log.info("[FCM] 전송 시작 - 총 {}명", targets.size());
+
         for (List<DrinkReminderTarget> batch : partition(targets, FCM_BATCH_SIZE)) {
             List<Message> messages = batch.stream()
                     .map(target -> Message.builder()
@@ -51,6 +53,9 @@ public class FcmSender {
 
             try {
                 BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages);
+                log.info("[FCM] 배치 전송 완료 - 성공: {}, 실패: {}",
+                        response.getSuccessCount(), response.getFailureCount());
+
                 if (response.getFailureCount() > 0) {
                     handleFailures(batch, response);
                 }
@@ -65,8 +70,11 @@ public class FcmSender {
         for (int i = 0; i < responses.size(); i++) {
             if (!responses.get(i).isSuccessful()) {
                 MessagingErrorCode code = responses.get(i).getException().getMessagingErrorCode();
+                log.warn("[FCM] 토큰 전송 실패 - user: {}, errorCode: {}",
+                        targets.get(i).username(), code);
                 if (code == MessagingErrorCode.UNREGISTERED
                         || code == MessagingErrorCode.INVALID_ARGUMENT) {
+                    log.warn("[FCM] 만료 토큰 삭제 - user: {}", targets.get(i).username());
                     fcmTokenRepository.deleteByFcmToken(targets.get(i).fcmToken());
                 }
             }
