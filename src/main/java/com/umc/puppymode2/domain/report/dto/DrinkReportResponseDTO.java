@@ -11,6 +11,6 @@ public class DrinkReportResponseDTO {
     private Integer goal;
     private Long drinkRecordCount;
     private Long drinkDays;
-    private int achievementRate;
+    private int successProbability;
     private int scoldedCount;
 }
