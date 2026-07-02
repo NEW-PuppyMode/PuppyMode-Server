@@ -62,8 +62,9 @@ class DrinkReportServiceImplTest {
         when(goalHistory.getMonthlyGoalCount()).thenReturn(goal);
 
         when(userGoalHistoryRepository
-                .findTopByUserIdAndGoalSetAtLessThanEqualOrderByGoalSetAtDesc(
-                        eq(userId), any(LocalDateTime.class)))
+                .findByUserIdAndGoalMonth(
+                        eq(userId),
+                        eq(targetMonth.atDay(1))))
                 .thenReturn(Optional.of(goalHistory));
 
         when(drinkHistoryRepository
@@ -98,8 +99,11 @@ class DrinkReportServiceImplTest {
         // then
         assertThat(result).isEqualTo(dto);
 
-        verify(userGoalHistoryRepository, times(1))
-                .findTopByUserIdAndGoalSetAtLessThanEqualOrderByGoalSetAtDesc(any(), any());
+        verify(userGoalHistoryRepository)
+                .findByUserIdAndGoalMonth(
+                        userId,
+                        targetMonth.atDay(1)
+                );
 
         verify(drinkHistoryRepository, times(1))
                 .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(any(), any(), any());
@@ -123,8 +127,9 @@ class DrinkReportServiceImplTest {
         int scoldedCount = 1;
 
         when(userGoalHistoryRepository
-                .findTopByUserIdAndGoalSetAtLessThanEqualOrderByGoalSetAtDesc(
-                        eq(userId), any(LocalDateTime.class)))
+                .findByUserIdAndGoalMonth(
+                        eq(userId),
+                        eq(targetMonth.atDay(1))))
                 .thenReturn(Optional.empty());
 
         when(drinkHistoryRepository
@@ -180,8 +185,9 @@ class DrinkReportServiceImplTest {
         when(goalHistory.getMonthlyGoalCount()).thenReturn(goal);
 
         when(userGoalHistoryRepository
-                .findTopByUserIdAndGoalSetAtLessThanEqualOrderByGoalSetAtDesc(
-                        eq(userId), any(LocalDateTime.class)))
+                .findByUserIdAndGoalMonth(
+                        eq(userId),
+                        eq(targetMonth.atDay(1))))
                 .thenReturn(Optional.of(goalHistory));
 
         when(drinkHistoryRepository
@@ -243,8 +249,9 @@ class DrinkReportServiceImplTest {
         when(goalHistory.getMonthlyGoalCount()).thenReturn(goal);
 
         when(userGoalHistoryRepository
-                .findTopByUserIdAndGoalSetAtLessThanEqualOrderByGoalSetAtDesc(
-                        eq(userId), any(LocalDateTime.class)))
+                .findByUserIdAndGoalMonth(
+                        eq(userId),
+                        eq(targetMonth.atDay(1))))
                 .thenReturn(Optional.of(goalHistory));
 
         when(drinkHistoryRepository
@@ -300,8 +307,9 @@ class DrinkReportServiceImplTest {
         when(goalHistory.getMonthlyGoalCount()).thenReturn(goal);
 
         when(userGoalHistoryRepository
-                .findTopByUserIdAndGoalSetAtLessThanEqualOrderByGoalSetAtDesc(
-                        eq(userId), any(LocalDateTime.class)))
+                .findByUserIdAndGoalMonth(
+                        eq(userId),
+                        eq(targetMonth.atDay(1))))
                 .thenReturn(Optional.of(goalHistory));
 
         when(drinkHistoryRepository
