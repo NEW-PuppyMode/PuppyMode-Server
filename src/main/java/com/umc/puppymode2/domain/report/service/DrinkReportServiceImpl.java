@@ -81,7 +81,12 @@ public class DrinkReportServiceImpl implements DrinkReportService {
         int currentDay = resolveCurrentDay(targetMonth);
         int daysInMonth = targetMonth.lengthOfMonth();
 
-        int successProbability = (int) Math.round(
+        /**
+         * 목표 달성 확률(%)
+         * 현재 월은 베이지안(Gamma-Poisson) 기반으로 계산하며,
+         * 과거 월은 목표 달성 여부에 따라 0 또는 100을 반환한다.
+         */
+        int achievementRate = (int) Math.round(
                 calculateGoalSuccessProbability(
                         goal,
                         drinkDays,
@@ -101,7 +106,7 @@ public class DrinkReportServiceImpl implements DrinkReportService {
                 goal,
                 drinkRecordCount,
                 drinkDays,
-                successProbability,
+                achievementRate,
                 scoldedCount
         );
     }
