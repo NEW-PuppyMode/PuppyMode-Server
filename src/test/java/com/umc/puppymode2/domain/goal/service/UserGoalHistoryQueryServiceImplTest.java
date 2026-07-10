@@ -5,6 +5,7 @@ import com.umc.puppymode2.domain.goal.converter.UserGoalHistoryConverter;
 import com.umc.puppymode2.domain.goal.dto.GoalInfoResponseDTO;
 import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
+import com.umc.puppymode2.global.util.TimeConstants;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -38,13 +39,13 @@ class UserGoalHistoryQueryServiceImplTest {
     @Test
     void 목표_조회_성공() {
 
-        LocalDate goalMonth = LocalDate.now().withDayOfMonth(1);
+        LocalDate goalMonth = LocalDate.now(TimeConstants.KST).withDayOfMonth(1);
 
         UserGoalHistory goal = UserGoalHistory.builder()
                 .userId(userId)
                 .goalMonth(goalMonth)
                 .monthlyGoalCount(5)
-                .goalSetAt(LocalDateTime.now())
+                .goalSetAt(LocalDateTime.now(TimeConstants.KST))
                 .build();
 
         GoalInfoResponseDTO dto = GoalInfoResponseDTO.builder()
@@ -73,7 +74,7 @@ class UserGoalHistoryQueryServiceImplTest {
     @Test
     void 목표가_없으면_null() {
 
-        LocalDate goalMonth = LocalDate.now().withDayOfMonth(1);
+        LocalDate goalMonth = LocalDate.now(TimeConstants.KST).withDayOfMonth(1);
 
         when(repository.findByUserIdAndGoalMonth(userId, goalMonth))
                 .thenReturn(Optional.empty());
@@ -86,7 +87,7 @@ class UserGoalHistoryQueryServiceImplTest {
     @Test
     void 이번달_목표_없으면_30일_지남_true() {
 
-        LocalDate goalMonth = LocalDate.now().withDayOfMonth(1);
+        LocalDate goalMonth = LocalDate.now(TimeConstants.KST).withDayOfMonth(1);
 
         when(repository.findByUserIdAndGoalMonth(userId, goalMonth))
                 .thenReturn(Optional.empty());
@@ -97,7 +98,7 @@ class UserGoalHistoryQueryServiceImplTest {
     @Test
     void 이번달_목표_있으면_false() {
 
-        LocalDate goalMonth = LocalDate.now().withDayOfMonth(1);
+        LocalDate goalMonth = LocalDate.now(TimeConstants.KST).withDayOfMonth(1);
 
         UserGoalHistory goal = UserGoalHistory.builder()
                 .goalMonth(goalMonth)
@@ -112,7 +113,7 @@ class UserGoalHistoryQueryServiceImplTest {
     @Test
     void 목표보다_실제_음주가_많으면_goalExceeded_true() {
 
-        LocalDate goalMonth = LocalDate.now().withDayOfMonth(1);
+        LocalDate goalMonth = LocalDate.now(TimeConstants.KST).withDayOfMonth(1);
 
         UserGoalHistory goal = UserGoalHistory.builder()
                 .userId(userId)
@@ -138,7 +139,7 @@ class UserGoalHistoryQueryServiceImplTest {
     @Test
     void 목표와_실제_음주가_같으면_goalExceeded_true() {
 
-        LocalDate goalMonth = LocalDate.now().withDayOfMonth(1);
+        LocalDate goalMonth = LocalDate.now(TimeConstants.KST).withDayOfMonth(1);
 
         UserGoalHistory goal = UserGoalHistory.builder()
                 .userId(userId)

@@ -4,6 +4,7 @@ import com.umc.puppymode2.domain.advice.dto.AdviceResponseDTO;
 import com.umc.puppymode2.domain.drinkhistory.repository.DrinkHistoryRepository;
 import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
+import com.umc.puppymode2.global.util.TimeConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +36,7 @@ public class AdviceQueryServiceImpl implements AdviceQueryService {
 
     @Override
     public AdviceResponseDTO getAdvice(Long userId) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(TimeConstants.KST);
         LocalDate firstDay = today.withDayOfMonth(1);
         LocalDate lastDay = today.withDayOfMonth(today.lengthOfMonth());
         LocalDate yesterday = today.minusDays(1);
@@ -114,9 +115,9 @@ public class AdviceQueryServiceImpl implements AdviceQueryService {
                     "자주 마시는 건\n괜찮은 게 아니라 익숙해진 거예요."
             ));
         }
-        
+
         // 한 달에 10회 이상
-        if(actual > 10) {
+        if (actual > 10) {
             messages.add("한 달 10회 이상은 위험선이에요.\n이번엔 줄여봐요.");
         }
 
@@ -125,14 +126,13 @@ public class AdviceQueryServiceImpl implements AdviceQueryService {
         return messages.get(random.nextInt(messages.size()));
     }
 
-    @Transactional
     private void saveAdviceRecord(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found for ID: " + userId));
 
         Advice advice = Advice.builder()
                 .user(user)
-                .advisedAt(LocalDateTime.now()) // 현재 시점 기록
+                .advisedAt(LocalDateTime.now(TimeConstants.KST)) // 현재 시점 기록 (KST)
                 .build();
 
         adviceRepository.save(advice);

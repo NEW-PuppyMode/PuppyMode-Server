@@ -12,6 +12,7 @@ import com.umc.puppymode2.domain.user.repository.UserRepository;
 import com.umc.puppymode2.global.apiPayload.code.status.ErrorStatus;
 import com.umc.puppymode2.global.auth.context.UserContext;
 import com.umc.puppymode2.global.exception.GeneralException;
+import com.umc.puppymode2.global.util.TimeConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +37,7 @@ public class MainServiceImpl implements MainService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
-        
+
         Optional<Puppy> puppyOpt = puppyRepository.findByUser_UserId(userId);
 
         // 온보딩 미완료
@@ -58,13 +59,14 @@ public class MainServiceImpl implements MainService {
         boolean isPuppyName = puppy.isCustomName();
         boolean isMyName = user.isCustomName();
 
+        LocalDate today = LocalDate.now(TimeConstants.KST);
+
         boolean isGoal = userGoalHistoryRepository
                 .findTopByUserIdOrderByGoalSetAtDesc(userId)
-                .filter(h -> h.getGoalSetAt().getYear() == LocalDate.now().getYear()
-                        && h.getGoalSetAt().getMonthValue() == LocalDate.now().getMonthValue())
+                .filter(h -> h.getGoalSetAt().getYear() == today.getYear()
+                        && h.getGoalSetAt().getMonthValue() == today.getMonthValue())
                 .isPresent();
 
-        LocalDate today = LocalDate.now();
         LocalDate yesterday = today.minusDays(1);
         boolean didRecordYesterday = drinkHistoryRepository.existsByUserUserIdAndDrinkDate(userId, yesterday);
         boolean didRecordToday = drinkHistoryRepository.existsByUserUserIdAndDrinkDate(userId, today);
