@@ -4,6 +4,7 @@ import com.umc.puppymode2.domain.goal.converter.UserGoalHistoryConverter;
 import com.umc.puppymode2.domain.goal.dto.GoalPostRequestDTO;
 import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
+import com.umc.puppymode2.global.util.TimeConstants;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -40,7 +41,7 @@ class UserGoalHistoryCommandServiceImplTest {
                 .userId(userId)
                 .monthlyGoalCount(5)
                 .goalMonth(LocalDate.of(2025,3,1))
-                .goalSetAt(LocalDateTime.now())
+                .goalSetAt(LocalDateTime.now(TimeConstants.KST))
                 .build();
 
         when(repository.existsByUserIdAndGoalMonth(anyLong(), any()))
@@ -104,7 +105,7 @@ class UserGoalHistoryCommandServiceImplTest {
         UserGoalHistory lastGoal = UserGoalHistory.builder()
                 .monthlyGoalCount(3)
                 .goalMonth(LocalDate.of(2025,2,1))
-                .goalSetAt(LocalDateTime.now())
+                .goalSetAt(LocalDateTime.now(TimeConstants.KST))
                 .build();
 
         when(repository.existsByUserIdAndGoalMonth(anyLong(), any()))
@@ -139,7 +140,7 @@ class UserGoalHistoryCommandServiceImplTest {
         UserGoalHistory lastGoal = UserGoalHistory.builder()
                 .monthlyGoalCount(31)
                 .goalMonth(LocalDate.of(2025,1,1))
-                .goalSetAt(LocalDateTime.now())
+                .goalSetAt(LocalDateTime.now(TimeConstants.KST))
                 .build();
 
         when(repository.existsByUserIdAndGoalMonth(anyLong(), any()))
@@ -152,7 +153,7 @@ class UserGoalHistoryCommandServiceImplTest {
 
         verify(repository).saveAndFlush(argThat(goal ->
                 goal.getMonthlyGoalCount() ==
-                        Math.min(31, LocalDate.now().lengthOfMonth())
+                        Math.min(31, LocalDate.now(TimeConstants.KST).lengthOfMonth())
         ));
     }
 }
