@@ -5,6 +5,7 @@ import com.umc.puppymode2.domain.goal.dto.GoalPostRequestDTO;
 import com.umc.puppymode2.domain.goal.dto.GoalPostResponseDTO;
 import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
+import com.umc.puppymode2.global.util.TimeConstants;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.exception.ConstraintViolationException;
@@ -25,9 +26,9 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
     @Override
     public GoalPostResponseDTO postGoal(Long userId, GoalPostRequestDTO dto) {
 
-        LocalDate now = LocalDate.now();
+        LocalDate now = LocalDate.now(TimeConstants.KST);
         LocalDate goalMonth = now.withDayOfMonth(1);
-        LocalDateTime goalSetAt = LocalDateTime.now();
+        LocalDateTime goalSetAt = LocalDateTime.now(TimeConstants.KST);
         int maxGoal = now.lengthOfMonth();
 
         try {

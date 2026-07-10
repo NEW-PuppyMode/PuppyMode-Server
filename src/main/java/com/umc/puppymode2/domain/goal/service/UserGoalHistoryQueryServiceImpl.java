@@ -5,6 +5,7 @@ import com.umc.puppymode2.domain.goal.converter.UserGoalHistoryConverter;
 import com.umc.puppymode2.domain.goal.dto.GoalInfoResponseDTO;
 import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
+import com.umc.puppymode2.global.util.TimeConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +22,7 @@ public class UserGoalHistoryQueryServiceImpl implements UserGoalHistoryQueryServ
     @Override
     public GoalInfoResponseDTO getLatestGoal(Long userId) {
 
-        LocalDate now = LocalDate.now();
+        LocalDate now = LocalDate.now(TimeConstants.KST);
         LocalDate goalMonth = now.withDayOfMonth(1); // 이번 달 기준
 
         // 이번 달 목표 조회
@@ -46,7 +47,7 @@ public class UserGoalHistoryQueryServiceImpl implements UserGoalHistoryQueryServ
     @Override
     public boolean isMoreThan30DayPassed(Long userId) {
 
-        LocalDate goalMonth = LocalDate.now().withDayOfMonth(1);
+        LocalDate goalMonth = LocalDate.now(TimeConstants.KST).withDayOfMonth(1);
 
         // 이번 달 목표 존재 여부 확인
         return repository.findByUserIdAndGoalMonth(userId, goalMonth).isEmpty();
