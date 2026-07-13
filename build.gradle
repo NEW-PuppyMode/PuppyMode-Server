@@ -60,6 +60,9 @@ dependencies {
 
     // FCM
     implementation 'com.google.firebase:firebase-admin:9.3.0'
+
+    // Math
+    implementation 'org.apache.commons:commons-math3:3.6.1'
 }
 
 jar {
