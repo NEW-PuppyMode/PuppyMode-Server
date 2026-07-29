@@ -4,6 +4,7 @@ import com.umc.puppymode2.domain.notification.dto.DrinkReminderTarget;
 import com.umc.puppymode2.domain.notification.repository.FcmTokenRepository;
 import com.umc.puppymode2.domain.notification.service.FcmSender;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -11,8 +12,10 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
+// TODO: iOS 알림 미수신 원인 파악(#171) 완료 후, 아래 상세 로그 제거 필요
 public class DrinkReminderScheduler {
 
     private final FcmTokenRepository fcmTokenRepository;
@@ -21,11 +24,23 @@ public class DrinkReminderScheduler {
     // TODO: 멀티 인스턴스 배포 시 ShedLock 적용 필요
     @Scheduled(cron = "0 0 22 * * *", zone = "Asia/Seoul")
     public void sendDrinkReminder() {
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
-        List<DrinkReminderTarget> targets = fcmTokenRepository.findTargetsForDrinkReminder(today);
+        try {
+            LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+            log.info("[DrinkReminder] 스케줄러 시작 - {}", today);
 
-        if (targets.isEmpty()) return;
+            List<DrinkReminderTarget> targets = fcmTokenRepository.findTargetsForDrinkReminder(today);
+            log.info("[DrinkReminder] 발송 대상: {}건", targets.size());
 
-        fcmSender.sendPersonalized(targets);
+            if (targets.isEmpty()) {
+                log.info("[DrinkReminder] 발송 대상 없음 - 종료");
+                return;
+            }
+
+            FcmSender.FcmSendResult result = fcmSender.sendPersonalized(targets);
+            log.info("[DrinkReminder] 발송 처리 종료 - 성공: {}건, 실패: {}건",
+                    result.successCount(), result.failureCount());
+        } catch (Exception e) {
+            log.error("[DrinkReminder] 예외 발생", e);
+        }
     }
 }
