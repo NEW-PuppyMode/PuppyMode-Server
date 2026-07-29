@@ -27,10 +27,13 @@ public class FcmSender {
      * sendEach 사용 → 메시지마다 내용이 달라도 한 번의 HTTP 요청으로 처리
      */
     @Transactional
-    public void sendPersonalized(List<DrinkReminderTarget> targets) {
-        if (targets.isEmpty()) return;
+    public FcmSendResult sendPersonalized(List<DrinkReminderTarget> targets) {
+        if (targets.isEmpty()) return new FcmSendResult(0, 0);
 
-        log.info("[FCM] 전송 시작 - 총 {}명", targets.size());
+        log.info("[FCM] 전송 시작 - 총 {}건", targets.size());
+
+        int totalSuccess = 0;
+        int totalFailure = 0;
 
         for (List<DrinkReminderTarget> batch : partition(targets, FCM_BATCH_SIZE)) {
             List<Message> messages = batch.stream()
@@ -57,6 +60,9 @@ public class FcmSender {
                 log.info("[FCM] 배치 전송 완료 - 성공: {}, 실패: {}",
                         response.getSuccessCount(), response.getFailureCount());
 
+                totalSuccess += response.getSuccessCount();
+                totalFailure += response.getFailureCount();
+
                 // 성공 건: messageId를 남겨야 Firebase/APNs 쪽에서 실제 도달 여부 추적 가능
                 List<SendResponse> responses = response.getResponses();
                 for (int i = 0; i < responses.size(); i++) {
@@ -71,8 +77,11 @@ public class FcmSender {
                 }
             } catch (FirebaseMessagingException e) {
                 log.error("[FCM] 배치 전송 실패", e);
+                totalFailure += batch.size();
             }
         }
+
+        return new FcmSendResult(totalSuccess, totalFailure);
     }
 
     private void handleFailures(List<DrinkReminderTarget> targets, BatchResponse response) {
@@ -91,10 +100,15 @@ public class FcmSender {
                     fcmTokenRepository.deleteByFcmToken(targets.get(i).fcmToken());
                 }
 
-                // APNs 인증 오류 (iOS 원인 파악용)
-                if (code == MessagingErrorCode.THIRD_PARTY_AUTH_ERROR
-                        || code == MessagingErrorCode.SENDER_ID_MISMATCH) {
-                    log.error("[FCM] APNs 인증 오류 의심 - user: {}, code: {} (Firebase 콘솔 APNs 인증키 확인 필요)",
+                // APNs 인증키 오류 (Firebase 콘솔 APNs 인증키 확인 필요)
+                if (code == MessagingErrorCode.THIRD_PARTY_AUTH_ERROR) {
+                    log.error("[FCM] APNs 인증 오류 - user: {}, code: {} (Firebase 콘솔 APNs 인증키 확인 필요)",
+                            maskUsername(targets.get(i).username()), code);
+                }
+
+                // sender ID 불일치 (다른 프로젝트에서 발급된 토큰일 가능성)
+                if (code == MessagingErrorCode.SENDER_ID_MISMATCH) {
+                    log.error("[FCM] Sender ID 불일치 - user: {}, code: {} (토큰 발급 프로젝트 확인 필요)",
                             maskUsername(targets.get(i).username()), code);
                 }
             }
@@ -120,4 +134,6 @@ public class FcmSender {
         }
         return partitions;
     }
+
+    public record FcmSendResult(int successCount, int failureCount) {}
 }

@@ -29,15 +29,16 @@ public class DrinkReminderScheduler {
             log.info("[DrinkReminder] 스케줄러 시작 - {}", today);
 
             List<DrinkReminderTarget> targets = fcmTokenRepository.findTargetsForDrinkReminder(today);
-            log.info("[DrinkReminder] 발송 대상: {}명", targets.size());
+            log.info("[DrinkReminder] 발송 대상: {}건", targets.size());
 
             if (targets.isEmpty()) {
                 log.info("[DrinkReminder] 발송 대상 없음 - 종료");
                 return;
             }
 
-            fcmSender.sendPersonalized(targets);
-            log.info("[DrinkReminder] 발송 완료");
+            FcmSender.FcmSendResult result = fcmSender.sendPersonalized(targets);
+            log.info("[DrinkReminder] 발송 처리 종료 - 성공: {}건, 실패: {}건",
+                    result.successCount(), result.failureCount());
         } catch (Exception e) {
             log.error("[DrinkReminder] 예외 발생", e);
         }
