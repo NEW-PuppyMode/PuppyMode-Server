@@ -15,6 +15,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+// TODO: iOS 알림 미수신 원인 파악(#171) 완료 후, 아래 상세 로그(log.info/warn/error) 및 maskUsername() 제거 필요
 public class FcmSender {
 
     private final FcmTokenRepository fcmTokenRepository;
@@ -28,6 +29,8 @@ public class FcmSender {
     @Transactional
     public void sendPersonalized(List<DrinkReminderTarget> targets) {
         if (targets.isEmpty()) return;
+
+        log.info("[FCM] 전송 시작 - 총 {}명", targets.size());
 
         for (List<DrinkReminderTarget> batch : partition(targets, FCM_BATCH_SIZE)) {
             List<Message> messages = batch.stream()
@@ -51,6 +54,18 @@ public class FcmSender {
 
             try {
                 BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages);
+                log.info("[FCM] 배치 전송 완료 - 성공: {}, 실패: {}",
+                        response.getSuccessCount(), response.getFailureCount());
+
+                // 성공 건: messageId를 남겨야 Firebase/APNs 쪽에서 실제 도달 여부 추적 가능
+                List<SendResponse> responses = response.getResponses();
+                for (int i = 0; i < responses.size(); i++) {
+                    if (responses.get(i).isSuccessful()) {
+                        log.info("[FCM] 전송 성공 - user: {}, messageId: {}",
+                                maskUsername(batch.get(i).username()), responses.get(i).getMessageId());
+                    }
+                }
+
                 if (response.getFailureCount() > 0) {
                     handleFailures(batch, response);
                 }
@@ -64,13 +79,38 @@ public class FcmSender {
         List<SendResponse> responses = response.getResponses();
         for (int i = 0; i < responses.size(); i++) {
             if (!responses.get(i).isSuccessful()) {
-                MessagingErrorCode code = responses.get(i).getException().getMessagingErrorCode();
+                FirebaseMessagingException ex = responses.get(i).getException();
+                MessagingErrorCode code = ex.getMessagingErrorCode();
+
+                log.warn("[FCM] 토큰 전송 실패 - user: {}, errorCode: {}, message: {}",
+                        maskUsername(targets.get(i).username()), code, ex.getMessage());
+
                 if (code == MessagingErrorCode.UNREGISTERED
                         || code == MessagingErrorCode.INVALID_ARGUMENT) {
+                    log.warn("[FCM] 만료 토큰 삭제 - user: {}", maskUsername(targets.get(i).username()));
                     fcmTokenRepository.deleteByFcmToken(targets.get(i).fcmToken());
+                }
+
+                // APNs 인증 오류 (iOS 원인 파악용)
+                if (code == MessagingErrorCode.THIRD_PARTY_AUTH_ERROR
+                        || code == MessagingErrorCode.SENDER_ID_MISMATCH) {
+                    log.error("[FCM] APNs 인증 오류 의심 - user: {}, code: {} (Firebase 콘솔 APNs 인증키 확인 필요)",
+                            maskUsername(targets.get(i).username()), code);
                 }
             }
         }
+    }
+
+    // TODO: iOS 알림 미수신 원인 파악 완료 후 아래 로그 및 마스킹 로직 제거 (#171)
+    /**
+     * 운영 로그 - 실명/닉네임 마스킹
+     */
+    private String maskUsername(String username) {
+        if (username == null || username.isBlank()) return "unknown";
+        if (username.length() <= 2) {
+            return username.charAt(0) + "*";
+        }
+        return username.charAt(0) + "*".repeat(username.length() - 2) + username.charAt(username.length() - 1);
     }
 
     private <T> List<List<T>> partition(List<T> list, int size) {
