@@ -53,7 +53,7 @@ public class MainServiceImpl implements MainService {
         LevelExp levelInfo = levelExpRepository.findByExp(puppy.getPuppyExp())
                 .orElseThrow(() -> new GeneralException(ErrorStatus.LEVEL_NOT_FOUND));
         int currentLevel = levelInfo.getLevel();
-        int percent = calculateExp(puppy.getPuppyExp(), currentLevel);
+        int percent = calculateExp(puppy.getPuppyExp(), levelInfo);
         PuppyAppearance appearance = getAppearance(puppy.getPuppyType(), currentLevel);
 
         boolean isPuppyName = puppy.isCustomName();
@@ -86,16 +86,16 @@ public class MainServiceImpl implements MainService {
                 .build();
     }
 
-    // 외형 단계 내 진행도 퍼센트 계산
-    // Stage 1: exp 0~269 (레벨 1~9)
-    // Stage 2: exp 270~1044 (레벨 10~19)
-    // Stage 3: exp 1045~2044 (레벨 20~29)
+    // 레벨 단위 진행률 계산
+    // 현재 레벨의 minExp ~ maxExp 구간 기준
     // 레벨 30 도달 시 100% 고정
-    private int calculateExp(int exp, int currentLevel) {
-        if (currentLevel == 30) return 100;
-        int stageMinExp = currentLevel < 10 ? 0 : currentLevel < 20 ? 270 : 1045;
-        int stageMaxExp = currentLevel < 10 ? 270 : currentLevel < 20 ? 1045 : 2045;
-        double ratio = (double) (exp - stageMinExp) / (stageMaxExp - stageMinExp);
+    private int calculateExp(int exp, LevelExp levelInfo) {
+        if (levelInfo.getLevel() == 30) return 100;
+
+        int minExp = levelInfo.getMinExp();
+        int maxExp = levelInfo.getMaxExp();
+
+        double ratio = (double) (exp - minExp) / (maxExp - minExp);
         return (int) (ratio * 100);
     }
 
