@@ -76,7 +76,7 @@ class MainServiceImplTest {
         LevelExp levelExp = mock(LevelExp.class);
         when(levelExp.getLevel()).thenReturn(1);
         when(levelExp.getMinExp()).thenReturn(0);
-        when(levelExp.getMaxExp()).thenReturn(10);
+        when(levelExp.getMaxExp()).thenReturn(100);
 
         PuppyAppearance appearance = mock(PuppyAppearance.class);
         when(appearance.getStageName()).thenReturn("눈송이 비숑");
