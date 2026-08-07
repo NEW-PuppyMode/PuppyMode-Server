@@ -75,9 +75,10 @@ class MainServiceImplTest {
 
         LevelExp levelExp = mock(LevelExp.class);
         when(levelExp.getLevel()).thenReturn(1);
+        when(levelExp.getMinExp()).thenReturn(0);
+        when(levelExp.getMaxExp()).thenReturn(10);
 
         PuppyAppearance appearance = mock(PuppyAppearance.class);
-        when(appearance.getStage()).thenReturn(1);
         when(appearance.getStageName()).thenReturn("눈송이 비숑");
         when(appearance.getImageUrl()).thenReturn("url");
 
@@ -106,5 +107,183 @@ class MainServiceImplTest {
         // when & then
         assertThrows(GeneralException.class,
                 () -> mainService.getMainPageInfo());
+    }
+
+    @Test
+    void 구간_시작_exp면_퍼센트는_0이다() {
+        // given
+        User user = mock(User.class);
+
+        Puppy puppy = Puppy.builder()
+                .puppyType(PuppyType.BICHON)
+                .puppyExp(945) // Lv19 구간(945~1045) 시작점
+                .puppyName("테스트강아지")
+                .build();
+
+        LevelExp levelExp = mock(LevelExp.class);
+        when(levelExp.getLevel()).thenReturn(19);
+        when(levelExp.getMinExp()).thenReturn(945);
+        when(levelExp.getMaxExp()).thenReturn(1045);
+
+        PuppyAppearance appearance = mock(PuppyAppearance.class);
+        when(appearance.getStageName()).thenReturn("곱슬 푸들");
+        when(appearance.getImageUrl()).thenReturn("url");
+
+        when(userContext.getCurrentUserId()).thenReturn(userId);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(puppyRepository.findByUser_UserId(userId)).thenReturn(Optional.of(puppy));
+        when(levelExpRepository.findByExp(945)).thenReturn(Optional.of(levelExp));
+        when(puppyAppearanceRepository.findByPuppyTypeAndLevel(PuppyType.BICHON, 19))
+                .thenReturn(Optional.of(appearance));
+        when(userGoalHistoryRepository.findTopByUserIdOrderByGoalSetAtDesc(userId))
+                .thenReturn(Optional.empty());
+
+        // when
+        MainResponseDto result = mainService.getMainPageInfo();
+
+        // then
+        assertEquals(0, result.getPuppyLevelPercent());
+    }
+
+    @Test
+    void 구간_중간_exp면_퍼센트가_비율대로_계산된다() {
+        // given
+        User user = mock(User.class);
+
+        Puppy puppy = Puppy.builder()
+                .puppyType(PuppyType.BICHON)
+                .puppyExp(1010) // Lv19 구간(945~1045) 안, 65% 지점
+                .puppyName("테스트강아지")
+                .build();
+
+        LevelExp levelExp = mock(LevelExp.class);
+        when(levelExp.getLevel()).thenReturn(19);
+        when(levelExp.getMinExp()).thenReturn(945);
+        when(levelExp.getMaxExp()).thenReturn(1045);
+
+        PuppyAppearance appearance = mock(PuppyAppearance.class);
+        when(appearance.getStageName()).thenReturn("곱슬 푸들");
+        when(appearance.getImageUrl()).thenReturn("url");
+
+        when(userContext.getCurrentUserId()).thenReturn(userId);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(puppyRepository.findByUser_UserId(userId)).thenReturn(Optional.of(puppy));
+        when(levelExpRepository.findByExp(1010)).thenReturn(Optional.of(levelExp));
+        when(puppyAppearanceRepository.findByPuppyTypeAndLevel(PuppyType.BICHON, 19))
+                .thenReturn(Optional.of(appearance));
+        when(userGoalHistoryRepository.findTopByUserIdOrderByGoalSetAtDesc(userId))
+                .thenReturn(Optional.empty());
+
+        // when
+        MainResponseDto result = mainService.getMainPageInfo();
+
+        // then
+        assertEquals(65, result.getPuppyLevelPercent());
+    }
+
+    @Test
+    void 구간_끝_직전_exp면_퍼센트는_99이다() {
+        // given
+        User user = mock(User.class);
+
+        Puppy puppy = Puppy.builder()
+                .puppyType(PuppyType.BICHON)
+                .puppyExp(1044) // Lv19 구간(945~1045) 끝 직전
+                .puppyName("테스트강아지")
+                .build();
+
+        LevelExp levelExp = mock(LevelExp.class);
+        when(levelExp.getLevel()).thenReturn(19);
+        when(levelExp.getMinExp()).thenReturn(945);
+        when(levelExp.getMaxExp()).thenReturn(1045);
+
+        PuppyAppearance appearance = mock(PuppyAppearance.class);
+        when(appearance.getStageName()).thenReturn("곱슬 푸들");
+        when(appearance.getImageUrl()).thenReturn("url");
+
+        when(userContext.getCurrentUserId()).thenReturn(userId);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(puppyRepository.findByUser_UserId(userId)).thenReturn(Optional.of(puppy));
+        when(levelExpRepository.findByExp(1044)).thenReturn(Optional.of(levelExp));
+        when(puppyAppearanceRepository.findByPuppyTypeAndLevel(PuppyType.BICHON, 19))
+                .thenReturn(Optional.of(appearance));
+        when(userGoalHistoryRepository.findTopByUserIdOrderByGoalSetAtDesc(userId))
+                .thenReturn(Optional.empty());
+
+        // when
+        MainResponseDto result = mainService.getMainPageInfo();
+
+        // then
+        assertEquals(99, result.getPuppyLevelPercent());
+    }
+
+    @Test
+    void 레벨업하면_퍼센트가_0으로_초기화된다() {
+        // given
+        User user = mock(User.class);
+
+        Puppy puppy = Puppy.builder()
+                .puppyType(PuppyType.BICHON)
+                .puppyExp(1045) // Lv20 구간(1045~1145) 시작점으로 넘어감
+                .puppyName("테스트강아지")
+                .build();
+
+        LevelExp levelExp = mock(LevelExp.class);
+        when(levelExp.getLevel()).thenReturn(20);
+        when(levelExp.getMinExp()).thenReturn(1045);
+        when(levelExp.getMaxExp()).thenReturn(1145);
+
+        PuppyAppearance appearance = mock(PuppyAppearance.class);
+        when(appearance.getStageName()).thenReturn("악성 곱슬 푸들");
+        when(appearance.getImageUrl()).thenReturn("url");
+
+        when(userContext.getCurrentUserId()).thenReturn(userId);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(puppyRepository.findByUser_UserId(userId)).thenReturn(Optional.of(puppy));
+        when(levelExpRepository.findByExp(1045)).thenReturn(Optional.of(levelExp));
+        when(puppyAppearanceRepository.findByPuppyTypeAndLevel(PuppyType.BICHON, 20))
+                .thenReturn(Optional.of(appearance));
+        when(userGoalHistoryRepository.findTopByUserIdOrderByGoalSetAtDesc(userId))
+                .thenReturn(Optional.empty());
+
+        // when
+        MainResponseDto result = mainService.getMainPageInfo();
+
+        // then
+        assertEquals(0, result.getPuppyLevelPercent());
+    }
+
+    @Test
+    void 레벨30이면_퍼센트는_100이다() {
+        // given
+        User user = mock(User.class);
+
+        Puppy puppy = Puppy.builder()
+                .puppyType(PuppyType.BICHON)
+                .puppyExp(2045)
+                .puppyName("테스트강아지")
+                .build();
+
+        LevelExp levelExp = mock(LevelExp.class);
+        when(levelExp.getLevel()).thenReturn(30);
+
+        PuppyAppearance appearance = mock(PuppyAppearance.class);
+        when(appearance.getStageName()).thenReturn("최종 형태");
+        when(appearance.getImageUrl()).thenReturn("url");
+
+        when(userContext.getCurrentUserId()).thenReturn(userId);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(puppyRepository.findByUser_UserId(userId)).thenReturn(Optional.of(puppy));
+        when(levelExpRepository.findByExp(2045)).thenReturn(Optional.of(levelExp));
+        when(puppyAppearanceRepository.findByPuppyTypeAndLevel(PuppyType.BICHON, 30))
+                .thenReturn(Optional.of(appearance));
+        when(userGoalHistoryRepository.findTopByUserIdOrderByGoalSetAtDesc(userId))
+                .thenReturn(Optional.empty());
+
+        // when
+        MainResponseDto result = mainService.getMainPageInfo();
+
+        // then
+        assertEquals(100, result.getPuppyLevelPercent());
     }
 }
