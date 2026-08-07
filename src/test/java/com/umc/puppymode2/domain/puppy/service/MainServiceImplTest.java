@@ -47,7 +47,7 @@ class MainServiceImplTest {
     private final Long userId = 1L;
 
     @Test
-    void 온보딩_미완료_유저가_메인을_조회하면_isOnboarded가_false이다() {
+    void 온보딩_미완료_유저가_메인을_조회하면_isOnboarded와_isBreedTestDone이_false이다() {
         // given
         User user = mock(User.class);
 
@@ -60,10 +60,11 @@ class MainServiceImplTest {
 
         // then
         assertFalse(result.isOnboarded());
+        assertFalse(result.isBreedTestDone());
     }
 
     @Test
-    void 온보딩_완료_유저가_메인을_조회하면_isOnboarded가_true이다() {
+    void 온보딩_완료_유저가_메인을_조회하면_isOnboarded와_isBreedTestDone이_true이다() {
         // given
         User user = mock(User.class);
 
@@ -96,6 +97,7 @@ class MainServiceImplTest {
 
         // then
         assertTrue(result.isOnboarded());
+        assertTrue(result.isBreedTestDone());
     }
 
     @Test
