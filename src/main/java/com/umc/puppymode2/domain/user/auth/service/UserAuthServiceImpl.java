@@ -223,8 +223,8 @@ public class UserAuthServiceImpl implements UserAuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
 
-        boolean isOnboarded = puppyRepository.existsByUser_UserId(user.getUserId());
+        boolean isBreedTestDone = puppyRepository.existsByUser_UserId(user.getUserId());
 
-        return new AuthMeResponseDTO(isOnboarded);
+        return new AuthMeResponseDTO(isBreedTestDone, isBreedTestDone);
     }
 }

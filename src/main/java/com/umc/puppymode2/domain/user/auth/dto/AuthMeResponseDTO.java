@@ -6,9 +6,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record AuthMeResponseDTO(
 
         @Schema(
-                description = "온보딩 완료 여부",
+                description = "온보딩 완료 여부 (deprecated, isBreedTestDone 사용 예정)",
                 example = "true"
         )
-        boolean isOnboarded
+        boolean isOnboarded,
+
+        @Schema(
+                description = "강아지 유형 테스트 완료 여부",
+                example = "true"
+        )
+        boolean isBreedTestDone
 ) {
 }

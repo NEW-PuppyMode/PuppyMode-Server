@@ -26,5 +26,8 @@ public class MainResponseDto {
     private boolean didRecordToday;  // 오늘 기록 완료 여부
 
     @JsonProperty("isOnboarded")
-    private boolean onboarded; // 온보딩 테스트 완료 여부
+    private boolean onboarded; // deprecated, isBreedTestDone 사용 예정
+
+    @JsonProperty("isBreedTestDone")
+    private boolean breedTestDone; // 강아지 유형 테스트 완료 여부
 }

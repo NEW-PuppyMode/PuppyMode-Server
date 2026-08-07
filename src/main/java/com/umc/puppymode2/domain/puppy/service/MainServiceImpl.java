@@ -40,14 +40,15 @@ public class MainServiceImpl implements MainService {
 
         Optional<Puppy> puppyOpt = puppyRepository.findByUser_UserId(userId);
 
-        // 온보딩 미완료
+        // 강아지 유형 테스트 미완료
         if (puppyOpt.isEmpty()) {
             return MainResponseDto.builder()
                     .onboarded(false)
+                    .breedTestDone(false)
                     .build();
         }
 
-        // 온보딩 완료
+        // 강아지 유형 테스트 완료
         Puppy puppy = puppyOpt.get();
 
         LevelExp levelInfo = levelExpRepository.findByExp(puppy.getPuppyExp())
@@ -73,6 +74,7 @@ public class MainServiceImpl implements MainService {
 
         return MainResponseDto.builder()
                 .onboarded(true)
+                .breedTestDone(true)
                 .puppyLevel(currentLevel)
                 .puppyLevelName(appearance.getStageName())
                 .puppyLevelPercent(percent)
