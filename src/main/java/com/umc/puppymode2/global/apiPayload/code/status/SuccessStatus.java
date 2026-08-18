@@ -49,7 +49,7 @@ public enum SuccessStatus implements BaseCode {
     VERSION_CHECK_SUCCESS(HttpStatus.OK, "VERSION200", "버전 정보 조회 성공"),
 
     // 강아지
-    PUPPY_NAME_UPDATE_SUCCESS(HttpStatus.OK, "PUPPY200", "강아지 이름 설정/변경 성공"),
+    PUPPY_NAME_UPDATE_SUCCESS(HttpStatus.OK, "PUPPY200", "강아지 이름 수정 성공"),
     ;
 
 
