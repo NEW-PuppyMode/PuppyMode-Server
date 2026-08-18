@@ -3,6 +3,7 @@ package com.umc.puppymode2.domain.puppy.controller;
 import com.umc.puppymode2.domain.puppy.dto.PuppyNameRequestDto;
 import com.umc.puppymode2.domain.puppy.service.PuppyNameService;
 import com.umc.puppymode2.global.apiPayload.ApiResponse;
+import com.umc.puppymode2.global.apiPayload.code.status.SuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,10 +15,18 @@ public class PuppyNameController {
 
     private final PuppyNameService puppyNameService;
 
-    @PostMapping("/puppy-name")
-    @Operation(method = "POST", summary = "강아지 이름 짓기 API", description = "강아지의 이름을 등록하는 API입니다.")
+    @PatchMapping("/puppy-name")
+    @Operation(
+            method = "PATCH",
+            summary = "강아지 이름 수정 API",
+            description = "강아지의 이름을 수정하는 API입니다. (최초 설정 및 이후 이름 변경 시 공용으로 사용됩니다.) 최초 수정 시에만 경험치가 지급됩니다."
+    )
     public ApiResponse<Void> updatePuppyName(@Valid @RequestBody PuppyNameRequestDto requestDto) {
         puppyNameService.updatePuppyName(requestDto);
-        return ApiResponse.onSuccess(null, "POST_PUPPY_NAME_SUCCESS", "강아지 이름 지어주기 성공");
+        return ApiResponse.onSuccess(
+                null,
+                SuccessStatus.PUPPY_NAME_UPDATE_SUCCESS.getCode(),
+                SuccessStatus.PUPPY_NAME_UPDATE_SUCCESS.getMessage()
+        );
     }
 }
