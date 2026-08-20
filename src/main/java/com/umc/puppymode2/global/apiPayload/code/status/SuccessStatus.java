@@ -21,6 +21,9 @@ public enum SuccessStatus implements BaseCode {
     AUTH_WITHDRAW_SUCCESS(HttpStatus.OK, "AUTH_WITHDRAW200", "회원탈퇴 성공"),
     AUTH_ME_SUCCESS(HttpStatus.OK, "AUTH_ME200", "사용자 정보 조회 성공"),
 
+    // 유저
+    USER_NAME_UPDATE_SUCCESS(HttpStatus.OK, "USER200", "유저 이름 수정 성공"),
+
     // 음주 기록
     DRINK_HISTORY_RECORD_SUCCESS(HttpStatus.OK, "DRINK_HISTORY200", "음주 기록 성공"),
 
@@ -44,6 +47,9 @@ public enum SuccessStatus implements BaseCode {
 
     // 버전
     VERSION_CHECK_SUCCESS(HttpStatus.OK, "VERSION200", "버전 정보 조회 성공"),
+
+    // 강아지
+    PUPPY_NAME_UPDATE_SUCCESS(HttpStatus.OK, "PUPPY200", "강아지 이름 수정 성공"),
     ;
 
 
