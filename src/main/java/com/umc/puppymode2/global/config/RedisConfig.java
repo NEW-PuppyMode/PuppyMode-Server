@@ -41,8 +41,16 @@ public class RedisConfig {
     @Value("${spring.data.redis.ssl.enabled:false}")
     private boolean sslEnabled;
 
+    // TCP 연결 자체를 맺는 데 걸리는 시간 제한. 연결 수립 단계라 다소 여유 있게 잡아도 된다.
     @Value("${spring.data.redis.timeout:10s}")
     private Duration timeout;
+
+    // 명령(GET/SET/DEL 등) 하나의 응답을 기다리는 시간 제한.
+    // connectTimeout과 값을 공유하면, Redis가 연결은 됐지만 응답이 없는 상태(네트워크 지연,
+    // GC 정지 등)일 때 캐시 조회 한 번이 수십 초간 요청 스레드를 붙잡아 서비스 전체 가용성을
+    // 떨어뜨릴 수 있다. 캐시는 "빨리 실패하고 DB로 폴백"하는 게 핵심이라 짧게 잡는다.
+    @Value("${spring.data.redis.command-timeout:500ms}")
+    private Duration commandTimeout;
 
     /**
      * RedisConnectionFactory 수동 설정
@@ -57,6 +65,7 @@ public class RedisConfig {
         log.info("[REDIS ENV] REDIS_PASSWORD={}", redisPassword != null && !redisPassword.isEmpty() ? "***SET***" : "***EMPTY***");
         log.info("[REDIS ENV] SSL_ENABLED={}", sslEnabled);
         log.info("[REDIS ENV] TIMEOUT={}", timeout);
+        log.info("[REDIS ENV] COMMAND_TIMEOUT={}", commandTimeout);
 
         // Redis 서버 설정
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
@@ -78,7 +87,7 @@ public class RedisConfig {
         // LettuceClientConfiguration 빌더
         LettuceClientConfiguration.LettuceClientConfigurationBuilder clientConfigBuilder =
                 LettuceClientConfiguration.builder()
-                        .commandTimeout(timeout)
+                        .commandTimeout(commandTimeout)
                         .clientOptions(clientOptions);
 
         // SSL 활성화 (AWS ElastiCache용)
@@ -93,8 +102,8 @@ public class RedisConfig {
 
         factory.setValidateConnection(false);
 
-        log.info("[REDIS CONFIG] Host={}, Port={}, SSL={}, Timeout={}",
-                maskHost(redisHost), redisPort, sslEnabled, timeout);
+        log.info("[REDIS CONFIG] Host={}, Port={}, SSL={}, ConnectTimeout={}, CommandTimeout={}",
+                maskHost(redisHost), redisPort, sslEnabled, timeout, commandTimeout);
 
         return factory;
     }
