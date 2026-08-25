@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Duration;
 import java.time.YearMonth;
@@ -69,7 +71,28 @@ public class DrinkReportCacheService {
         }
     }
 
+    /**
+     * (userId, 월) 캐시를 무효화한다.
+     *
+     * 호출 시점에 활성 트랜잭션이 있으면, 그 트랜잭션이 커밋된 이후에 실제 삭제를 수행하도록 미룬다.
+     * 커밋 전에 바로 지우면, 그 사이에 끼어든 다른 요청이 아직 커밋되지 않은(=변경 전) 데이터로
+     * 캐시를 다시 채워버릴 수 있고, 그 stale 값이 TTL(최대 1일)만큼 남아있게 된다.
+     * 활성 트랜잭션이 없으면(예: 트랜잭션 밖에서 호출) 지금처럼 즉시 삭제한다.
+     */
     public void evict(Long userId, YearMonth targetMonth) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    doEvict(userId, targetMonth);
+                }
+            });
+        } else {
+            doEvict(userId, targetMonth);
+        }
+    }
+
+    private void doEvict(Long userId, YearMonth targetMonth) {
         try {
             redisTemplate.delete(buildKey(userId, targetMonth));
         } catch (Exception e) {
