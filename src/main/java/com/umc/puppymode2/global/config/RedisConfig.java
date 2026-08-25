@@ -1,6 +1,9 @@
 package com.umc.puppymode2.global.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.SocketOptions;
 import lombok.Getter;
@@ -112,8 +115,25 @@ public class RedisConfig {
         template.setHashKeySerializer(new StringRedisSerializer());
 
         // Value 직렬화
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer(objectMapper));
-        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer(objectMapper));
+        // API 응답용 objectMapper를 그대로 넘기면 캐시된 JSON에 타입 정보(@class)가 남지 않아,
+        // 조회 시 원래 DTO가 아닌 LinkedHashMap으로 역직렬화되어 캐시가 항상 미스로 처리되는 문제가 있었다.
+        // Redis 전용 복사본에만 다형적 타입 정보를 활성화해서 이 문제를 해결한다.
+        // (원본 objectMapper를 직접 수정하면 REST API 응답 JSON에도 @class가 섞여 나가게 되므로 복사본을 사용)
+        // allowIfSubType으로 우리 도메인 패키지만 역직렬화 대상으로 허용해,
+        // 캐시된 값이 조작되더라도 임의 클래스가 역직렬화되는 걸 막는다 (Jackson 다형적 역직렬화 취약점 대비).
+        ObjectMapper redisObjectMapper = objectMapper.copy();
+        PolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator.builder()
+                .allowIfSubType("com.umc.puppymode2")
+                .build();
+        redisObjectMapper.activateDefaultTyping(
+                typeValidator,
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+        );
+
+        GenericJackson2JsonRedisSerializer valueSerializer = new GenericJackson2JsonRedisSerializer(redisObjectMapper);
+        template.setValueSerializer(valueSerializer);
+        template.setHashValueSerializer(valueSerializer);
 
         template.afterPropertiesSet();
         return template;
