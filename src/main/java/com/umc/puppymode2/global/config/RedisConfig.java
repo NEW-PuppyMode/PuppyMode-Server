@@ -42,14 +42,17 @@ public class RedisConfig {
     private boolean sslEnabled;
 
     // TCP 연결 자체를 맺는 데 걸리는 시간 제한. 연결 수립 단계라 다소 여유 있게 잡아도 된다.
-    @Value("${spring.data.redis.timeout:10s}")
-    private Duration timeout;
+    @Value("${spring.data.redis.connect-timeout:10s}")
+    private Duration connectTimeout;
 
     // 명령(GET/SET/DEL 등) 하나의 응답을 기다리는 시간 제한.
-    // connectTimeout과 값을 공유하면, Redis가 연결은 됐지만 응답이 없는 상태(네트워크 지연,
-    // GC 정지 등)일 때 캐시 조회 한 번이 수십 초간 요청 스레드를 붙잡아 서비스 전체 가용성을
-    // 떨어뜨릴 수 있다. 캐시는 "빨리 실패하고 DB로 폴백"하는 게 핵심이라 짧게 잡는다.
-    @Value("${spring.data.redis.command-timeout:500ms}")
+    // Spring Boot 컨벤션대로 spring.data.redis.timeout을 그대로 명령 타임아웃에 쓴다.
+    // 이 프로퍼티를 새 이름으로 바꿔버리면, 배포 환경이 이미 spring.data.redis.timeout을
+    // 설정해뒀을 때 그 값이 조용히 무시되고 다른 의미(연결 타임아웃)로 바뀌어버린다.
+    // connectTimeout과 값을 공유하던 예전 방식은, Redis가 연결은 됐지만 응답이 없는
+    // 상태(네트워크 지연, GC 정지 등)일 때 캐시 조회 한 번이 수십 초간 요청 스레드를
+    // 붙잡아 서비스 전체 가용성을 떨어뜨릴 수 있어 분리했다.
+    @Value("${spring.data.redis.timeout:10s}")
     private Duration commandTimeout;
 
     /**
@@ -64,7 +67,7 @@ public class RedisConfig {
         log.info("[REDIS ENV] REDIS_PORT={}", redisPort);
         log.info("[REDIS ENV] REDIS_PASSWORD={}", redisPassword != null && !redisPassword.isEmpty() ? "***SET***" : "***EMPTY***");
         log.info("[REDIS ENV] SSL_ENABLED={}", sslEnabled);
-        log.info("[REDIS ENV] TIMEOUT={}", timeout);
+        log.info("[REDIS ENV] CONNECT_TIMEOUT={}", connectTimeout);
         log.info("[REDIS ENV] COMMAND_TIMEOUT={}", commandTimeout);
 
         // Redis 서버 설정
@@ -79,7 +82,7 @@ public class RedisConfig {
         // ClientOptions 생성
         ClientOptions clientOptions = ClientOptions.builder()
                 .socketOptions(SocketOptions.builder()
-                        .connectTimeout(timeout)
+                        .connectTimeout(connectTimeout)
                         .keepAlive(true)
                         .build())
                 .build();
@@ -103,7 +106,7 @@ public class RedisConfig {
         factory.setValidateConnection(false);
 
         log.info("[REDIS CONFIG] Host={}, Port={}, SSL={}, ConnectTimeout={}, CommandTimeout={}",
-                maskHost(redisHost), redisPort, sslEnabled, timeout, commandTimeout);
+                maskHost(redisHost), redisPort, sslEnabled, connectTimeout, commandTimeout);
 
         return factory;
     }
