@@ -5,6 +5,7 @@ import com.umc.puppymode2.domain.goal.dto.GoalPostRequestDTO;
 import com.umc.puppymode2.domain.goal.dto.GoalPostResponseDTO;
 import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
+import com.umc.puppymode2.global.cache.DrinkReportCacheService;
 import com.umc.puppymode2.global.util.TimeConstants;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +23,7 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
 
     private final UserGoalHistoryRepository repository;
     private final UserGoalHistoryConverter converter;
+    private final DrinkReportCacheService reportCacheService;
 
     @Transactional
     @Override
@@ -52,6 +55,9 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
 
                 repository.saveAndFlush(newGoal);
 
+                // 이번 달 목표(goal)가 방금 바뀌었으므로, 캐시된 이번 달 리포트도 무효화
+                reportCacheService.evict(userId, YearMonth.from(goalMonth));
+
                 return GoalPostResponseDTO.builder()
                         .isSuccess(true)
                         .code("POST_GOAL_SUCCESS")
@@ -77,6 +83,9 @@ public class UserGoalHistoryCommandServiceImpl implements UserGoalHistoryCommand
                     .build();
 
             repository.saveAndFlush(copiedGoal);
+
+            // 기존 목표를 그대로 이어받았더라도 이번 달 목표 row가 새로 생긴 것이므로 동일하게 무효화
+            reportCacheService.evict(userId, YearMonth.from(goalMonth));
 
             return GoalPostResponseDTO.builder()
                     .isSuccess(true)
