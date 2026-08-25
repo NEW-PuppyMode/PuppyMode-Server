@@ -6,6 +6,7 @@ import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
 import com.umc.puppymode2.domain.report.converter.DrinkReportConverter;
 import com.umc.puppymode2.domain.report.dto.DrinkReportResponseDTO;
+import com.umc.puppymode2.global.cache.DrinkReportCacheService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +37,9 @@ class DrinkReportServiceImplTest {
 
     @Mock
     private DrinkReportConverter drinkReportConverter;
+
+    @Mock
+    private DrinkReportCacheService reportCacheService;
 
     @InjectMocks
     private DrinkReportServiceImpl drinkReportService;

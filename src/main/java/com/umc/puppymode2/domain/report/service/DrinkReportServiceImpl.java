@@ -6,8 +6,10 @@ import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
 import com.umc.puppymode2.domain.advice.repository.AdviceRepository;
 import com.umc.puppymode2.domain.report.converter.DrinkReportConverter;
 import com.umc.puppymode2.domain.report.dto.DrinkReportResponseDTO;
+import com.umc.puppymode2.global.cache.DrinkReportCacheService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.special.Beta;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DrinkReportServiceImpl implements DrinkReportService {
@@ -30,10 +33,24 @@ public class DrinkReportServiceImpl implements DrinkReportService {
     private final DrinkHistoryRepository drinkHistoryRepository;
     private final AdviceRepository adviceRepository;
     private final DrinkReportConverter drinkReportConverter;
+    private final DrinkReportCacheService reportCacheService;
 
     @Transactional(Transactional.TxType.SUPPORTS)
     @Override
     public DrinkReportResponseDTO drinkReport(Long userId, YearMonth targetMonth) {
+
+        // 캐시 적용 전/후 응답속도를 비교 측정하기 위한 타이머 (성능 측정용, 기능 로직과 무관)
+        long start = System.nanoTime();
+
+        // 1) cache-aside 조회: Redis에 캐시된 리포트가 있으면 DB를 전혀 거치지 않고 바로 반환
+        DrinkReportResponseDTO cached = reportCacheService.get(userId, targetMonth);
+        if (cached != null) {
+            log.debug("[REPORT PERF] cache HIT userId={} month={} elapsedMs={}",
+                    userId, targetMonth, elapsedMs(start));
+            return cached;
+        }
+
+        // 2) 캐시 미스: 이하는 기존과 동일하게 goal/drinkHistory/advice를 조합해 직접 계산
 
         LocalDate startDate = targetMonth.atDay(1);
         LocalDate endDate = targetMonth.atEndOfMonth();
@@ -102,13 +119,28 @@ public class DrinkReportServiceImpl implements DrinkReportService {
                         endDateTime
                 );
 
-        return drinkReportConverter.toDto(
+        DrinkReportResponseDTO result = drinkReportConverter.toDto(
                 goal,
                 drinkRecordCount,
                 drinkDays,
                 achievementRate,
                 scoldedCount
         );
+
+        // 3) 다음 조회부터는 캐시로 응답할 수 있도록 계산 결과를 Redis에 적재
+        reportCacheService.put(userId, targetMonth, result);
+
+        log.debug("[REPORT PERF] cache MISS userId={} month={} elapsedMs={}",
+                userId, targetMonth, elapsedMs(start));
+
+        return result;
+    }
+
+    /**
+     * 성능 측정용 헬퍼. 나노초 타임스탬프를 밀리초(소수점 포함) 경과시간으로 변환한다.
+     */
+    private double elapsedMs(long startNanos) {
+        return (System.nanoTime() - startNanos) / 1_000_000.0;
     }
 
     /**
