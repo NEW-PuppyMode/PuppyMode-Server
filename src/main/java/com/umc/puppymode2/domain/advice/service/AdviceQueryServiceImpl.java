@@ -4,6 +4,7 @@ import com.umc.puppymode2.domain.advice.dto.AdviceResponseDTO;
 import com.umc.puppymode2.domain.drinkhistory.repository.DrinkHistoryRepository;
 import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
+import com.umc.puppymode2.global.cache.DrinkReportCacheService;
 import com.umc.puppymode2.global.util.TimeConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
@@ -33,6 +35,7 @@ public class AdviceQueryServiceImpl implements AdviceQueryService {
 
     private final AdviceRepository adviceRepository;
     private final UserRepository userRepository;
+    private final DrinkReportCacheService reportCacheService;
 
     @Override
     public AdviceResponseDTO getAdvice(Long userId) {
@@ -130,11 +133,17 @@ public class AdviceQueryServiceImpl implements AdviceQueryService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found for ID: " + userId));
 
+        LocalDateTime advisedAt = LocalDateTime.now(TimeConstants.KST);
+
         Advice advice = Advice.builder()
                 .user(user)
-                .advisedAt(LocalDateTime.now(TimeConstants.KST)) // 현재 시점 기록 (KST)
+                .advisedAt(advisedAt) // 현재 시점 기록 (KST)
                 .build();
 
         adviceRepository.save(advice);
+
+        // 잔소리(advice) 기록이 늘어나면 리포트의 scoldedCount가 바뀌므로
+        // 이번 달(advisedAt은 항상 현재 시점) 캐시를 무효화한다.
+        reportCacheService.evict(userId, YearMonth.from(advisedAt));
     }
 }
