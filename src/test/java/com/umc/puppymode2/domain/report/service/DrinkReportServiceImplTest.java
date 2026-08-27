@@ -7,11 +7,13 @@ import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
 import com.umc.puppymode2.domain.report.converter.DrinkReportConverter;
 import com.umc.puppymode2.domain.report.dto.DrinkReportResponseDTO;
 import com.umc.puppymode2.global.cache.DrinkReportCacheService;
+import com.umc.puppymode2.global.util.TimeConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
+import org.mockito.MockedStatic;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -355,6 +357,48 @@ class DrinkReportServiceImplTest {
                 eq(0),
                 eq(scoldedCount)
         );
+    }
+
+    /**
+     * #168과 동일한 원인의 회귀 테스트.
+     *
+     * resolveCurrentDay()가 LocalDate.now()를 타임존 없이 호출하면, 서버 JVM 기본 타임존이
+     * UTC일 때 한국 시간 00:00~08:59 사이에 날짜가 하루 어긋난다. 실제 벽시계 시각에
+     * 의존하면 이 버그는 하루 중 특정 시간대에만 재현되는 flaky한 테스트가 되므로,
+     * LocalDate.now(TimeConstants.KST) 호출 자체를 static mock으로 가로채 결정론적으로 검증한다.
+     */
+    @Test
+    void 이번달_리포트는_LocalDate_now_KST로_오늘_날짜를_계산한다() {
+        // given
+        YearMonth currentMonth = YearMonth.of(2025, 8);
+        LocalDate fixedToday = LocalDate.of(2025, 8, 20);
+
+        when(userGoalHistoryRepository
+                .findByUserIdAndGoalMonth(eq(userId), eq(currentMonth.atDay(1))))
+                .thenReturn(Optional.empty());
+        when(drinkHistoryRepository
+                .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(eq(userId), any(), any()))
+                .thenReturn(0L);
+        when(drinkHistoryRepository
+                .countByUserUserIdAndDrinkDateBetween(eq(userId), any(), any()))
+                .thenReturn(0L);
+        when(adviceRepository
+                .countByUserUserIdAndAdvisedAtBetween(eq(userId), any(), any()))
+                .thenReturn(0L);
+        when(drinkReportConverter.toDto(anyInt(), anyLong(), anyLong(), anyInt(), anyInt()))
+                .thenReturn(mock(DrinkReportResponseDTO.class));
+
+        // when & then
+        try (MockedStatic<LocalDate> mockedLocalDate = mockStatic(LocalDate.class, CALLS_REAL_METHODS)) {
+            mockedLocalDate.when(() -> LocalDate.now(TimeConstants.KST)).thenReturn(fixedToday);
+
+            drinkReportService.drinkReport(userId, currentMonth);
+
+            // KST를 명시한 오버로드가 실제로 호출됐는지
+            mockedLocalDate.verify(() -> LocalDate.now(TimeConstants.KST), atLeastOnce());
+            // 타임존 없는 오버로드(버그의 원인)는 절대 호출되면 안 됨
+            mockedLocalDate.verify(LocalDate::now, never());
+        }
     }
 
 }
