@@ -1,6 +1,7 @@
 package com.umc.puppymode2.global.cache;
 
 import com.umc.puppymode2.domain.report.dto.DrinkReportResponseDTO;
+import com.umc.puppymode2.global.util.TimeConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,7 +63,10 @@ public class DrinkReportCacheService {
             return;
         }
         try {
-            Duration ttl = targetMonth.equals(YearMonth.now())
+            // 서버 기본 타임존이 아니라 KST 기준으로 "이번 달"을 판단한다.
+            // 그렇지 않으면 매월 1일 새벽(KST 00:00~08:59) 동안 이번 달 리포트가
+            // 과거 달로 오인되어 TTL이 5분이 아니라 1일로 잘못 잡힌다 (#168과 동일 원인).
+            Duration ttl = targetMonth.equals(YearMonth.now(TimeConstants.KST))
                     ? CURRENT_MONTH_TTL
                     : PAST_MONTH_TTL;
             redisTemplate.opsForValue().set(buildKey(userId, targetMonth), dto, ttl);

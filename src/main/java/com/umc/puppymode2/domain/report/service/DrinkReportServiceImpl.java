@@ -7,6 +7,7 @@ import com.umc.puppymode2.domain.advice.repository.AdviceRepository;
 import com.umc.puppymode2.domain.report.converter.DrinkReportConverter;
 import com.umc.puppymode2.domain.report.dto.DrinkReportResponseDTO;
 import com.umc.puppymode2.global.cache.DrinkReportCacheService;
+import com.umc.puppymode2.global.util.TimeConstants;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -198,7 +199,9 @@ public class DrinkReportServiceImpl implements DrinkReportService {
     }
 
     private int resolveCurrentDay(YearMonth targetMonth) {
-        LocalDate today = LocalDate.now();
+        // 서버 JVM 기본 타임존(운영은 보통 UTC)이 아니라 항상 KST 기준으로 "오늘"을 계산한다.
+        // 그렇지 않으면 한국 시간 00:00~08:59 사이에 날짜/월 계산이 하루 어긋난다 (#168과 동일 원인).
+        LocalDate today = LocalDate.now(TimeConstants.KST);
         YearMonth currentMonth = YearMonth.from(today);
 
         if (targetMonth.equals(currentMonth)) {
