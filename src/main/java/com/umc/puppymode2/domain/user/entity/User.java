@@ -41,6 +41,9 @@ public class User extends BaseEntity {
     @Column(name = "is_custom_name", nullable = false)
     private boolean isCustomName = false;
 
+    @Column(nullable = false)
+    private boolean tutorialShown = false;
+
     private LocalDateTime withdrawnAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

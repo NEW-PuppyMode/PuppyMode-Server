@@ -27,6 +27,8 @@ public interface UserGoalHistoryRepository extends JpaRepository<UserGoalHistory
     // 가장 최근 목표 조회 (기존 목표 유지 기능)
     Optional<UserGoalHistory> findTopByUserIdOrderByGoalMonthDesc(Long userId);
 
+    // 온보딩 최초 목표 설정 완료 여부 판단용 (월과 무관하게 이력이 하나라도 있는지)
+    boolean existsByUserId(Long userId);
 
     @Modifying
     @Query("DELETE FROM UserGoalHistory ugh WHERE ugh.userId = :userId")

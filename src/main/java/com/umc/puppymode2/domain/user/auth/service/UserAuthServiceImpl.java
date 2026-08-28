@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.user.auth.service;
 
+import com.umc.puppymode2.domain.onboarding.progress.OnboardingProgressService;
 import com.umc.puppymode2.domain.puppy.repository.PuppyRepository;
 import com.umc.puppymode2.domain.user.auth.dto.AuthMeResponseDTO;
 import com.umc.puppymode2.domain.user.auth.dto.LoginResponseDTO;
@@ -39,6 +40,7 @@ public class UserAuthServiceImpl implements UserAuthService {
     private final SocialAuthRepository socialAuthRepository;
     private final RedisConfig.RedisHealthIndicator redisHealthIndicator;
     private final PuppyRepository puppyRepository;
+    private final OnboardingProgressService onboardingProgressService;
 
     @Transactional
     @Override
@@ -211,8 +213,11 @@ public class UserAuthServiceImpl implements UserAuthService {
     }
 
     /**
-     * 사용자의 온보딩 완료 여부를 조회합니다.
-     * - puppy 존재 여부를 기준으로 판단
+     * 사용자의 온보딩/튜토리얼 진행 상태를 조회합니다.
+     * - isOnboarded / isPuppyTestCompleted: puppy 존재 여부 (강아지 유형 검사 완료 여부)
+     *   ※ isOnboarded는 구버전 클라이언트 호환을 위해 유지, 값은 isPuppyTestCompleted와 동일
+     * - onboardingCompleted: 강아지이름 + 내이름 + 최초 목표설정 3단계 완료 여부
+     * - tutorialShown: 튜토리얼 노출 여부
      *
      * @param userId 사용자 ID
      * @return 사용자 상태 조회 응답 DTO
@@ -223,8 +228,14 @@ public class UserAuthServiceImpl implements UserAuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
 
-        boolean isOnboarded = puppyRepository.existsByUser_UserId(user.getUserId());
+        boolean isPuppyTestCompleted = puppyRepository.existsByUser_UserId(user.getUserId());
+        boolean onboardingCompleted = onboardingProgressService.isOnboardingCompleted(user);
 
-        return new AuthMeResponseDTO(isOnboarded);
+        return new AuthMeResponseDTO(
+                isPuppyTestCompleted,   // isOnboarded (구버전 호환, 값 동일)
+                isPuppyTestCompleted,   // isPuppyTestCompleted
+                onboardingCompleted,
+                user.isTutorialShown()
+        );
     }
 }

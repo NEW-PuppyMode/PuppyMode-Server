@@ -50,6 +50,9 @@ public enum SuccessStatus implements BaseCode {
 
     // 강아지
     PUPPY_NAME_UPDATE_SUCCESS(HttpStatus.OK, "PUPPY200", "강아지 이름 수정 성공"),
+
+    // 튜토리얼
+    TUTORIAL_START_SUCCESS(HttpStatus.OK, "TUTORIAL200", "튜토리얼 진행 상태 등록 성공"),
     ;
 
 
