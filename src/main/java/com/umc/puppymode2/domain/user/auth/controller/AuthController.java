@@ -177,7 +177,9 @@ public class AuthController {
             summary = "현재 사용자 상태 조회",
             description = """
                     현재 사용자의 상태를 조회합니다.
-                    - 온보딩 여부
+                    - isOnboarded / isPuppyTestCompleted: 강아지 유형 검사 완료 여부 (동일한 값, isOnboarded는 구버전 호환용)
+                    - onboardingCompleted: 강아지이름·내이름·최초 목표설정 완료 여부
+                    - tutorialShown: 튜토리얼 진행 여부
                     - 토큰이 유효하지 않은 경우 401 반환
                     """
     )
