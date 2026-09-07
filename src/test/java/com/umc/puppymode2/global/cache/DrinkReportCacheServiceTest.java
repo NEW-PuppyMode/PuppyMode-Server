@@ -18,6 +18,7 @@ import org.springframework.transaction.support.TransactionSynchronizationUtils;
 
 import java.time.Duration;
 import java.time.YearMonth;
+import java.time.ZonedDateTime;
 
 import static org.mockito.Mockito.*;
 
@@ -35,7 +36,8 @@ class DrinkReportCacheServiceTest {
 
     private final Long userId = 1L;
     private final YearMonth month = YearMonth.of(2025, 8);
-    private final String key = "report:1:2025-08";
+    // KEY_PREFIX 는 "report:v2:" (DrinkReportResponseDTO 필드 구성이 바뀔 때마다 버전업 - #184)
+    private final String key = "report:v2:1:2025-08";
 
     @BeforeEach
     void setUp() {
@@ -92,11 +94,15 @@ class DrinkReportCacheServiceTest {
      * 가로채 결정론적으로 검증한다.
      */
     @Test
-    void 이번달이면_TTL_5분이_적용된다() {
+    void 이번달이고_다음달_시작까지_5분_넘게_남았으면_TTL_5분이_적용된다() {
         DrinkReportResponseDTO dto = mock(DrinkReportResponseDTO.class);
+        // "지금"을 8월 중순으로 고정 → 9월 시작까지 한참 남음 → 5분 상한이 그대로 적용
+        ZonedDateTime midAugustKst = ZonedDateTime.of(2025, 8, 15, 12, 0, 0, 0, TimeConstants.KST);
 
-        try (MockedStatic<YearMonth> mockedYearMonth = mockStatic(YearMonth.class, CALLS_REAL_METHODS)) {
+        try (MockedStatic<YearMonth> mockedYearMonth = mockStatic(YearMonth.class, CALLS_REAL_METHODS);
+             MockedStatic<ZonedDateTime> mockedZdt = mockStatic(ZonedDateTime.class, CALLS_REAL_METHODS)) {
             mockedYearMonth.when(() -> YearMonth.now(TimeConstants.KST)).thenReturn(month);
+            mockedZdt.when(() -> ZonedDateTime.now(TimeConstants.KST)).thenReturn(midAugustKst);
 
             cacheService.put(userId, month, dto);
 
@@ -105,6 +111,30 @@ class DrinkReportCacheServiceTest {
         }
 
         verify(valueOperations).set(eq(key), eq(dto), eq(Duration.ofMinutes(5)));
+    }
+
+    /**
+     * 월 경계 회귀 테스트.
+     *
+     * KST 8/31 23:58에 계산한 8월 리포트를 5분 TTL로 캐시하면, 9/1 00:00 이후 몇 분간
+     * "이번 달" 기준으로 계산된 goalStatus=IN_PROGRESS 등이 이미 과거가 된 8월 조회에
+     * 잘못 반환된다. 이를 막기 위해 이번 달 TTL을 "다음 달 시작까지 남은 시간"으로 제한한다.
+     */
+    @Test
+    void 이번달이라도_월말이라_다음달_시작까지_5분_미만이면_TTL이_그_남은_시간으로_제한된다() {
+        DrinkReportResponseDTO dto = mock(DrinkReportResponseDTO.class);
+        // KST 8/31 23:58:00 → 9/1 00:00 까지 정확히 2분 남음
+        ZonedDateTime endOfAugustKst = ZonedDateTime.of(2025, 8, 31, 23, 58, 0, 0, TimeConstants.KST);
+
+        try (MockedStatic<YearMonth> mockedYearMonth = mockStatic(YearMonth.class, CALLS_REAL_METHODS);
+             MockedStatic<ZonedDateTime> mockedZdt = mockStatic(ZonedDateTime.class, CALLS_REAL_METHODS)) {
+            mockedYearMonth.when(() -> YearMonth.now(TimeConstants.KST)).thenReturn(month);
+            mockedZdt.when(() -> ZonedDateTime.now(TimeConstants.KST)).thenReturn(endOfAugustKst);
+
+            cacheService.put(userId, month, dto);
+        }
+
+        verify(valueOperations).set(eq(key), eq(dto), eq(Duration.ofMinutes(2)));
     }
 
     @Test

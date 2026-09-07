@@ -6,6 +6,7 @@ import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
 import com.umc.puppymode2.domain.report.converter.DrinkReportConverter;
 import com.umc.puppymode2.domain.report.dto.DrinkReportResponseDTO;
+import com.umc.puppymode2.domain.report.dto.GoalStatus;
 import com.umc.puppymode2.global.cache.DrinkReportCacheService;
 import com.umc.puppymode2.global.util.TimeConstants;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,7 +96,8 @@ class DrinkReportServiceImplTest {
                 eq(drinkRecordCount),
                 eq(drinkDays),
                 anyInt(),
-                eq(scoldedCount)
+                eq(scoldedCount),
+                any()
         )).thenReturn(dto);
 
         // when
@@ -121,7 +123,7 @@ class DrinkReportServiceImplTest {
                 .countByUserUserIdAndAdvisedAtBetween(any(), any(), any());
 
         verify(drinkReportConverter, times(1))
-                .toDto(eq(goal), eq(drinkRecordCount), eq(drinkDays), anyInt(), eq(scoldedCount));
+                .toDto(eq(goal), eq(drinkRecordCount), eq(drinkDays), anyInt(), eq(scoldedCount), any());
     }
 
     @Test
@@ -160,7 +162,8 @@ class DrinkReportServiceImplTest {
                 eq(drinkRecordCount),
                 eq(drinkDays),
                 anyInt(),
-                eq(scoldedCount)
+                eq(scoldedCount),
+                any()
         )).thenReturn(dto);
 
         // when
@@ -175,7 +178,8 @@ class DrinkReportServiceImplTest {
                 eq(drinkRecordCount),
                 eq(drinkDays),
                 anyInt(),
-                eq(scoldedCount)
+                eq(scoldedCount),
+                any()
         );
     }
 
@@ -218,7 +222,8 @@ class DrinkReportServiceImplTest {
                 eq(drinkRecordCount),
                 eq(drinkDays),
                 anyInt(),
-                eq(scoldedCount)
+                eq(scoldedCount),
+                any()
         )).thenReturn(dto);
 
         // when
@@ -236,7 +241,8 @@ class DrinkReportServiceImplTest {
                 eq(drinkRecordCount),
                 eq(drinkDays),
                 achievementRateCaptor.capture(),
-                eq(scoldedCount)
+                eq(scoldedCount),
+                any()
         );
 
         assertThat(achievementRateCaptor.getValue())
@@ -282,7 +288,8 @@ class DrinkReportServiceImplTest {
                 eq(drinkRecordCount),
                 eq(drinkDays),
                 eq(0),
-                eq(scoldedCount)
+                eq(scoldedCount),
+                any()
         )).thenReturn(dto);
 
         // when
@@ -297,7 +304,8 @@ class DrinkReportServiceImplTest {
                 eq(drinkRecordCount),
                 eq(drinkDays),
                 eq(0),
-                eq(scoldedCount)
+                eq(scoldedCount),
+                any()
         );
     }
 
@@ -340,7 +348,8 @@ class DrinkReportServiceImplTest {
                 eq(drinkRecordCount),
                 eq(drinkDays),
                 eq(0),
-                eq(scoldedCount)
+                eq(scoldedCount),
+                any()
         )).thenReturn(dto);
 
         // when
@@ -355,7 +364,8 @@ class DrinkReportServiceImplTest {
                 eq(drinkRecordCount),
                 eq(drinkDays),
                 eq(0),
-                eq(scoldedCount)
+                eq(scoldedCount),
+                any()
         );
     }
 
@@ -385,7 +395,7 @@ class DrinkReportServiceImplTest {
         when(adviceRepository
                 .countByUserUserIdAndAdvisedAtBetween(eq(userId), any(), any()))
                 .thenReturn(0L);
-        when(drinkReportConverter.toDto(anyInt(), anyLong(), anyLong(), anyInt(), anyInt()))
+        when(drinkReportConverter.toDto(anyInt(), anyLong(), anyLong(), anyInt(), anyInt(), any()))
                 .thenReturn(mock(DrinkReportResponseDTO.class));
 
         // when & then
@@ -399,6 +409,123 @@ class DrinkReportServiceImplTest {
             // 타임존 없는 오버로드(버그의 원인)는 절대 호출되면 안 됨
             mockedLocalDate.verify(LocalDate::now, never());
         }
+    }
+
+    // ---------------------------------------------------------------------
+    // goalStatus 판정 (#184)
+    // ---------------------------------------------------------------------
+
+    @Test
+    void 목표가_없으면_goalStatus는_NO_GOAL이다() {
+        // targetMonth(2024-03)는 항상 과거이지만, 목표 자체가 없으므로 과거/현재 판정 이전에 NO_GOAL
+        stubDrinkReportBasics(Optional.empty(), 0L, 0L);
+
+        drinkReportService.drinkReport(userId, targetMonth);
+
+        assertThat(captureGoalStatus()).isEqualTo(GoalStatus.NO_GOAL);
+    }
+
+    @Test
+    void 과거월에_실제_음주일수가_목표_이하이고_기록이_있으면_ACHIEVED이다() {
+        UserGoalHistory goalHistory = mock(UserGoalHistory.class);
+        when(goalHistory.getMonthlyGoalCount()).thenReturn(10);
+
+        // drinkDays(3) <= goal(10), drinkRecordCount(5) > 0
+        stubDrinkReportBasics(Optional.of(goalHistory), 3L, 5L);
+
+        drinkReportService.drinkReport(userId, targetMonth);
+
+        assertThat(captureGoalStatus()).isEqualTo(GoalStatus.ACHIEVED);
+    }
+
+    @Test
+    void 과거월에_실제_음주일수가_목표를_초과하면_FAILED이다() {
+        UserGoalHistory goalHistory = mock(UserGoalHistory.class);
+        when(goalHistory.getMonthlyGoalCount()).thenReturn(5);
+
+        // drinkDays(8) > goal(5)
+        stubDrinkReportBasics(Optional.of(goalHistory), 8L, 10L);
+
+        drinkReportService.drinkReport(userId, targetMonth);
+
+        assertThat(captureGoalStatus()).isEqualTo(GoalStatus.FAILED);
+    }
+
+    @Test
+    void 과거월에_목표는_있지만_음주_기록이_0건이면_FAILED이다() {
+        UserGoalHistory goalHistory = mock(UserGoalHistory.class);
+        when(goalHistory.getMonthlyGoalCount()).thenReturn(5);
+
+        // 목표만 세우고 그 달에 기록을 한 번도 남기지 않은 경우 → 달성으로 보지 않는다
+        stubDrinkReportBasics(Optional.of(goalHistory), 0L, 0L);
+
+        drinkReportService.drinkReport(userId, targetMonth);
+
+        assertThat(captureGoalStatus()).isEqualTo(GoalStatus.FAILED);
+    }
+
+    @Test
+    void 조회월이_이번_달이면_goalStatus는_IN_PROGRESS이다() {
+        YearMonth currentMonth = YearMonth.of(2025, 8);
+        LocalDate fixedToday = LocalDate.of(2025, 8, 20);
+
+        UserGoalHistory goalHistory = mock(UserGoalHistory.class);
+        when(goalHistory.getMonthlyGoalCount()).thenReturn(10);
+
+        when(userGoalHistoryRepository
+                .findByUserIdAndGoalMonth(eq(userId), eq(currentMonth.atDay(1))))
+                .thenReturn(Optional.of(goalHistory));
+        when(drinkHistoryRepository
+                .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(eq(userId), any(), any()))
+                .thenReturn(2L);
+        when(drinkHistoryRepository
+                .countByUserUserIdAndDrinkDateBetween(eq(userId), any(), any()))
+                .thenReturn(4L);
+        when(adviceRepository
+                .countByUserUserIdAndAdvisedAtBetween(eq(userId), any(), any()))
+                .thenReturn(0L);
+        when(drinkReportConverter.toDto(anyInt(), anyLong(), anyLong(), anyInt(), anyInt(), any()))
+                .thenReturn(mock(DrinkReportResponseDTO.class));
+
+        try (MockedStatic<LocalDate> mockedLocalDate = mockStatic(LocalDate.class, CALLS_REAL_METHODS)) {
+            mockedLocalDate.when(() -> LocalDate.now(TimeConstants.KST)).thenReturn(fixedToday);
+
+            drinkReportService.drinkReport(userId, currentMonth);
+        }
+
+        assertThat(captureGoalStatus()).isEqualTo(GoalStatus.IN_PROGRESS);
+    }
+
+    /**
+     * drinkReport()가 캐시 미스 경로를 타도록 최소한의 스텁만 세팅한다.
+     *
+     * @param goalOpt          targetMonth 목표 조회 결과
+     * @param drinkDays        isDrink=true 인 날 수
+     * @param drinkRecordCount 해당 월 전체 기록 수(true+false)
+     */
+    private void stubDrinkReportBasics(Optional<UserGoalHistory> goalOpt, long drinkDays, long drinkRecordCount) {
+        when(userGoalHistoryRepository
+                .findByUserIdAndGoalMonth(eq(userId), eq(targetMonth.atDay(1))))
+                .thenReturn(goalOpt);
+        when(drinkHistoryRepository
+                .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(eq(userId), any(), any()))
+                .thenReturn(drinkDays);
+        when(drinkHistoryRepository
+                .countByUserUserIdAndDrinkDateBetween(eq(userId), any(), any()))
+                .thenReturn(drinkRecordCount);
+        when(adviceRepository
+                .countByUserUserIdAndAdvisedAtBetween(eq(userId), any(), any()))
+                .thenReturn(0L);
+        when(drinkReportConverter.toDto(anyInt(), anyLong(), anyLong(), anyInt(), anyInt(), any()))
+                .thenReturn(mock(DrinkReportResponseDTO.class));
+    }
+
+    /** drinkReportConverter.toDto(...)에 전달된 goalStatus 인자를 캡처한다. */
+    private GoalStatus captureGoalStatus() {
+        ArgumentCaptor<GoalStatus> captor = ArgumentCaptor.forClass(GoalStatus.class);
+        verify(drinkReportConverter).toDto(
+                anyInt(), anyLong(), anyLong(), anyInt(), anyInt(), captor.capture());
+        return captor.getValue();
     }
 
 }

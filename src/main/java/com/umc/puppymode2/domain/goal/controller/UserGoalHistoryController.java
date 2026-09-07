@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/goals")
 @RequiredArgsConstructor
@@ -50,7 +52,20 @@ public class UserGoalHistoryController {
         );
     }
 
-    // 3. 이번 달 목표 설정 여부
+    // 3. 목표가 설정된 월 목록 조회
+    @GetMapping("/months")
+    @Operation(summary = "목표 설정 월 목록 조회 API",
+            description = "사용자가 목표를 설정한 적 있는 월 목록을 \"yyyy-MM\" 형태로 오름차순 반환합니다. " +
+                    "캘린더 모달에서 해당 월을 활성화하는 데 사용합니다. 목표 이력이 없으면 빈 배열입니다.")
+    public ResponseEntity<ApiResponse<List<String>>> getGoalMonths() {
+        Long userId = getCurrentUserId();
+        List<String> response = queryService.getGoalMonths(userId);
+        return ResponseEntity.ok(
+                ApiResponse.onSuccess(response, "GOAL200", "목표 설정 월 목록 조회 성공")
+        );
+    }
+
+    // 4. 이번 달 목표 설정 여부
     @GetMapping("/check-30days")
     @Operation(summary = "이번 달 목표 설정 여부 API", description = "이번 달 목표가 설정되어 있는지 확인합니다.")
     public ResponseEntity<ApiResponse<Boolean>> check30Days() {

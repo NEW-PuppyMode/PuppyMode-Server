@@ -12,6 +12,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.time.Duration;
 import java.time.YearMonth;
+import java.time.ZonedDateTime;
 
 /**
  * 월간 음주 리포트(DrinkReportResponseDTO)에 대한 cache-aside 캐시.
@@ -27,7 +28,11 @@ import java.time.YearMonth;
 @RequiredArgsConstructor
 public class DrinkReportCacheService {
 
-    private static final String KEY_PREFIX = "report:";
+    // 캐시에 저장되는 DrinkReportResponseDTO의 필드 구성이 바뀌면 이 버전을 올린다.
+    // 배포 직후 기존 키(구 버전 JSON)는 아무도 읽지 않게 되고 각자 TTL이 지나면 사라지며,
+    // 새 키로는 첫 요청부터 새 필드가 채워진 값이 재계산되어 저장된다.
+    // (v2: goalStatus 필드 추가 - #184)
+    private static final String KEY_PREFIX = "report:v2:";
     private static final Duration CURRENT_MONTH_TTL = Duration.ofMinutes(5);
     private static final Duration PAST_MONTH_TTL = Duration.ofDays(1);
 
@@ -66,13 +71,40 @@ public class DrinkReportCacheService {
             // 서버 기본 타임존이 아니라 KST 기준으로 "이번 달"을 판단한다.
             // 그렇지 않으면 매월 1일 새벽(KST 00:00~08:59) 동안 이번 달 리포트가
             // 과거 달로 오인되어 TTL이 5분이 아니라 1일로 잘못 잡힌다 (#168과 동일 원인).
-            Duration ttl = targetMonth.equals(YearMonth.now(TimeConstants.KST))
-                    ? CURRENT_MONTH_TTL
-                    : PAST_MONTH_TTL;
+            Duration ttl;
+            if (targetMonth.equals(YearMonth.now(TimeConstants.KST))) {
+                // 이번 달 리포트는 최대 5분 캐시하되, 월 경계를 넘겨 살아남게 두지 않는다.
+                // 예: KST 8/31 23:59에 계산한 8월 리포트를 그대로 5분 캐시하면,
+                // 9/1 00:00 직후 몇 분간 goalStatus=IN_PROGRESS 처럼 "이번 달" 기준으로 계산된 값이
+                // 이미 과거가 된 8월 조회에 잘못 반환된다(achievementRate도 동일 문제).
+                // 다음 달 시작(KST 00:00)까지 남은 시간을 TTL 상한으로 건다.
+                Duration untilNextMonth = durationUntilNextMonthStartKst();
+                if (untilNextMonth.isZero() || untilNextMonth.isNegative()) {
+                    // YearMonth.now() 판정 직후 월 경계를 넘어선 극단적 타이밍.
+                    // 이번 달로 캐시할 이유가 없으니 저장을 건너뛴다(다음 요청이 과거 달로 다시 캐시).
+                    return;
+                }
+                ttl = CURRENT_MONTH_TTL.compareTo(untilNextMonth) <= 0 ? CURRENT_MONTH_TTL : untilNextMonth;
+            } else {
+                ttl = PAST_MONTH_TTL;
+            }
             redisTemplate.opsForValue().set(buildKey(userId, targetMonth), dto, ttl);
         } catch (Exception e) {
             log.warn("[REPORT CACHE] 저장 실패, 캐싱 없이 진행합니다: {}", e.getMessage());
         }
+    }
+
+    /**
+     * 지금(KST)부터 다음 달 1일 00:00(KST)까지 남은 시간.
+     * 이번 달 리포트 캐시가 월 경계를 넘겨 유효하지 않은 상태로 반환되는 것을 막기 위한 TTL 상한.
+     */
+    private Duration durationUntilNextMonthStartKst() {
+        ZonedDateTime nowKst = ZonedDateTime.now(TimeConstants.KST);
+        ZonedDateTime nextMonthStart = nowKst.toLocalDate()
+                .withDayOfMonth(1)
+                .plusMonths(1)
+                .atStartOfDay(TimeConstants.KST);
+        return Duration.between(nowKst, nextMonthStart);
     }
 
     /**

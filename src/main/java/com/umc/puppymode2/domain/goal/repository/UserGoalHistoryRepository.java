@@ -37,4 +37,10 @@ public interface UserGoalHistoryRepository extends JpaRepository<UserGoalHistory
     // 이번 달 보상 미지급 목록 조회
     List<UserGoalHistory> findAllByGoalMonthAndRewardedFalse(LocalDate goalMonth);
 
+    // 해당 유저가 목표를 설정한 적 있는 모든 월(goalMonth)을 오름차순으로 조회한다.
+    // (user_id, goal_month) UNIQUE 제약이 있어 월별로 row가 최대 1개이므로 DISTINCT는 불필요하다.
+    // 캘린더 모달에서 "목표가 설정된 월"만 활성화하는 데 사용한다.
+    @Query("SELECT ugh.goalMonth FROM UserGoalHistory ugh WHERE ugh.userId = :userId ORDER BY ugh.goalMonth")
+    List<LocalDate> findGoalMonthsByUserId(@Param("userId") Long userId);
+
 }
