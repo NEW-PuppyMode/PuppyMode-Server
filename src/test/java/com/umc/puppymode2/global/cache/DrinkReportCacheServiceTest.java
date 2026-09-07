@@ -35,7 +35,8 @@ class DrinkReportCacheServiceTest {
 
     private final Long userId = 1L;
     private final YearMonth month = YearMonth.of(2025, 8);
-    private final String key = "report:1:2025-08";
+    // KEY_PREFIX 는 "report:v2:" (DrinkReportResponseDTO 필드 구성이 바뀔 때마다 버전업 - #184)
+    private final String key = "report:v2:1:2025-08";
 
     @BeforeEach
     void setUp() {

@@ -13,4 +13,7 @@ public class DrinkReportResponseDTO {
     private Long drinkDays;
     private int achievementRate;
     private int scoldedCount;
+
+    // 조회 대상 월의 목표 대비 달성 상태 (NO_GOAL / IN_PROGRESS / ACHIEVED / FAILED)
+    private GoalStatus goalStatus;
 }

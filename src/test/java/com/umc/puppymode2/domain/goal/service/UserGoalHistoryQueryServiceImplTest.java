@@ -56,12 +56,14 @@ class UserGoalHistoryQueryServiceImplTest {
 
         when(repository.findByUserIdAndGoalMonth(userId, goalMonth))
                 .thenReturn(Optional.of(goal));
+        when(repository.findTopByUserIdOrderByGoalMonthDesc(userId))
+                .thenReturn(Optional.of(goal));
 
         when(drinkHistoryRepository
                 .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(anyLong(), any(), any()))
                 .thenReturn(2L);
 
-        when(converter.toDto(goal, 2L))
+        when(converter.toDto(goal, 2L, goal))
                 .thenReturn(dto);
 
         var result = service.getLatestGoal(userId);
@@ -72,16 +74,55 @@ class UserGoalHistoryQueryServiceImplTest {
     }
 
     @Test
-    void 목표가_없으면_null() {
+    void 이번달_목표가_없어도_최근_목표_연월이_담긴_DTO를_반환한다() {
+
+        LocalDate goalMonth = LocalDate.now(TimeConstants.KST).withDayOfMonth(1);
+
+        // 과거(2026-08)에 세운 목표만 있고 이번 달 목표는 없는 상황
+        UserGoalHistory pastGoal = UserGoalHistory.builder()
+                .userId(userId)
+                .goalMonth(LocalDate.of(2026, 8, 1))
+                .monthlyGoalCount(10)
+                .goalSetAt(LocalDateTime.of(2026, 8, 1, 9, 0))
+                .build();
+
+        when(repository.findByUserIdAndGoalMonth(userId, goalMonth))
+                .thenReturn(Optional.empty());
+        when(repository.findTopByUserIdOrderByGoalMonthDesc(userId))
+                .thenReturn(Optional.of(pastGoal));
+        when(converter.toDto(null, null, pastGoal))
+                .thenCallRealMethod();
+
+        var result = service.getLatestGoal(userId);
+
+        assertNotNull(result);
+        assertNull(result.getMonthlyGoalCount());
+        assertNull(result.getGoalSetAt());
+        assertEquals(2026, result.getLatestGoalYear());
+        assertEquals(8, result.getLatestGoalMonth());
+        // 이번 달 목표가 없으면 음주 횟수 count 쿼리는 아예 호출하지 않는다
+        verify(drinkHistoryRepository, never())
+                .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(any(), any(), any());
+    }
+
+    @Test
+    void 목표_이력이_전혀_없으면_모든_필드가_null인_DTO를_반환한다() {
 
         LocalDate goalMonth = LocalDate.now(TimeConstants.KST).withDayOfMonth(1);
 
         when(repository.findByUserIdAndGoalMonth(userId, goalMonth))
                 .thenReturn(Optional.empty());
+        when(repository.findTopByUserIdOrderByGoalMonthDesc(userId))
+                .thenReturn(Optional.empty());
+        when(converter.toDto(null, null, null))
+                .thenCallRealMethod();
 
         var result = service.getLatestGoal(userId);
 
-        assertNull(result);
+        assertNotNull(result);
+        assertNull(result.getMonthlyGoalCount());
+        assertNull(result.getLatestGoalYear());
+        assertNull(result.getLatestGoalMonth());
     }
 
     @Test
@@ -123,12 +164,14 @@ class UserGoalHistoryQueryServiceImplTest {
 
         when(repository.findByUserIdAndGoalMonth(userId, goalMonth))
                 .thenReturn(Optional.of(goal));
+        when(repository.findTopByUserIdOrderByGoalMonthDesc(userId))
+                .thenReturn(Optional.of(goal));
 
         when(drinkHistoryRepository
                 .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(any(), any(), any()))
                 .thenReturn(6L);
 
-        when(converter.toDto(goal, 6L))
+        when(converter.toDto(goal, 6L, goal))
                 .thenCallRealMethod();
 
         var result = service.getLatestGoal(userId);
@@ -149,12 +192,14 @@ class UserGoalHistoryQueryServiceImplTest {
 
         when(repository.findByUserIdAndGoalMonth(userId, goalMonth))
                 .thenReturn(Optional.of(goal));
+        when(repository.findTopByUserIdOrderByGoalMonthDesc(userId))
+                .thenReturn(Optional.of(goal));
 
         when(drinkHistoryRepository
                 .countByUserUserIdAndIsDrinkTrueAndDrinkDateBetween(any(), any(), any()))
                 .thenReturn(5L);
 
-        when(converter.toDto(goal, 5L))
+        when(converter.toDto(goal, 5L, goal))
                 .thenCallRealMethod();
 
         var result = service.getLatestGoal(userId);
