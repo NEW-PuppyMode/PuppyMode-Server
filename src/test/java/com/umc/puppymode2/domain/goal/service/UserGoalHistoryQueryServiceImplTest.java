@@ -96,8 +96,12 @@ class UserGoalHistoryQueryServiceImplTest {
         var result = service.getLatestGoal(userId);
 
         assertNotNull(result);
+        // 이번 달 목표 관련 4개 필드는 전부 null이어야 한다
         assertNull(result.getMonthlyGoalCount());
+        assertNull(result.getMonthlyActualCount());
+        assertNull(result.getIsGoalExceeded());
         assertNull(result.getGoalSetAt());
+        // 최근 목표(2026-08)의 연/월만 채워진다
         assertEquals(2026, result.getLatestGoalYear());
         assertEquals(8, result.getLatestGoalMonth());
         // 이번 달 목표가 없으면 음주 횟수 count 쿼리는 아예 호출하지 않는다
@@ -120,7 +124,11 @@ class UserGoalHistoryQueryServiceImplTest {
         var result = service.getLatestGoal(userId);
 
         assertNotNull(result);
+        // 이름 그대로 6개 필드가 전부 null이어야 한다
         assertNull(result.getMonthlyGoalCount());
+        assertNull(result.getMonthlyActualCount());
+        assertNull(result.getIsGoalExceeded());
+        assertNull(result.getGoalSetAt());
         assertNull(result.getLatestGoalYear());
         assertNull(result.getLatestGoalMonth());
     }
