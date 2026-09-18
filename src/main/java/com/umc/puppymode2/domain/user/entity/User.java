@@ -102,22 +102,6 @@ public class User extends BaseEntity {
         this.isCustomName = true;
     }
 
-    public void withdraw() {
-        this.status = UserStatus.STOP;
-        this.withdrawnAt = LocalDateTime.now();
-
-        // 개인 정보 마스킹
-        this.email = "withdrawn_" + userId + "@deleted.com";
-        this.username = "탈퇴한 사용자";
-        this.receiveNotifications = false;
-
-        // CASCADE로 자동 삭제
-        this.socialAuths.clear();
-        this.drinkHistories.clear();
-        this.advices.clear();
-        this.puppy = null;
-    }
-
     public void updateNotificationSetting(boolean receiveNotifications) {
         this.receiveNotifications = receiveNotifications;
     }

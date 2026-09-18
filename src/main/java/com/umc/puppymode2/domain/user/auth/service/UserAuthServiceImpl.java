@@ -1,5 +1,7 @@
 package com.umc.puppymode2.domain.user.auth.service;
 
+import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
+import com.umc.puppymode2.domain.notification.repository.FcmTokenRepository;
 import com.umc.puppymode2.domain.onboarding.progress.OnboardingProgressService;
 import com.umc.puppymode2.domain.puppy.repository.PuppyRepository;
 import com.umc.puppymode2.domain.user.auth.dto.AuthMeResponseDTO;
@@ -41,6 +43,8 @@ public class UserAuthServiceImpl implements UserAuthService {
     private final RedisConfig.RedisHealthIndicator redisHealthIndicator;
     private final PuppyRepository puppyRepository;
     private final OnboardingProgressService onboardingProgressService;
+    private final UserGoalHistoryRepository userGoalHistoryRepository;
+    private final FcmTokenRepository fcmTokenRepository;
 
     @Transactional
     @Override
@@ -85,17 +89,7 @@ public class UserAuthServiceImpl implements UserAuthService {
         // 신규 회원일 경우
         Optional<User> optionalUser = userRepository.findByEmail(email);
 
-        user = optionalUser.map(existingUser -> {
-            // 탈퇴한 회원인 경우 -> 재활성화 처리
-            if (existingUser.getStatus() == UserStatus.STOP) {
-
-                // 상태를 NORMAL로 복구
-                existingUser.setStatus(UserStatus.NORMAL);
-
-                return userRepository.save(existingUser);
-            }
-            return existingUser;
-        }).orElseGet(() -> {
+        user = optionalUser.orElseGet(() -> {
             // 새 사용자 생성
             isNewUser.set(true);
             User newUser = User.builder()
@@ -192,7 +186,8 @@ public class UserAuthServiceImpl implements UserAuthService {
 
     /**
      * 회원탈퇴 처리
-     * User 엔티티의 withdraw() 메서드를 호출하여 처리합니다.
+     * - UserGoalHistory, FcmToken은 User와 JPA cascade로 안 묶여 있어 명시적으로 먼저 삭제
+     * - User 삭제 시 SocialAuth/DrinkHistory/Advice/Puppy는 cascade=ALL, orphanRemoval=true로 자동 삭제됨
      *
      * @param userId 사용자 ID
      */
@@ -202,14 +197,20 @@ public class UserAuthServiceImpl implements UserAuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        // User 엔티티의 withdraw() 메서드 호출
-        // - 상태를 STOP으로 변경
-        // - 개인정보 마스킹 (이메일, 이름)
-        // - 연관 데이터 CASCADE 삭제 (socialAuths, drinkHistories, advices, puppy)
-        user.withdraw();
+        try {
+            userGoalHistoryRepository.deleteAllByUserId(userId);
+        } catch (Exception e) {
+            log.error("[Withdraw][APPLE] 목표 히스토리 삭제 실패 - userId: {}", userId, e);
+            throw new RuntimeException("탈퇴 처리 중 오류가 발생했습니다.", e);
+        }
 
-        userRepository.save(user);
-        log.info("[Withdraw] 회원탈퇴 처리 완료 - userId: {}", userId);
+        try {
+            fcmTokenRepository.deleteAllByUserUserId(userId);
+        } catch (Exception e) {
+            log.error("[Withdraw][APPLE] FCM 토큰 삭제 실패 - userId: {}", userId, e);
+        }
+
+        userRepository.delete(user);
     }
 
     /**
