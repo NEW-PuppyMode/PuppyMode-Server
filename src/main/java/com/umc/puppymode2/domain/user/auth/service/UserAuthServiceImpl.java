@@ -69,11 +69,13 @@ public class UserAuthServiceImpl implements UserAuthService {
                 socialAuthRepository.save(socialAuth);
             }
 
-            // username 변경 처리
-            if (newUsername != null && !newUsername.equals(user.getUsername())) {
-                log.debug("username 변경됨.");
-                user.setUsername(newUsername);
-                userRepository.save(user);
+            // 사용자가 직접 이름을 수정하지 않은 경우에만 소셜 프로필 이름 반영
+            if (!user.isCustomName()
+                    && newUsername != null
+                    && !newUsername.equals(user.getUsername())) {
+
+                log.debug("소셜 프로필 username으로 변경됨.");
+                user.updateProviderUsername(newUsername);
             }
 
             // 인증 객체 등록
