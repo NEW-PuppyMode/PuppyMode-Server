@@ -97,9 +97,13 @@ public class User extends BaseEntity {
         this.isCustomName = isCustomName;
     }
 
-    public void setUsername(String username) {
+    public void updateCustomUsername(String username) {
         this.username = username;
         this.isCustomName = true;
+    }
+
+    public void updateProviderUsername(String username) {
+        this.username = username;
     }
 
     public void withdraw() {
