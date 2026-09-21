@@ -87,9 +87,15 @@ public class FriendConverter {
                 .build();
     }
 
-    // BaseEntity의 createdAt은 JPA Auditing이 서버(JVM) 기본 타임존으로 채운 LocalDateTime이다.
-    // 서버 타임존이 UTC든 KST든 같은 시각을 가리키도록, 기본 타임존으로 해석한 뒤 KST(+09:00)로 변환한다.
-    private OffsetDateTime toKstOffset(LocalDateTime dateTime) {
+    /**
+     * friend 도메인의 LocalDateTime 컬럼(created_at, responded_at)을 응답용 KST(+09:00) 시각으로 변환한다.
+     *
+     * 두 컬럼 모두 JVM 기본 타임존 기준으로 저장된다.
+     * (created_at: BaseEntity의 JPA Auditing, responded_at: FriendRequest가 LocalDateTime.now()로 기록)
+     * 서버 타임존이 UTC든 KST든 같은 시각을 가리키도록, 기본 타임존으로 해석한 뒤 KST로 변환한다.
+     * 이 도메인의 시각을 응답에 내릴 때는 항상 이 메서드를 거쳐야 기준이 어긋나지 않는다.
+     */
+    public OffsetDateTime toKstOffset(LocalDateTime dateTime) {
         if (dateTime == null) {
             return null;
         }

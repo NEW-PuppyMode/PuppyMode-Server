@@ -2,7 +2,6 @@ package com.umc.puppymode2.domain.friend.entity;
 
 import com.umc.puppymode2.domain.common.BaseEntity;
 import com.umc.puppymode2.domain.friend.entity.enums.FriendRequestStatus;
-import com.umc.puppymode2.global.util.TimeConstants;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -50,6 +49,11 @@ public class FriendRequest extends BaseEntity {
     private FriendRequestStatus status;
 
     // 수락/거절한 시각. PENDING이면 null
+    //
+    // 시간 기준: 같은 행의 created_at(BaseEntity, JPA Auditing이 JVM 기본 타임존으로 채움)과 반드시 같은 기준을 써야 한다.
+    // 여기만 KST로 저장하면 JVM 타임존이 KST가 아닐 때 같은 시각이 서로 다른 LocalDateTime 값으로 저장되어
+    // 두 값을 비교하거나 응답으로 내려줄 때 어긋난다. 그래서 LocalDateTime.now()(JVM 기본 타임존)를 쓰고,
+    // KST(+09:00)로의 변환은 응답을 만드는 FriendConverter에서 한 곳으로만 한다.
     @Column(name = "responded_at")
     private LocalDateTime respondedAt;
 
@@ -70,12 +74,12 @@ public class FriendRequest extends BaseEntity {
 
     public void accept() {
         this.status = FriendRequestStatus.ACCEPTED;
-        this.respondedAt = LocalDateTime.now(TimeConstants.KST);
+        this.respondedAt = LocalDateTime.now(); // created_at과 같은 기준(JVM 기본 타임존). 위 필드 주석 참고
     }
 
     public void reject() {
         this.status = FriendRequestStatus.REJECTED;
-        this.respondedAt = LocalDateTime.now(TimeConstants.KST);
+        this.respondedAt = LocalDateTime.now(); // created_at과 같은 기준(JVM 기본 타임존). 위 필드 주석 참고
     }
 
     // 거절됐거나(친구 삭제 후의) 수락 처리된 요청을 다시 대기 상태로 되돌린다. (재요청)
