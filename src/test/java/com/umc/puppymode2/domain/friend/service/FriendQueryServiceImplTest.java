@@ -1,5 +1,7 @@
 package com.umc.puppymode2.domain.friend.service;
 
+import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
+import com.umc.puppymode2.domain.cheer.repository.CheerSentProjection;
 import com.umc.puppymode2.domain.friend.cache.PuppyProfileCache;
 import com.umc.puppymode2.domain.friend.cache.PuppyProfileCache.PuppyProfile;
 import com.umc.puppymode2.domain.friend.converter.FriendConverter;
@@ -48,6 +50,7 @@ class FriendQueryServiceImplTest {
     @Mock private FriendRequestRepository friendRequestRepository;
     @Mock private FriendshipRepository friendshipRepository;
     @Mock private FriendDrinkRecordRepository friendDrinkRecordRepository;
+    @Mock private CheerRepository cheerRepository;
     @Mock private UserRepository userRepository;
     @Mock private PuppyRepository puppyRepository;
     @Mock private PuppyProfileCache puppyProfileCache;
@@ -158,6 +161,62 @@ class FriendQueryServiceImplTest {
         FriendListResponseDTO.Item friend = service.getFriends(ME).getFriends().get(0);
 
         assertEquals(FriendDrinkStatus.DRANK_TODAY, friend.getDrinkStatus());
+    }
+
+    @Test
+    void 내가_이미_응원을_보낸_친구는_SENT이고_응원_대상_날짜가_없다() {
+        givenSingleFriend(1L);
+        when(friendDrinkRecordRepository.findRecords(anyCollection(), anyCollection())).thenReturn(List.of(
+                record(1L, today, true)));
+        when(cheerRepository.findSentTargets(eq(ME), anyCollection(), anyCollection())).thenReturn(List.of(
+                sent(1L, today)));
+
+        FriendListResponseDTO.Item friend = service.getFriends(ME).getFriends().get(0);
+
+        assertEquals(FriendDrinkStatus.DRANK_TODAY, friend.getDrinkStatus());
+        assertEquals(FriendCheerState.SENT, friend.getCheer().getState());
+        assertNull(friend.getCheer().getTargetDate());
+    }
+
+    @Test
+    void 이틀_연속_음주에서_어제_응원을_보냈다면_오늘_건으로_넘어가며_ACTIVE가_유지된다() {
+        givenSingleFriend(1L);
+        when(friendDrinkRecordRepository.findRecords(anyCollection(), anyCollection())).thenReturn(List.of(
+                record(1L, yesterday, true), record(1L, today, true)));
+        when(cheerRepository.findSentTargets(eq(ME), anyCollection(), anyCollection())).thenReturn(List.of(
+                sent(1L, yesterday)));
+
+        FriendListResponseDTO.Item friend = service.getFriends(ME).getFriends().get(0);
+
+        assertEquals(FriendCheerState.ACTIVE, friend.getCheer().getState());
+        assertEquals(today, friend.getCheer().getTargetDate());
+    }
+
+    @Test
+    void 다른_친구에게_보낸_응원은_이_친구의_상태에_영향을_주지_않는다() {
+        when(friendshipRepository.findFriendIds(ME)).thenReturn(List.of(1L, 2L));
+        when(userRepository.findAllById(anyCollection())).thenReturn(List.of(
+                user(1L, "가", UserStatus.NORMAL), user(2L, "나", UserStatus.NORMAL)));
+        when(puppyRepository.findAllByUserUserIdIn(any())).thenReturn(List.of());
+        when(friendDrinkRecordRepository.findRecords(anyCollection(), anyCollection())).thenReturn(List.of(
+                record(1L, today, true), record(2L, today, true)));
+        when(cheerRepository.findSentTargets(eq(ME), anyCollection(), anyCollection())).thenReturn(List.of(
+                sent(1L, today)));
+
+        List<FriendListResponseDTO.Item> friends = service.getFriends(ME).getFriends();
+
+        assertEquals(FriendCheerState.SENT, friends.get(0).getCheer().getState());
+        assertEquals(FriendCheerState.ACTIVE, friends.get(1).getCheer().getState());
+    }
+
+    @Test
+    void 보낸_응원은_어제와_오늘_날짜만_조회한다() {
+        givenSingleFriend(1L);
+        when(friendDrinkRecordRepository.findRecords(anyCollection(), anyCollection())).thenReturn(List.of());
+
+        service.getFriends(ME);
+
+        verify(cheerRepository).findSentTargets(eq(ME), eq(java.util.Set.of(1L)), eq(List.of(yesterday, today)));
     }
 
     @Test
@@ -273,6 +332,19 @@ class FriendQueryServiceImplTest {
         FriendRequest request = FriendRequest.create(requesterId, receiverId);
         ReflectionTestUtils.setField(request, "friendRequestId", id);
         return request;
+    }
+
+    private void givenSingleFriend(Long friendId) {
+        when(friendshipRepository.findFriendIds(ME)).thenReturn(List.of(friendId));
+        when(userRepository.findAllById(anyCollection())).thenReturn(List.of(user(friendId, "가", UserStatus.NORMAL)));
+        when(puppyRepository.findAllByUserUserIdIn(any())).thenReturn(List.of());
+    }
+
+    private CheerSentProjection sent(Long receiverId, LocalDate targetDate) {
+        return new CheerSentProjection() {
+            @Override public Long getReceiverId() { return receiverId; }
+            @Override public LocalDate getTargetDate() { return targetDate; }
+        };
     }
 
     private FriendDrinkRecordProjection record(Long userId, LocalDate date, boolean isDrink) {
