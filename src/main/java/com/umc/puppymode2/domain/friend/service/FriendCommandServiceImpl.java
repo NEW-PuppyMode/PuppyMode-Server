@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.friend.service;
 
+import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
 import com.umc.puppymode2.domain.friend.converter.FriendConverter;
 import com.umc.puppymode2.domain.friend.dto.FriendRequestAcceptResponseDTO;
 import com.umc.puppymode2.domain.friend.dto.FriendRequestSendResponseDTO;
@@ -28,6 +29,7 @@ public class FriendCommandServiceImpl implements FriendCommandService {
     private final FriendCodeRepository friendCodeRepository;
     private final FriendRequestRepository friendRequestRepository;
     private final FriendshipRepository friendshipRepository;
+    private final CheerRepository cheerRepository;
     private final UserRepository userRepository;
     private final FriendCodeAttemptLimiter attemptLimiter;
     private final FriendConverter converter;
@@ -145,7 +147,9 @@ public class FriendCommandServiceImpl implements FriendCommandService {
 
         friendshipRepository.delete(friendship);
 
-        // TODO: 응원(Cheer) 기능이 들어오는 소셜 2/4에서, 둘 사이의 만료 전 응원도 이 트랜잭션에서 함께 삭제한다.
+        // 둘 사이(양방향)의 응원도 같은 트랜잭션에서 함께 지운다. 이미 만료됐지만 정리 배치가 아직 안 지운 행도 함께 지워진다.
+        cheerRepository.deleteAllBetween(myUserId, friendUserId);
+
         // 기존 FriendRequest 행은 지우지 않는다. 다시 친구 요청을 하면 sendFriendRequest가 그 행을 PENDING으로 되돌린다.
     }
 

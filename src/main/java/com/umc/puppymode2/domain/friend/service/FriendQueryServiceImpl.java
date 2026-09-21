@@ -1,5 +1,7 @@
 package com.umc.puppymode2.domain.friend.service;
 
+import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
+import com.umc.puppymode2.domain.cheer.repository.CheerSentProjection;
 import com.umc.puppymode2.domain.friend.cache.PuppyProfileCache;
 import com.umc.puppymode2.domain.friend.cache.PuppyProfileCache.PuppyProfile;
 import com.umc.puppymode2.domain.friend.converter.FriendConverter;
@@ -39,6 +41,7 @@ public class FriendQueryServiceImpl implements FriendQueryService {
     private final FriendRequestRepository friendRequestRepository;
     private final FriendshipRepository friendshipRepository;
     private final FriendDrinkRecordRepository friendDrinkRecordRepository;
+    private final CheerRepository cheerRepository;
     private final UserRepository userRepository;
     private final PuppyRepository puppyRepository;
     private final PuppyProfileCache puppyProfileCache;
@@ -94,9 +97,8 @@ public class FriendQueryServiceImpl implements FriendQueryService {
         LocalDate today = LocalDate.now(TimeConstants.KST);
         Map<Long, Map<LocalDate, Boolean>> drinkByFriend = findDrinkRecords(users.keySet(), today);
 
-        // TODO: 응원(Cheer)이 들어오는 소셜 2/4에서, 내가 이 친구에게 이미 보낸 응원의 대상 날짜를 조회해 넘긴다.
-        //       지금은 응원 데이터가 없으므로 항상 빈 집합이며, 그동안 cheer.state에서 SENT는 나오지 않는다.
-        Set<LocalDate> sentDates = Set.of();
+        // 내가 각 친구에게 어제/오늘 날짜로 이미 보낸 응원. cheer.state의 SENT 판정과 응원 대상 날짜 계산에 쓰인다.
+        Map<Long, Set<LocalDate>> sentByFriend = findSentCheerDates(myUserId, users.keySet(), today);
 
         // 가나다순 정렬. DB collation에 의존하지 않고 한국어 Collator로 정렬한다.
         Collator collator = Collator.getInstance(Locale.KOREAN);
@@ -108,7 +110,9 @@ public class FriendQueryServiceImpl implements FriendQueryService {
         for (User friend : sortedFriends) {
             Puppy puppy = puppies.get(friend.getUserId());
             FriendStatus status = statusCalculator.calculate(
-                    today, drinkByFriend.getOrDefault(friend.getUserId(), Map.of()), sentDates);
+                    today,
+                    drinkByFriend.getOrDefault(friend.getUserId(), Map.of()),
+                    sentByFriend.getOrDefault(friend.getUserId(), Set.of()));
             items.add(converter.toFriendItem(friend, puppy, puppyProfileCache.profileOf(puppy), status));
         }
         return converter.toFriendListDto(items);
@@ -142,6 +146,18 @@ public class FriendQueryServiceImpl implements FriendQueryService {
     private Map<Long, Puppy> findPuppies(Collection<Long> userIds) {
         return puppyRepository.findAllByUserUserIdIn(new ArrayList<>(userIds)).stream()
                 .collect(Collectors.toMap(p -> p.getUser().getUserId(), Function.identity(), (a, b) -> a));
+    }
+
+    // 내가 친구들에게 어제/오늘 날짜로 보낸 응원을 친구 userId -> 응원 대상 날짜 집합 으로 모은다.
+    private Map<Long, Set<LocalDate>> findSentCheerDates(Long myUserId, Collection<Long> friendIds, LocalDate today) {
+        List<CheerSentProjection> sent =
+                cheerRepository.findSentTargets(myUserId, friendIds, List.of(today.minusDays(1), today));
+
+        Map<Long, Set<LocalDate>> result = new HashMap<>();
+        for (CheerSentProjection cheer : sent) {
+            result.computeIfAbsent(cheer.getReceiverId(), id -> new HashSet<>()).add(cheer.getTargetDate());
+        }
+        return result;
     }
 
     // 친구들의 어제/오늘 음주 기록을 userId -> (날짜 -> 마셨는지) 로 모은다.
