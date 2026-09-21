@@ -28,6 +28,6 @@ public class UserNameServiceImpl implements UserNameService {
             user.getPuppy().setPuppyExp(user.getPuppy().getPuppyExp() + 10);
         }
 
-        user.setUsername(requestDto.getMyName());
+        user.updateCustomUsername(requestDto.getMyName());
     }
 }
