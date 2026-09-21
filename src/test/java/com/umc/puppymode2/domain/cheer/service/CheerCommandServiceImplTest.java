@@ -7,12 +7,13 @@ import com.umc.puppymode2.domain.cheer.entity.Cheer;
 import com.umc.puppymode2.domain.cheer.entity.CheerTemplate;
 import com.umc.puppymode2.domain.cheer.entity.enums.CheerCategory;
 import com.umc.puppymode2.domain.cheer.exception.CheerErrorStatus;
+import com.umc.puppymode2.domain.cheer.repository.CheerFriendshipRepository;
 import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
 import com.umc.puppymode2.domain.cheer.repository.CheerTemplateRepository;
 import com.umc.puppymode2.domain.friend.converter.FriendConverter;
+import com.umc.puppymode2.domain.friend.entity.Friendship;
 import com.umc.puppymode2.domain.friend.repository.FriendDrinkRecordProjection;
 import com.umc.puppymode2.domain.friend.repository.FriendDrinkRecordRepository;
-import com.umc.puppymode2.domain.friend.repository.FriendshipRepository;
 import com.umc.puppymode2.domain.user.auth.enums.Provider;
 import com.umc.puppymode2.domain.user.entity.User;
 import com.umc.puppymode2.domain.user.entity.enums.UserStatus;
@@ -46,7 +47,7 @@ class CheerCommandServiceImplTest {
 
     @Mock private CheerRepository cheerRepository;
     @Mock private CheerTemplateRepository cheerTemplateRepository;
-    @Mock private FriendshipRepository friendshipRepository;
+    @Mock private CheerFriendshipRepository cheerFriendshipRepository;
     @Mock private FriendDrinkRecordRepository friendDrinkRecordRepository;
     @Mock private UserRepository userRepository;
     @Spy private CheerTimePolicy timePolicy = new CheerTimePolicy();
@@ -158,8 +159,31 @@ class CheerCommandServiceImplTest {
     // ---------------------------------------------------------------- 친구 관계 / 사용자 상태
 
     @Test
+    void 친구_관계는_공유_잠금으로_조회한다() {
+        // 확인과 저장 사이에 친구 삭제가 끼어들어 응원이 남는 경쟁 상태를 막기 위해, 관계 행을 잠그고 확인한다.
+        givenFriendAndTemplate();
+        givenFriendDrank(today, true);
+        givenSaveAssignsId(900L);
+
+        service.sendCheer(ME, FRIEND, request(today));
+
+        verify(cheerFriendshipRepository).findWithSharedLock(ME, FRIEND);
+    }
+
+    @Test
+    void 잠금_조회_시점에_이미_친구가_삭제됐다면_응원을_저장하지_않는다() {
+        // 삭제가 먼저 끝난 경우: 잠금 조회가 삭제 완료를 기다린 뒤 빈 결과를 받는다.
+        when(cheerFriendshipRepository.findWithSharedLock(ME, FRIEND)).thenReturn(Optional.empty());
+
+        GeneralException e = assertThrows(GeneralException.class, () -> service.sendCheer(ME, FRIEND, request(today)));
+
+        assertEquals(CheerErrorStatus.NOT_FRIENDS, e.getCode());
+        verify(cheerRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
     void 친구가_아니면_403() {
-        when(friendshipRepository.existsByUserLowIdAndUserHighId(ME, FRIEND)).thenReturn(false);
+        when(cheerFriendshipRepository.findWithSharedLock(ME, FRIEND)).thenReturn(Optional.empty());
 
         GeneralException e = assertThrows(GeneralException.class, () -> service.sendCheer(ME, FRIEND, request(today)));
 
@@ -169,7 +193,7 @@ class CheerCommandServiceImplTest {
 
     @Test
     void 나_자신에게_보내면_친구_관계가_없으므로_403() {
-        when(friendshipRepository.existsByUserLowIdAndUserHighId(ME, ME)).thenReturn(false);
+        when(cheerFriendshipRepository.findWithSharedLock(ME, ME)).thenReturn(Optional.empty());
 
         GeneralException e = assertThrows(GeneralException.class, () -> service.sendCheer(ME, ME, request(today)));
 
@@ -179,7 +203,7 @@ class CheerCommandServiceImplTest {
     @Test
     void 친구의_ID_순서와_무관하게_low_high로_정규화해_친구를_판정한다() {
         Long bigMe = 99L;
-        when(friendshipRepository.existsByUserLowIdAndUserHighId(FRIEND, bigMe)).thenReturn(false);
+        when(cheerFriendshipRepository.findWithSharedLock(FRIEND, bigMe)).thenReturn(Optional.empty());
 
         GeneralException e = assertThrows(GeneralException.class, () -> service.sendCheer(bigMe, FRIEND, request(today)));
 
@@ -188,7 +212,7 @@ class CheerCommandServiceImplTest {
 
     @Test
     void 친구가_NORMAL이_아니면_친구가_아닌_것과_같은_403() {
-        when(friendshipRepository.existsByUserLowIdAndUserHighId(ME, FRIEND)).thenReturn(true);
+        when(cheerFriendshipRepository.findWithSharedLock(ME, FRIEND)).thenReturn(Optional.of(Friendship.of(ME, FRIEND)));
         when(userRepository.findById(FRIEND)).thenReturn(Optional.of(user(FRIEND, UserStatus.REST)));
 
         GeneralException e = assertThrows(GeneralException.class, () -> service.sendCheer(ME, FRIEND, request(today)));
@@ -307,14 +331,23 @@ class CheerCommandServiceImplTest {
         service.markAllReceivedAsRead(ME);
 
         ArgumentCaptor<LocalDateTime> captor = ArgumentCaptor.forClass(LocalDateTime.class);
-        verify(cheerRepository).markAllAsRead(eq(ME), captor.capture());
+        verify(cheerRepository).markAllAsRead(eq(ME), captor.capture(), eq(UserStatus.NORMAL));
         assertFalse(captor.getValue().isBefore(before));
         assertFalse(captor.getValue().isAfter(LocalDateTime.now()));
     }
 
     @Test
+    void 읽음_처리는_NORMAL_발신자의_응원만_대상으로_한다() {
+        // 발신자가 휴면(REST)인 동안 목록/뱃지에 보이지 않는 응원이 읽음 처리되면,
+        // 발신자가 복귀했을 때 목록에는 나타나는데 뱃지에서는 이미 읽은 것으로 빠져 어긋난다.
+        service.markAllReceivedAsRead(ME);
+
+        verify(cheerRepository).markAllAsRead(eq(ME), any(LocalDateTime.class), eq(UserStatus.NORMAL));
+    }
+
+    @Test
     void 읽을_응원이_없어도_예외_없이_성공한다() {
-        when(cheerRepository.markAllAsRead(eq(ME), any())).thenReturn(0);
+        when(cheerRepository.markAllAsRead(eq(ME), any(), any())).thenReturn(0);
 
         assertDoesNotThrow(() -> service.markAllReceivedAsRead(ME));
     }
@@ -326,7 +359,7 @@ class CheerCommandServiceImplTest {
     }
 
     private void givenFriend() {
-        when(friendshipRepository.existsByUserLowIdAndUserHighId(ME, FRIEND)).thenReturn(true);
+        when(cheerFriendshipRepository.findWithSharedLock(ME, FRIEND)).thenReturn(Optional.of(Friendship.of(ME, FRIEND)));
         when(userRepository.findById(FRIEND)).thenReturn(Optional.of(user(FRIEND, UserStatus.NORMAL)));
     }
 

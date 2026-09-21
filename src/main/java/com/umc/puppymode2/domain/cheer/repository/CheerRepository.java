@@ -50,11 +50,21 @@ public interface CheerRepository extends JpaRepository<Cheer, Long> {
                                @Param("now") LocalDateTime now,
                                @Param("normal") UserStatus normal);
 
-    // 내가 받은 안 읽은 만료 전 응원을 모두 읽음 처리한다. 이미 모두 읽은 상태여도 0건 갱신으로 정상 종료(멱등)
+    /*
+     * 내가 받은 안 읽은 만료 전 응원을 모두 읽음 처리한다. 이미 모두 읽은 상태여도 0건 갱신으로 정상 종료(멱등)
+     *
+     * 발신자가 NORMAL인 응원만 갱신한다. 목록/뱃지 쿼리는 NORMAL 발신자의 응원만 보여주므로, 여기서도 같은 조건을 써야
+     * 발신자가 휴면(REST)인 동안 눈에 보이지 않는 응원이 읽음 처리되는 일이 없다.
+     * (그렇게 읽음 처리되면 발신자가 NORMAL로 돌아왔을 때 목록에는 다시 나타나는데 뱃지는 이미 읽은 것으로 세어 어긋난다)
+     * 친구 관계 조건은 넣지 않는다. 친구를 삭제하면 둘 사이의 응원이 함께 삭제되므로 친구가 아닌 사람의 응원은 남지 않는다.
+     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Cheer c SET c.readAt = :now, c.updatedAt = :now " +
-            "WHERE c.receiverId = :receiverId AND c.readAt IS NULL AND c.expiresAt > :now")
-    int markAllAsRead(@Param("receiverId") Long receiverId, @Param("now") LocalDateTime now);
+            "WHERE c.receiverId = :receiverId AND c.readAt IS NULL AND c.expiresAt > :now " +
+            "AND EXISTS (SELECT 1 FROM User u WHERE u.userId = c.senderId AND u.status = :normal)")
+    int markAllAsRead(@Param("receiverId") Long receiverId,
+                      @Param("now") LocalDateTime now,
+                      @Param("normal") UserStatus normal);
 
     /*
      * 친구 목록의 「응원 보냄(SENT)」 판정용.

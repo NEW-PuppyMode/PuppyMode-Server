@@ -6,11 +6,11 @@ import com.umc.puppymode2.domain.cheer.dto.CheerSendResponseDTO;
 import com.umc.puppymode2.domain.cheer.entity.Cheer;
 import com.umc.puppymode2.domain.cheer.entity.CheerTemplate;
 import com.umc.puppymode2.domain.cheer.exception.CheerErrorStatus;
+import com.umc.puppymode2.domain.cheer.repository.CheerFriendshipRepository;
 import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
 import com.umc.puppymode2.domain.cheer.repository.CheerTemplateRepository;
 import com.umc.puppymode2.domain.friend.repository.FriendDrinkRecordProjection;
 import com.umc.puppymode2.domain.friend.repository.FriendDrinkRecordRepository;
-import com.umc.puppymode2.domain.friend.repository.FriendshipRepository;
 import com.umc.puppymode2.domain.user.entity.enums.UserStatus;
 import com.umc.puppymode2.domain.user.repository.UserRepository;
 import com.umc.puppymode2.global.exception.GeneralException;
@@ -31,7 +31,7 @@ public class CheerCommandServiceImpl implements CheerCommandService {
 
     private final CheerRepository cheerRepository;
     private final CheerTemplateRepository cheerTemplateRepository;
-    private final FriendshipRepository friendshipRepository;
+    private final CheerFriendshipRepository cheerFriendshipRepository;
     private final FriendDrinkRecordRepository friendDrinkRecordRepository;
     private final UserRepository userRepository;
     private final CheerTimePolicy timePolicy;
@@ -48,8 +48,10 @@ public class CheerCommandServiceImpl implements CheerCommandService {
         // 1. 나와 상대가 친구이고 상대가 NORMAL 이어야 한다.
         //    친구가 아닌 경우와 상대가 비활성인 경우를 같은 응답으로 처리해, 친구가 아닌 사람의 상태를 알려주지 않는다.
         //    (내가 나에게 보내는 경우도 친구 관계가 없으므로 여기서 걸린다)
-        boolean isFriend = friendshipRepository.existsByUserLowIdAndUserHighId(
-                Math.min(myUserId, friendUserId), Math.max(myUserId, friendUserId));
+        //    친구 관계 행은 공유 잠금으로 조회한다. 이 트랜잭션이 끝날 때까지 친구 삭제가 기다리므로,
+        //    확인한 뒤 응원을 저장하기 전에 친구가 삭제되어 응원이 남는 경쟁 상태를 막는다. (CheerFriendshipRepository 참고)
+        boolean isFriend = cheerFriendshipRepository.findWithSharedLock(
+                Math.min(myUserId, friendUserId), Math.max(myUserId, friendUserId)).isPresent();
         if (!isFriend) {
             throw new GeneralException(CheerErrorStatus.NOT_FRIENDS);
         }
@@ -94,7 +96,7 @@ public class CheerCommandServiceImpl implements CheerCommandService {
     @Override
     public void markAllReceivedAsRead(Long myUserId) {
         // 읽음 시각도 다른 시각 컬럼과 같은 기준(JVM 기본 타임존)으로 기록한다.
-        cheerRepository.markAllAsRead(myUserId, LocalDateTime.now());
+        cheerRepository.markAllAsRead(myUserId, LocalDateTime.now(), UserStatus.NORMAL);
     }
 
     // 친구가 해당 날짜에 실제로 마셨는지. is_drink = false 인 행은 마신 것이 아니며,

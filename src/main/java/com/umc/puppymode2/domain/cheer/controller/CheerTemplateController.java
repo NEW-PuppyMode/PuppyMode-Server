@@ -46,15 +46,32 @@ public class CheerTemplateController {
                 .body(ApiResponse.onSuccess(response, "CHEER200", "응원 문구 조회 성공"));
     }
 
-    // ETag 계산용 문자열: 분류, 문구 ID, 문구 내용의 순서까지 포함해 내용이 하나라도 다르면 달라지게 한다.
-    private String toEtagSource(CheerTemplateListResponseDTO dto) {
+    /**
+     * ETag 계산용 문자열: 응답 본문에 나가는 값(분류, 탭 이름, 문구 ID, 문구 내용)과 그 순서를 모두 포함한다.
+     * 응답에 보이는 값이 하나라도 다르면 ETag도 달라져야, 바뀐 내용 대신 304를 받는 일이 없다.
+     *
+     * 각 값은 "길이:값" 형태(길이 접두사)로 이어 붙인다. 문구 안에 구분자로 쓸 만한 문자(; : | 등)가
+     * 들어 있어도 필드 경계가 모호해지지 않는다. 예: id=1, message="a;2:b" 인 문구 1개와
+     * id=1 "a" / id=2 "b" 인 문구 2개는 서로 다른 문자열이 된다.
+     */
+    String toEtagSource(CheerTemplateListResponseDTO dto) {
         StringBuilder source = new StringBuilder();
         for (CheerTemplateListResponseDTO.Category category : dto.getCategories()) {
-            source.append(category.getCategory()).append('|');
+            appendField(source, String.valueOf(category.getCategory()));
+            appendField(source, category.getLabel());
+            // 문구 개수도 넣어 분류 사이의 경계를 분명히 한다.
+            appendField(source, String.valueOf(category.getTemplates().size()));
             for (CheerTemplateListResponseDTO.Template template : category.getTemplates()) {
-                source.append(template.getId()).append(':').append(template.getMessage()).append(';');
+                appendField(source, String.valueOf(template.getId()));
+                appendField(source, template.getMessage());
             }
         }
         return source.toString();
+    }
+
+    // 값을 "길이:값;" 으로 붙인다. 길이를 먼저 적기 때문에 값에 어떤 문자가 들어 있어도 경계가 유일하게 결정된다.
+    private void appendField(StringBuilder source, String value) {
+        String text = String.valueOf(value);
+        source.append(text.length()).append(':').append(text).append(';');
     }
 }

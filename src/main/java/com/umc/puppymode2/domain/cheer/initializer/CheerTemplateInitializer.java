@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -30,18 +31,21 @@ public class CheerTemplateInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        if (cheerTemplateRepository.count() > 0) {
+            return;
+        }
+        List<CheerTemplate> seeds = buildSeeds();
         try {
-            if (cheerTemplateRepository.count() > 0) {
-                return;
-            }
-            List<CheerTemplate> seeds = buildSeeds();
             cheerTemplateRepository.saveAll(seeds);
             log.info("[CHEER TEMPLATE] 기본 응원 문구 {}건을 등록했습니다.", seeds.size());
-        } catch (Exception e) {
-            // 여러 인스턴스가 동시에 처음 뜨면 UNIQUE(category, message)에 걸릴 수 있다. (그 경우 다른 인스턴스가 이미 넣은 것)
-            // 시드 등록 실패로 서버 기동이 막히면 안 되므로 로그만 남긴다.
-            log.warn("[CHEER TEMPLATE] 기본 응원 문구 등록을 건너뜁니다: {}", e.getMessage());
+        } catch (DataIntegrityViolationException e) {
+            // 여러 인스턴스가 동시에 처음 뜨면 UNIQUE(category, message)에 걸릴 수 있다.
+            // 이 경우는 다른 인스턴스가 이미 같은 문구를 넣은 것이므로 정상으로 보고 넘어간다.
+            log.info("[CHEER TEMPLATE] 다른 인스턴스가 이미 기본 응원 문구를 등록했습니다: {}", e.getMessage());
         }
+        // 그 외 예외(DB 장애 등)는 삼키지 않고 그대로 던진다.
+        // 삼키면 시드가 빈 채로 서버가 떠서, 재시작이나 수동 복구 전까지 응원 문구 조회가 비고 응원 보내기가 전부 실패한다.
+        // 던지면 기동이 실패해 배포 환경이 재시작하면서 다시 시도된다.
     }
 
     List<CheerTemplate> buildSeeds() {
