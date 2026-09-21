@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.friend.service;
 
+import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
 import com.umc.puppymode2.domain.friend.converter.FriendConverter;
 import com.umc.puppymode2.domain.friend.dto.FriendRequestAcceptResponseDTO;
 import com.umc.puppymode2.domain.friend.dto.FriendRequestSendResponseDTO;
@@ -38,6 +39,7 @@ class FriendCommandServiceImplTest {
     @Mock private FriendCodeRepository friendCodeRepository;
     @Mock private FriendRequestRepository friendRequestRepository;
     @Mock private FriendshipRepository friendshipRepository;
+    @Mock private CheerRepository cheerRepository;
     @Mock private UserRepository userRepository;
     @Mock private FriendCodeAttemptLimiter attemptLimiter;
     @Spy private FriendConverter converter = new FriendConverter();
@@ -383,6 +385,25 @@ class FriendCommandServiceImplTest {
         service.deleteFriend(ME, OTHER);
 
         verify(friendshipRepository).delete(friendship);
+    }
+
+    @Test
+    void 친구를_삭제하면_둘_사이의_응원도_함께_삭제된다() {
+        when(friendshipRepository.findByUserLowIdAndUserHighId(ME, OTHER))
+                .thenReturn(Optional.of(Friendship.of(ME, OTHER)));
+
+        service.deleteFriend(ME, OTHER);
+
+        verify(cheerRepository).deleteAllBetween(ME, OTHER);
+    }
+
+    @Test
+    void 친구가_아니라서_삭제에_실패하면_응원도_지우지_않는다() {
+        when(friendshipRepository.findByUserLowIdAndUserHighId(ME, OTHER)).thenReturn(Optional.empty());
+
+        assertThrows(GeneralException.class, () -> service.deleteFriend(ME, OTHER));
+
+        verifyNoInteractions(cheerRepository);
     }
 
     @Test
