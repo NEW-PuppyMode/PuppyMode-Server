@@ -24,10 +24,6 @@ public class UserNameServiceImpl implements UserNameService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
 
-        if (!user.isCustomName()) {
-            user.getPuppy().setPuppyExp(user.getPuppy().getPuppyExp() + 10);
-        }
-
         user.updateCustomUsername(requestDto.getMyName());
     }
 }
