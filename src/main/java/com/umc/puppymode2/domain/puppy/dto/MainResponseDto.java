@@ -12,6 +12,7 @@ public class MainResponseDto {
     private int puppyLevelPercent;   // 경험치 진행률(%)
     private String puppyImageUrl;    // 강아지 레벨 이미지 URL
     private String currentPuppyName;
+    private String currentMyName;
 
     @JsonProperty("isPuppyName")
     private boolean puppyName;     // 강아지 이름 지어주기 여부
