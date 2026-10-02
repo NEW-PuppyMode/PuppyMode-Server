@@ -78,6 +78,7 @@ public class MainServiceImpl implements MainService {
                 .puppyLevelPercent(percent)
                 .puppyImageUrl(appearance.getImageUrl())
                 .currentPuppyName(puppy.getPuppyName())
+                .currentMyName(user.getUsername())
                 .puppyName(isPuppyName)
                 .myName(isMyName)
                 .goal(isGoal)
