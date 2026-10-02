@@ -19,7 +19,7 @@ public class PuppyNameController {
     @Operation(
             method = "PATCH",
             summary = "강아지 이름 수정 API",
-            description = "강아지의 이름을 수정하는 API입니다. (최초 설정 및 이후 이름 변경 시 공용으로 사용됩니다.) 최초 수정 시에만 경험치가 지급됩니다."
+            description = "강아지의 이름을 수정하는 API입니다. (최초 설정 및 이후 이름 변경 시 공용으로 사용됩니다.)"
     )
     public ApiResponse<Void> updatePuppyName(@Valid @RequestBody PuppyNameRequestDto requestDto) {
         puppyNameService.updatePuppyName(requestDto);

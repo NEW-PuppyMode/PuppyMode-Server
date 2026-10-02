@@ -21,13 +21,8 @@ public class PuppyNameServiceImpl implements PuppyNameService {
     @Transactional
     public void updatePuppyName(PuppyNameRequestDto requestDto) {
         Long userId = userContext.getCurrentUserId();
-
         Puppy puppy = puppyRepository.findByUser_UserId(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.PUPPY_NOT_FOUND));
-
-        if (!puppy.isCustomName()) {
-            puppy.setPuppyExp(puppy.getPuppyExp() + 10);
-        }
 
         puppy.setPuppyName(requestDto.getPuppyName());
     }
