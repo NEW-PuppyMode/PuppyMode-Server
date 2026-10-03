@@ -7,4 +7,5 @@ import lombok.Getter;
 @AllArgsConstructor
 public class NotificationSettingResponseDTO {
     private Boolean receiveNotifications;
+    private Boolean receiveFriendNotifications;
 }

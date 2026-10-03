@@ -8,6 +8,7 @@ import com.umc.puppymode2.domain.user.auth.enums.Provider;
 import com.umc.puppymode2.domain.user.entity.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,6 +35,10 @@ public class User extends BaseEntity {
 
     @Column(nullable = false)
     private boolean receiveNotifications = false;
+
+    @Column(nullable = false)
+    @ColumnDefault("true")
+    private boolean receiveFriendNotifications = true;
 
     @Enumerated(EnumType.STRING)
     private UserStatus status;
@@ -108,5 +113,9 @@ public class User extends BaseEntity {
 
     public void updateNotificationSetting(boolean receiveNotifications) {
         this.receiveNotifications = receiveNotifications;
+    }
+
+    public void updateFriendNotificationSetting(boolean receiveFriendNotifications) {
+        this.receiveFriendNotifications = receiveFriendNotifications;
     }
 }
