@@ -43,7 +43,7 @@ public class SocialNotificationEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onCheerReceived(CheerReceivedEvent event) {
         notify(event.receiverId(), event.senderId(),
-                "응원이 도착했어요", "님이 응원을 보냈어요", "cheers_received");
+                "응원이 도착했어요", "님: " + event.message(), "cheers_received");
     }
 
     private void notify(Long receiverId, Long actorId, String title, String bodySuffix, String landing) {

@@ -135,17 +135,17 @@ class SocialNotificationEventListenerTest {
         when(userRepository.findById(REQUESTER)).thenReturn(Optional.of(sender));
         when(fcmTokenRepository.findByUserUserId(RECEIVER)).thenReturn(List.of(new FcmToken(receiver, "token-1")));
 
-        listener.onCheerReceived(new CheerReceivedEvent(RECEIVER, REQUESTER));
+        listener.onCheerReceived(new CheerReceivedEvent(RECEIVER, REQUESTER, "그래 마실 수도 있지"));
 
         verify(fcmSender).sendToTokens(
-                List.of("token-1"), "응원이 도착했어요", "쿠키님이 응원을 보냈어요", "cheers_received");
+                List.of("token-1"), "응원이 도착했어요", "쿠키님: 그래 마실 수도 있지", "cheers_received");
     }
 
     @Test
     void 응원을_받아도_친구_알림이_꺼져있으면_발송하지_않는다() {
         when(userRepository.findById(RECEIVER)).thenReturn(Optional.of(user(RECEIVER, "receiver", false)));
 
-        listener.onCheerReceived(new CheerReceivedEvent(RECEIVER, REQUESTER));
+        listener.onCheerReceived(new CheerReceivedEvent(RECEIVER, REQUESTER, "그래 마실 수도 있지"));
 
         verifyNoInteractions(fcmSender);
     }

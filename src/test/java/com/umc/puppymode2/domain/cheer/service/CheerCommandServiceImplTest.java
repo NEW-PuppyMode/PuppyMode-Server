@@ -84,7 +84,7 @@ class CheerCommandServiceImplTest {
         assertEquals(FRIEND, saved.getReceiverId());
         assertEquals(today, saved.getTargetDate());
         assertNull(saved.getReadAt());
-        verify(eventPublisher).publishEvent(new CheerReceivedEvent(FRIEND, ME));
+        verify(eventPublisher).publishEvent(new CheerReceivedEvent(FRIEND, ME, "그래 마실 수도 있지"));
     }
 
     @Test

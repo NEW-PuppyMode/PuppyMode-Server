@@ -85,7 +85,7 @@ public class CheerCommandServiceImpl implements CheerCommandService {
         try {
             // 문구와 분류는 스냅샷으로 복사해 저장한다. (템플릿이 나중에 바뀌어도 받은 응원 표시는 그대로)
             Cheer saved = cheerRepository.saveAndFlush(Cheer.of(myUserId, friendUserId, template, targetDate, expiresAt));
-            eventPublisher.publishEvent(new CheerReceivedEvent(friendUserId, myUserId));
+            eventPublisher.publishEvent(new CheerReceivedEvent(friendUserId, myUserId, template.getMessage()));
 
             // 응원을 보낸 뒤 친구가 기록을 수정해(is_drink true -> false) 이 날짜에 음주 기록이 없어져도
             // 이미 보낸 응원은 그대로 유지한다. (여기서는 저장만 하고, 이후 DrinkHistory 변경을 따라가지 않는다)
