@@ -52,20 +52,27 @@ public class CheerTemplateInitializer implements ApplicationRunner {
         List<CheerTemplate> seeds = new ArrayList<>();
         addAll(seeds, CheerCategory.PRANK,
                 "이정도면 알콜 중독이야",
-                "매일 마시면 그거는 병이야"
-                // TODO: 장난 문구 3개("간이 남아…", "병원 가서 검…", "너 이러다…")는 설계서에서 문장이 잘려 있다.
-                //       기획 확정본을 받으면 여기에 추가한다. (문구 테이블이 이미 채워진 환경에는 DB에 직접 INSERT 필요)
+                "매일 마시면 그거는 병이야",
+                "간이 남아 도니?",
+                "너 이러다 진짜.. 여기까지 할게.",
+                "병원 가서 검사 좀 받아라",
+                "너 얼굴 완전 술톤이야..",
+                "에휴..뭐하냐",
+                "자꾸 핑계대지마!"
         );
         addAll(seeds, CheerCategory.COMFORT,
                 "그래 마실 수도 있지",
                 "너무 자책하지마",
                 "다 이유가 있겠지",
                 "힘든 일 있었구나",
+                "괜찮아!",
+                "다 잘될거야 걱정하지마 ~~",
                 "마시고 풀렸으면 됐어");
         addAll(seeds, CheerCategory.CHEER,
                 "그럴 수도 있어 다음이 중요해",
                 "실수는 있을 수 있지 화이팅",
                 "다음엔 꼭 참아보자!",
+                "우리 그래도 좀 줄여보자!! 넌 할 수 있어!",
                 "마신 건 마신거고 다음이 중요해",
                 "완벽할 순 없지 다시 해보자");
         return seeds;

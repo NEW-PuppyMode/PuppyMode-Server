@@ -84,6 +84,63 @@ public class FcmSender {
         return new FcmSendResult(totalSuccess, totalFailure);
     }
 
+    /**
+     * 한 유저의 여러 기기(토큰)에 동일한 내용을 전송
+     * 친구요청/응원 등 단건 이벤트성 알림에 사용
+     */
+    public FcmSendResult sendToTokens(List<String> tokens, String title, String body, String landing) {
+        if (tokens.isEmpty()) return new FcmSendResult(0, 0);
+
+        List<Message> messages = tokens.stream()
+                .map(token -> Message.builder()
+                        .setToken(token)
+                        .setNotification(Notification.builder()
+                                .setTitle(title)
+                                .setBody(body)
+                                .build())
+                        .putData("landing", landing)
+                        .setAndroidConfig(AndroidConfig.builder()
+                                .setPriority(AndroidConfig.Priority.HIGH)
+                                .build())
+                        .setApnsConfig(ApnsConfig.builder()
+                                .setAps(Aps.builder()
+                                        .setSound("default")
+                                        .build())
+                                .build())
+                        .build())
+                .toList();
+
+        try {
+            BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages);
+            log.info("[FCM] 토큰 전송 완료 - 성공: {}, 실패: {}",
+                    response.getSuccessCount(), response.getFailureCount());
+
+            if (response.getFailureCount() > 0) {
+                handleTokenFailures(tokens, response);
+            }
+            return new FcmSendResult(response.getSuccessCount(), response.getFailureCount());
+        } catch (FirebaseMessagingException e) {
+            log.error("[FCM] 토큰 전송 실패", e);
+            return new FcmSendResult(0, tokens.size());
+        }
+    }
+
+    private void handleTokenFailures(List<String> tokens, BatchResponse response) {
+        List<SendResponse> responses = response.getResponses();
+        for (int i = 0; i < responses.size(); i++) {
+            if (responses.get(i).isSuccessful()) continue;
+
+            FirebaseMessagingException ex = responses.get(i).getException();
+            MessagingErrorCode code = ex.getMessagingErrorCode();
+            log.warn("[FCM] 토큰 전송 실패 - errorCode: {}, message: {}", code, ex.getMessage());
+
+            if (code == MessagingErrorCode.UNREGISTERED || code == MessagingErrorCode.INVALID_ARGUMENT) {
+                log.warn("[FCM] 만료 토큰 삭제");
+                fcmTokenRepository.deleteByFcmToken(tokens.get(i));
+            }
+        }
+    }
+
     private void handleFailures(List<DrinkReminderTarget> targets, BatchResponse response) {
         List<SendResponse> responses = response.getResponses();
         for (int i = 0; i < responses.size(); i++) {

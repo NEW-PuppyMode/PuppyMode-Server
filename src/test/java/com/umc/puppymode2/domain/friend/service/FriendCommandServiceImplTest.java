@@ -8,6 +8,8 @@ import com.umc.puppymode2.domain.friend.entity.FriendCode;
 import com.umc.puppymode2.domain.friend.entity.FriendRequest;
 import com.umc.puppymode2.domain.friend.entity.Friendship;
 import com.umc.puppymode2.domain.friend.entity.enums.FriendRequestStatus;
+import com.umc.puppymode2.domain.friend.event.FriendRequestAcceptedEvent;
+import com.umc.puppymode2.domain.friend.event.FriendRequestReceivedEvent;
 import com.umc.puppymode2.domain.friend.exception.FriendErrorStatus;
 import com.umc.puppymode2.domain.friend.repository.FriendCodeRepository;
 import com.umc.puppymode2.domain.friend.repository.FriendRequestRepository;
@@ -24,6 +26,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -42,6 +45,7 @@ class FriendCommandServiceImplTest {
     @Mock private CheerRepository cheerRepository;
     @Mock private UserRepository userRepository;
     @Mock private FriendCodeAttemptLimiter attemptLimiter;
+    @Mock private ApplicationEventPublisher eventPublisher;
     @Spy private FriendConverter converter = new FriendConverter();
 
     @InjectMocks
@@ -72,6 +76,7 @@ class FriendCommandServiceImplTest {
         assertFalse(result.isAutoAccepted());
         verify(attemptLimiter).assertNotLimited(ME);
         verify(attemptLimiter, never()).recordFailure(any());
+        verify(eventPublisher).publishEvent(new FriendRequestReceivedEvent(OTHER, ME));
     }
 
     @Test
@@ -122,6 +127,7 @@ class FriendCommandServiceImplTest {
 
         assertEquals(FriendErrorStatus.ALREADY_FRIENDS, e.getCode());
         verify(attemptLimiter, never()).recordFailure(any());
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
@@ -165,6 +171,7 @@ class FriendCommandServiceImplTest {
         assertTrue(rejected.isPending());
         assertNull(rejected.getRespondedAt());
         verify(friendRequestRepository, never()).saveAndFlush(any());
+        verify(eventPublisher).publishEvent(new FriendRequestReceivedEvent(OTHER, ME));
     }
 
     @Test
@@ -179,6 +186,7 @@ class FriendCommandServiceImplTest {
 
         assertEquals(FriendRequestStatus.PENDING, result.getStatus());
         assertTrue(accepted.isPending());
+        verify(eventPublisher).publishEvent(new FriendRequestReceivedEvent(OTHER, ME));
     }
 
     @Test
@@ -202,6 +210,8 @@ class FriendCommandServiceImplTest {
         assertEquals(OTHER, captor.getValue().getUserHighId());
         // 내가 새로 보내는 요청 행은 만들지 않는다.
         verify(friendRequestRepository, never()).saveAndFlush(any(FriendRequest.class));
+        verify(eventPublisher).publishEvent(new FriendRequestAcceptedEvent(OTHER, ME));
+        verify(eventPublisher, never()).publishEvent(new FriendRequestReceivedEvent(OTHER, ME));
     }
 
     @Test
@@ -216,6 +226,7 @@ class FriendCommandServiceImplTest {
         GeneralException e = assertThrows(GeneralException.class, () -> service.sendFriendRequest(ME, CODE));
 
         assertEquals(FriendErrorStatus.ALREADY_FRIENDS, e.getCode());
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
@@ -230,6 +241,7 @@ class FriendCommandServiceImplTest {
         GeneralException e = assertThrows(GeneralException.class, () -> service.sendFriendRequest(ME, CODE));
 
         assertEquals(FriendErrorStatus.REQUEST_ALREADY_SENT, e.getCode());
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
@@ -261,6 +273,7 @@ class FriendCommandServiceImplTest {
         verify(friendshipRepository).saveAndFlush(captor.capture());
         assertEquals(ME, captor.getValue().getUserLowId());
         assertEquals(OTHER, captor.getValue().getUserHighId());
+        verify(eventPublisher).publishEvent(new FriendRequestAcceptedEvent(OTHER, ME));
     }
 
     @Test
@@ -340,6 +353,7 @@ class FriendCommandServiceImplTest {
         GeneralException e = assertThrows(GeneralException.class, () -> service.acceptFriendRequest(ME, 101L));
 
         assertEquals(FriendErrorStatus.REQUEST_ALREADY_HANDLED, e.getCode());
+        verifyNoInteractions(eventPublisher);
     }
 
     // ---------------------------------------------------------------- 거절

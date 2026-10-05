@@ -5,6 +5,7 @@ import com.umc.puppymode2.domain.cheer.dto.CheerSendRequestDTO;
 import com.umc.puppymode2.domain.cheer.dto.CheerSendResponseDTO;
 import com.umc.puppymode2.domain.cheer.entity.Cheer;
 import com.umc.puppymode2.domain.cheer.entity.CheerTemplate;
+import com.umc.puppymode2.domain.cheer.event.CheerReceivedEvent;
 import com.umc.puppymode2.domain.cheer.exception.CheerErrorStatus;
 import com.umc.puppymode2.domain.cheer.repository.CheerFriendshipRepository;
 import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
@@ -16,6 +17,7 @@ import com.umc.puppymode2.domain.user.repository.UserRepository;
 import com.umc.puppymode2.global.exception.GeneralException;
 import com.umc.puppymode2.global.util.TimeConstants;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +38,7 @@ public class CheerCommandServiceImpl implements CheerCommandService {
     private final UserRepository userRepository;
     private final CheerTimePolicy timePolicy;
     private final CheerConverter converter;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     @Override
@@ -82,6 +85,7 @@ public class CheerCommandServiceImpl implements CheerCommandService {
         try {
             // 문구와 분류는 스냅샷으로 복사해 저장한다. (템플릿이 나중에 바뀌어도 받은 응원 표시는 그대로)
             Cheer saved = cheerRepository.saveAndFlush(Cheer.of(myUserId, friendUserId, template, targetDate, expiresAt));
+            eventPublisher.publishEvent(new CheerReceivedEvent(friendUserId, myUserId, template.getMessage()));
 
             // 응원을 보낸 뒤 친구가 기록을 수정해(is_drink true -> false) 이 날짜에 음주 기록이 없어져도
             // 이미 보낸 응원은 그대로 유지한다. (여기서는 저장만 하고, 이후 DrinkHistory 변경을 따라가지 않는다)

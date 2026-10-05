@@ -7,6 +7,8 @@ import com.umc.puppymode2.domain.friend.dto.FriendRequestSendResponseDTO;
 import com.umc.puppymode2.domain.friend.entity.FriendCode;
 import com.umc.puppymode2.domain.friend.entity.FriendRequest;
 import com.umc.puppymode2.domain.friend.entity.Friendship;
+import com.umc.puppymode2.domain.friend.event.FriendRequestAcceptedEvent;
+import com.umc.puppymode2.domain.friend.event.FriendRequestReceivedEvent;
 import com.umc.puppymode2.domain.friend.exception.FriendErrorStatus;
 import com.umc.puppymode2.domain.friend.repository.FriendCodeRepository;
 import com.umc.puppymode2.domain.friend.repository.FriendRequestRepository;
@@ -16,6 +18,7 @@ import com.umc.puppymode2.domain.user.entity.enums.UserStatus;
 import com.umc.puppymode2.domain.user.repository.UserRepository;
 import com.umc.puppymode2.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +36,7 @@ public class FriendCommandServiceImpl implements FriendCommandService {
     private final UserRepository userRepository;
     private final FriendCodeAttemptLimiter attemptLimiter;
     private final FriendConverter converter;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     @Override
@@ -75,6 +79,7 @@ public class FriendCommandServiceImpl implements FriendCommandService {
                 // 같은 순간 다른 경로(상대의 수락 등)로 이미 친구가 된 경우 UNIQUE(low, high)에 걸린다.
                 throw new GeneralException(FriendErrorStatus.ALREADY_FRIENDS);
             }
+            eventPublisher.publishEvent(new FriendRequestAcceptedEvent(targetUserId, myUserId));
             return converter.toSendDto(incoming, true);
         }
 
@@ -87,12 +92,14 @@ public class FriendCommandServiceImpl implements FriendCommandService {
             }
             // 거절됐거나, 수락됐지만 이후 친구를 삭제한 경우: 새 행을 만들지 않고 기존 행을 되돌려 재요청한다.
             existing.reopen();
+            eventPublisher.publishEvent(new FriendRequestReceivedEvent(targetUserId, myUserId));
             return converter.toSendDto(existing, false);
         }
 
         // 6. 처음 보내는 요청
         try {
             FriendRequest saved = friendRequestRepository.saveAndFlush(FriendRequest.create(myUserId, targetUserId));
+            eventPublisher.publishEvent(new FriendRequestReceivedEvent(targetUserId, myUserId));
             return converter.toSendDto(saved, false);
         } catch (DataIntegrityViolationException e) {
             // 더블탭·동시 요청으로 UNIQUE(requester_id, receiver_id)에 걸린 경우 = 이미 요청함
@@ -121,6 +128,7 @@ public class FriendCommandServiceImpl implements FriendCommandService {
             // 이미 친구 관계가 만들어진 상태 = 다른 경로로 먼저 처리된 요청
             throw new GeneralException(FriendErrorStatus.REQUEST_ALREADY_HANDLED);
         }
+        eventPublisher.publishEvent(new FriendRequestAcceptedEvent(requesterId, myUserId));
 
         // 서로 동시에 요청해서 반대 방향 PENDING 요청이 남아 있을 수 있다. (양쪽 모두 요청 시점에는
         // 상대의 미커밋 요청을 볼 수 없다.) 이미 친구가 됐으므로 그 요청도 함께 수락 처리해 목록에 남지 않게 한다.

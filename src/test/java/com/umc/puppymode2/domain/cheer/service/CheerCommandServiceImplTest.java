@@ -6,6 +6,7 @@ import com.umc.puppymode2.domain.cheer.dto.CheerSendResponseDTO;
 import com.umc.puppymode2.domain.cheer.entity.Cheer;
 import com.umc.puppymode2.domain.cheer.entity.CheerTemplate;
 import com.umc.puppymode2.domain.cheer.entity.enums.CheerCategory;
+import com.umc.puppymode2.domain.cheer.event.CheerReceivedEvent;
 import com.umc.puppymode2.domain.cheer.exception.CheerErrorStatus;
 import com.umc.puppymode2.domain.cheer.repository.CheerFriendshipRepository;
 import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
@@ -27,6 +28,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -52,6 +54,7 @@ class CheerCommandServiceImplTest {
     @Mock private UserRepository userRepository;
     @Spy private CheerTimePolicy timePolicy = new CheerTimePolicy();
     @Spy private CheerConverter converter = new CheerConverter(new FriendConverter());
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private CheerCommandServiceImpl service;
@@ -81,6 +84,7 @@ class CheerCommandServiceImplTest {
         assertEquals(FRIEND, saved.getReceiverId());
         assertEquals(today, saved.getTargetDate());
         assertNull(saved.getReadAt());
+        verify(eventPublisher).publishEvent(new CheerReceivedEvent(FRIEND, ME, "그래 마실 수도 있지"));
     }
 
     @Test
@@ -308,6 +312,7 @@ class CheerCommandServiceImplTest {
 
         assertEquals(CheerErrorStatus.CHEER_ALREADY_SENT, e.getCode());
         verify(cheerRepository, never()).saveAndFlush(any());
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
@@ -320,6 +325,7 @@ class CheerCommandServiceImplTest {
         GeneralException e = assertThrows(GeneralException.class, () -> service.sendCheer(ME, FRIEND, request(today)));
 
         assertEquals(CheerErrorStatus.CHEER_ALREADY_SENT, e.getCode());
+        verifyNoInteractions(eventPublisher);
     }
 
     // ---------------------------------------------------------------- 읽음 처리

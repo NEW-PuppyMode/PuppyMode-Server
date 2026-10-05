@@ -40,7 +40,7 @@ public class NotificationSettingController {
     public ResponseEntity<ApiResponse<NotificationSettingResponseDTO>> update(
             @Valid @RequestBody NotificationSettingRequestDTO request) {
         Long userId = userContext.getCurrentUserId();
-        NotificationSettingResponseDTO result = notificationSettingService.update(userId, request.getReceiveNotifications());
+        NotificationSettingResponseDTO result = notificationSettingService.update(userId, request);
         return ResponseEntity.ok(ApiResponse.onSuccess(
                 result,
                 SuccessStatus.NOTIFICATION_UPDATE_SUCCESS.getCode(),
