@@ -38,10 +38,10 @@ class CheerTemplateInitializerTest {
         verify(cheerTemplateRepository).saveAll(captor.capture());
         List<CheerTemplate> seeds = captor.getValue();
         // 확정된 문구: 장난 2 + 위로 5 + 응원 5 (장난 3개는 기획 확정 전)
-        assertEquals(12, seeds.size());
-        assertEquals(2, countOf(seeds, CheerCategory.PRANK));
-        assertEquals(5, countOf(seeds, CheerCategory.COMFORT));
-        assertEquals(5, countOf(seeds, CheerCategory.CHEER));
+        assertEquals(21, seeds.size());
+        assertEquals(8, countOf(seeds, CheerCategory.PRANK));
+        assertEquals(7, countOf(seeds, CheerCategory.COMFORT));
+        assertEquals(6, countOf(seeds, CheerCategory.CHEER));
     }
 
     @Test
@@ -55,7 +55,7 @@ class CheerTemplateInitializerTest {
         verify(cheerTemplateRepository).saveAll(captor.capture());
         List<CheerTemplate> comfort = captor.getValue().stream()
                 .filter(t -> t.getCategory() == CheerCategory.COMFORT).toList();
-        assertEquals(List.of(1, 2, 3, 4, 5), comfort.stream().map(CheerTemplate::getDisplayOrder).toList());
+        assertEquals(List.of(1, 2, 3, 4, 5, 6, 7), comfort.stream().map(CheerTemplate::getDisplayOrder).toList());
         assertEquals("그래 마실 수도 있지", comfort.get(0).getMessage());
     }
 
