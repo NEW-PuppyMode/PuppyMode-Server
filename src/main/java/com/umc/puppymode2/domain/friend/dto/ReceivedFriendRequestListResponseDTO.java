@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.friend.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,6 +18,7 @@ public class ReceivedFriendRequestListResponseDTO {
     private int count; // 받은 요청 수 (「받은 요청 N」)
     private List<Item> requests;
 
+    @Schema(name = "ReceivedFriendRequestItem")
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
