@@ -37,6 +37,11 @@ public class AsyncConfig implements AsyncConfigurer {
         executor.setMaxPoolSize(2);
         executor.setQueueCapacity(20);
         executor.setThreadNamePrefix("complaint-");
+        // 큐가 가득 차면 예외를 던지지 않고 경고만 남긴 채 알림을 버린다. 알림은 부가 기능이고 신고 접수는 이미 커밋된 뒤다.
+        // (스프링이 AFTER_COMMIT 리스너의 거부 예외를 삼키고 ERROR 스택트레이스로 남기므로, 의도를 명시하고 로그를 한 줄로 줄인다)
+        executor.setRejectedExecutionHandler((task, pool) ->
+                log.warn("[신고 알림] 작업 큐가 가득 차 알림을 건너뜁니다. (active={}, queued={})",
+                        pool.getActiveCount(), pool.getQueue().size()));
         executor.initialize();
         return executor;
     }
