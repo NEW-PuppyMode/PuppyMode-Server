@@ -1,6 +1,10 @@
 package com.umc.puppymode2.domain.complaint.service;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.ClientResponse;
@@ -76,5 +80,34 @@ class ComplaintSlackSenderTest {
 
             assertNotNull(context.getBean(ComplaintSlackSender.class));
         }
+    }
+
+    @Test
+    void 전송이_실패해도_로그에_웹훅_URL이_남지_않는다() {
+        String webhookUrl = "https://hooks.slack.com/services/T000/B000/SECRET";
+        Logger logger = (Logger) LoggerFactory.getLogger(ComplaintSlackSender.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            // 4xx/5xx 응답: WebClientResponseException의 메시지에는 요청 URI가 들어간다.
+            new ComplaintSlackSender(
+                    webClientReturning(new AtomicInteger(),
+                            () -> Mono.just(ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR).build())),
+                    webhookUrl).send("신고");
+            // 그 밖의 예외: 메시지에 URL이 섞여 있는 경우
+            new ComplaintSlackSender(
+                    webClientReturning(new AtomicInteger(), () -> Mono.error(new RuntimeException("POST " + webhookUrl + " failed"))),
+                    webhookUrl).send("신고");
+        } finally {
+            logger.detachAppender(appender);
+        }
+
+        assertEquals(2, appender.list.size());
+        for (ILoggingEvent event : appender.list) {
+            assertFalse(event.getFormattedMessage().contains("hooks.slack.com"), event.getFormattedMessage());
+            assertFalse(event.getFormattedMessage().contains("SECRET"), event.getFormattedMessage());
+        }
+        assertTrue(appender.list.get(0).getFormattedMessage().contains("500"));
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.Duration;
 import java.util.Map;
@@ -44,8 +45,12 @@ public class ComplaintSlackSender {
                     .retrieve()
                     .toBodilessEntity()
                     .block(TIMEOUT);
+        } catch (WebClientResponseException e) {
+            // 예외 메시지에는 요청 URI(= 웹훅 URL)가 들어 있어서 로그에 남기지 않는다. 웹훅 URL은 그 자체로 인증 정보다.
+            log.warn("[신고 Slack 알림] 전송 실패: HTTP {}", e.getStatusCode().value());
         } catch (Exception e) {
-            log.warn("[신고 Slack 알림] 전송 실패: {}", e.getMessage());
+            // 마찬가지로 메시지에 URL이 들어갈 수 있어 예외 종류만 남긴다.
+            log.warn("[신고 Slack 알림] 전송 실패: {}", e.getClass().getSimpleName());
         }
     }
 }
