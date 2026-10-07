@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.friend.service;
 
+import com.umc.puppymode2.domain.block.repository.UserBlockRepository;
 import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
 import com.umc.puppymode2.domain.cheer.repository.CheerSentProjection;
 import com.umc.puppymode2.domain.friend.cache.PuppyProfileCache;
@@ -51,6 +52,7 @@ class FriendQueryServiceImplTest {
     @Mock private FriendshipRepository friendshipRepository;
     @Mock private FriendDrinkRecordRepository friendDrinkRecordRepository;
     @Mock private CheerRepository cheerRepository;
+    @Mock private UserBlockRepository userBlockRepository;
     @Mock private UserRepository userRepository;
     @Mock private PuppyRepository puppyRepository;
     @Mock private PuppyProfileCache puppyProfileCache;
@@ -263,6 +265,23 @@ class FriendQueryServiceImplTest {
 
         assertEquals(2, result.getCount());
         assertEquals(List.of(103L, 101L),
+                result.getRequests().stream().map(ReceivedFriendRequestListResponseDTO.Item::getRequestId).toList());
+    }
+
+    @Test
+    void 차단_관계인_요청자는_어느_방향이든_받은_요청_목록에서_제외한다() {
+        when(friendRequestRepository.findAllByReceiverAndStatus(ME, FriendRequestStatus.PENDING)).thenReturn(List.of(
+                request(103L, 3L, ME), request(102L, 2L, ME), request(101L, 1L, ME)));
+        when(friendshipRepository.findFriendIds(ME)).thenReturn(List.of());
+        // 1번은 내가 차단, 2번은 나를 차단한 사용자. findRelatedUserIds는 방향과 무관하게 상대 ID를 돌려준다.
+        when(userBlockRepository.findRelatedUserIds(ME)).thenReturn(List.of(1L, 2L));
+        when(userRepository.findAllById(anyCollection())).thenReturn(List.of(user(3L, "다", UserStatus.NORMAL)));
+        when(puppyRepository.findAllByUserUserIdIn(any())).thenReturn(List.of());
+
+        ReceivedFriendRequestListResponseDTO result = service.getReceivedRequests(ME);
+
+        assertEquals(1, result.getCount());
+        assertEquals(List.of(103L),
                 result.getRequests().stream().map(ReceivedFriendRequestListResponseDTO.Item::getRequestId).toList());
     }
 

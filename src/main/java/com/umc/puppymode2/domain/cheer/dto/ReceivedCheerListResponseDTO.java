@@ -1,6 +1,7 @@
 package com.umc.puppymode2.domain.cheer.dto;
 
 import com.umc.puppymode2.domain.cheer.entity.enums.CheerCategory;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,6 +19,7 @@ public class ReceivedCheerListResponseDTO {
     private int count; // 받은 응원 수 (「받은 응원 N」 탭 배지)
     private List<Item> cheers;
 
+    @Schema(name = "ReceivedCheerItem")
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor

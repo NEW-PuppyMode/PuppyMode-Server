@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.friend.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,6 +18,7 @@ public class FriendListResponseDTO {
     private int count; // 친구 수 (「내 친구 N」)
     private List<Item> friends;
 
+    @Schema(name = "FriendListItem")
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor

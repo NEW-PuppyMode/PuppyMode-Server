@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.friend.service;
 
+import com.umc.puppymode2.domain.block.repository.UserBlockRepository;
 import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
 import com.umc.puppymode2.domain.friend.converter.FriendConverter;
 import com.umc.puppymode2.domain.friend.dto.FriendRequestAcceptResponseDTO;
@@ -33,6 +34,7 @@ public class FriendCommandServiceImpl implements FriendCommandService {
     private final FriendRequestRepository friendRequestRepository;
     private final FriendshipRepository friendshipRepository;
     private final CheerRepository cheerRepository;
+    private final UserBlockRepository userBlockRepository;
     private final UserRepository userRepository;
     private final FriendCodeAttemptLimiter attemptLimiter;
     private final FriendConverter converter;
@@ -59,8 +61,10 @@ public class FriendCommandServiceImpl implements FriendCommandService {
             throw codeInputFailure(myUserId, FriendErrorStatus.CANNOT_ADD_SELF);
         }
 
-        // TODO: 차단(UserBlock) 기능이 들어오는 소셜 3/4에서, 어느 방향이든 차단 관계면
-        //       차단 여부를 노출하지 않도록 FRIEND_CODE_NOT_FOUND(codeInputFailure)로 응답하는 검사를 이 자리에 추가한다.
+        // 어느 쪽이 차단했든 차단 관계면 차단 여부를 노출하지 않도록 "존재하지 않는 코드"로 응답한다.
+        if (userBlockRepository.existsBlockedBetween(myUserId, targetUserId)) {
+            throw codeInputFailure(myUserId, FriendErrorStatus.FRIEND_CODE_NOT_FOUND);
+        }
 
         // 3. 이미 친구
         if (friendshipRepository.existsByUserLowIdAndUserHighId(
@@ -119,7 +123,11 @@ public class FriendCommandServiceImpl implements FriendCommandService {
                 .filter(user -> user.getStatus() == UserStatus.NORMAL)
                 .orElseThrow(() -> new GeneralException(FriendErrorStatus.REQUEST_NOT_FOUND));
 
-        // TODO: 소셜 3/4(차단)에서 수락 시점에 차단 관계를 다시 검사해, 차단됐다면 REQUEST_NOT_FOUND로 처리한다.
+        // 수락 시점에 차단 관계를 다시 검사해, 어느 쪽이든 차단됐다면 없는 요청으로 취급한다.
+        // (차단하면 대기 중 요청이 삭제되므로 차단과 수락이 동시에 일어난 경우를 막는 방어다)
+        if (userBlockRepository.existsBlockedBetween(myUserId, requesterId)) {
+            throw new GeneralException(FriendErrorStatus.REQUEST_NOT_FOUND);
+        }
 
         request.accept();
         try {

@@ -31,4 +31,12 @@ public class WebClientConfig {
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                 .build();
     }
+
+    // 신고 접수 알림용. 웹훅 URL은 호출하는 쪽에서 요청마다 넘긴다.
+    @Bean("slackWebClient")
+    public WebClient slackWebClient() {
+        return WebClient.builder()
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+    }
 }

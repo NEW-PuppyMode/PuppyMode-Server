@@ -62,8 +62,7 @@ public class CheerCommandServiceImpl implements CheerCommandService {
                 .filter(user -> user.getStatus() == UserStatus.NORMAL)
                 .orElseThrow(() -> new GeneralException(CheerErrorStatus.NOT_FRIENDS));
 
-        // TODO: 차단(UserBlock) 기능이 들어오는 소셜 3/4에서, 어느 방향이든 차단 관계면
-        //       NOT_FRIENDS로 응답하는 검사를 이 자리에 추가한다. (명세: 친구 아님(차단 포함) → 403)
+        // 차단하면 친구 관계가 삭제되므로 차단 관계는 위의 친구 확인에서 NOT_FRIENDS로 걸러진다. (별도 검사 불필요)
 
         // 2. 문구가 존재하고 활성이어야 한다.
         CheerTemplate template = cheerTemplateRepository.findByCheerTemplateIdAndActiveTrue(request.getTemplateId())

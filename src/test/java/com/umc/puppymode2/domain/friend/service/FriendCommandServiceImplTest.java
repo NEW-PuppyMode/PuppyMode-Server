@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.friend.service;
 
+import com.umc.puppymode2.domain.block.repository.UserBlockRepository;
 import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
 import com.umc.puppymode2.domain.friend.converter.FriendConverter;
 import com.umc.puppymode2.domain.friend.dto.FriendRequestAcceptResponseDTO;
@@ -43,6 +44,7 @@ class FriendCommandServiceImplTest {
     @Mock private FriendRequestRepository friendRequestRepository;
     @Mock private FriendshipRepository friendshipRepository;
     @Mock private CheerRepository cheerRepository;
+    @Mock private UserBlockRepository userBlockRepository;
     @Mock private UserRepository userRepository;
     @Mock private FriendCodeAttemptLimiter attemptLimiter;
     @Mock private ApplicationEventPublisher eventPublisher;
@@ -77,6 +79,31 @@ class FriendCommandServiceImplTest {
         verify(attemptLimiter).assertNotLimited(ME);
         verify(attemptLimiter, never()).recordFailure(any());
         verify(eventPublisher).publishEvent(new FriendRequestReceivedEvent(OTHER, ME));
+    }
+
+
+    @Test
+    void 차단_관계면_차단_여부를_숨기고_없는_코드와_동일하게_404이며_실패_횟수를_기록한다() {
+        givenTargetExists(OTHER, UserStatus.NORMAL);
+        when(userBlockRepository.existsBlockedBetween(ME, OTHER)).thenReturn(true);
+
+        GeneralException e = assertThrows(GeneralException.class, () -> service.sendFriendRequest(ME, CODE));
+
+        assertEquals(FriendErrorStatus.FRIEND_CODE_NOT_FOUND, e.getCode());
+        verify(attemptLimiter).recordFailure(ME);
+        verify(friendRequestRepository, never()).saveAndFlush(any());
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    void 차단_관계면_상대가_이미_보낸_요청이_있어도_자동_수락하지_않는다() {
+        givenTargetExists(OTHER, UserStatus.NORMAL);
+        when(userBlockRepository.existsBlockedBetween(ME, OTHER)).thenReturn(true);
+
+        assertThrows(GeneralException.class, () -> service.sendFriendRequest(ME, CODE));
+
+        verify(friendshipRepository, never()).saveAndFlush(any());
+        verify(friendRequestRepository, never()).findByRequesterIdAndReceiverId(any(), any());
     }
 
     @Test
@@ -274,6 +301,21 @@ class FriendCommandServiceImplTest {
         assertEquals(ME, captor.getValue().getUserLowId());
         assertEquals(OTHER, captor.getValue().getUserHighId());
         verify(eventPublisher).publishEvent(new FriendRequestAcceptedEvent(OTHER, ME));
+    }
+
+    @Test
+    void 수락_시점에_차단_관계면_없는_요청으로_처리하고_친구_관계를_만들지_않는다() {
+        FriendRequest pending = request(101L, OTHER, ME, FriendRequestStatus.PENDING);
+        when(friendRequestRepository.findByIdForUpdate(101L)).thenReturn(Optional.of(pending));
+        when(userRepository.findById(OTHER)).thenReturn(Optional.of(user(OTHER, UserStatus.NORMAL)));
+        when(userBlockRepository.existsBlockedBetween(ME, OTHER)).thenReturn(true);
+
+        GeneralException e = assertThrows(GeneralException.class, () -> service.acceptFriendRequest(ME, 101L));
+
+        assertEquals(FriendErrorStatus.REQUEST_NOT_FOUND, e.getCode());
+        assertEquals(FriendRequestStatus.PENDING, pending.getStatus());
+        verify(friendshipRepository, never()).saveAndFlush(any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
