@@ -214,6 +214,58 @@ class BlockTransactionIT {
     }
 
     @Test
+    void 서로_동시에_차단해도_하나만_성공하고_나머지는_친구_아님으로_정리된다() throws Exception {
+        // A→B, B→A는 방향별 UNIQUE에 걸리지 않아 둘 다 차단 기록 저장을 통과한다. 이어서 같은 친구 관계를 지우려 할 때
+        // 한쪽이 0행을 지우게 되므로, 예외가 아니라 "친구 아님"(403)으로 정리돼야 한다. 경쟁이 매번 일어나진 않아서 반복한다.
+        for (int round = 0; round < 15; round++) {
+            friendshipRepository.save(Friendship.of(me, other));
+
+            ExecutorService pool = Executors.newFixedThreadPool(2);
+            CountDownLatch ready = new CountDownLatch(2);
+            CountDownLatch go = new CountDownLatch(1);
+            List<Callable<Object>> tasks = List.of(
+                    () -> runBlock(ready, go, me, other),
+                    () -> runBlock(ready, go, other, me));
+            List<Future<Object>> futures = new ArrayList<>();
+            for (Callable<Object> task : tasks) {
+                futures.add(pool.submit(task));
+            }
+            ready.await();
+            go.countDown();
+
+            int success = 0;
+            for (Future<Object> future : futures) {
+                Object result = future.get();
+                if (result == null) {
+                    success++;
+                } else {
+                    assertEquals(BlockErrorStatus.NOT_FRIENDS, result, "라운드 " + round + ": 예상하지 못한 결과 " + result);
+                }
+            }
+            pool.shutdown();
+
+            assertEquals(1, success, "라운드 " + round);
+            assertEquals(1, userBlockRepository.count(), "라운드 " + round);
+            assertFalse(friendshipRepository.existsByUserLowIdAndUserHighId(Math.min(me, other), Math.max(me, other)));
+            userBlockRepository.deleteAll();
+        }
+    }
+
+    // 성공이면 null, 실패면 GeneralException의 코드 또는 예외 자체를 돌려준다.
+    private Object runBlock(CountDownLatch ready, CountDownLatch go, Long blocker, Long blocked) throws InterruptedException {
+        ready.countDown();
+        go.await();
+        try {
+            blockCommandService.block(blocker, blocked);
+            return null;
+        } catch (GeneralException e) {
+            return e.getCode();
+        } catch (Exception e) {
+            return e;
+        }
+    }
+
+    @Test
     void 차단_중에는_양쪽_모두_친구_요청이_없는_코드로_막히고_해제하면_다시_보낼_수_있다() {
         friendCodeRepository.save(FriendCode.of(me, "1111"));
         friendCodeRepository.save(FriendCode.of(other, "2222"));

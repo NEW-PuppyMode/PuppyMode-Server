@@ -6,7 +6,6 @@ import com.umc.puppymode2.domain.block.exception.BlockErrorStatus;
 import com.umc.puppymode2.domain.block.repository.UserBlockRepository;
 import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
 import com.umc.puppymode2.domain.friend.converter.FriendConverter;
-import com.umc.puppymode2.domain.friend.entity.Friendship;
 import com.umc.puppymode2.domain.friend.repository.FriendRequestRepository;
 import com.umc.puppymode2.domain.friend.repository.FriendshipRepository;
 import com.umc.puppymode2.domain.user.entity.enums.UserStatus;
@@ -56,12 +55,15 @@ public class BlockCommandServiceImpl implements BlockCommandService {
             throw new GeneralException(BlockErrorStatus.ALREADY_BLOCKED);
         }
 
-        // 5. 친구 관계를 확인하고 삭제한다. 그 사이에 상대가 친구를 먼저 삭제했다면 친구가 아닌 것이므로
-        //    예외로 4번의 차단 기록까지 롤백한다. (친구가 아닌데 차단 기록만 남는 상태를 막는다)
-        Friendship friendship = friendshipRepository
-                .findByUserLowIdAndUserHighId(Math.min(myUserId, targetUserId), Math.max(myUserId, targetUserId))
-                .orElseThrow(() -> new GeneralException(BlockErrorStatus.NOT_FRIENDS));
-        friendshipRepository.delete(friendship);
+        // 5. 친구 관계를 삭제한다. 읽어서 지우지 않고 영향 행 수로 판단한다.
+        //    - 삭제된 행이 없다면(친구가 아니거나, 그 사이 상대가 친구를 지웠거나, 서로 동시에 차단해 상대가 먼저 지운 경우)
+        //      친구가 아닌 것이므로 예외로 4번의 차단 기록까지 롤백한다. (친구가 아닌데 차단 기록만 남는 상태를 막는다)
+        //    - 엔티티를 읽은 뒤 delete(entity)로 지우면 동시에 지워진 경우 0행 삭제가 OptimisticLocking 예외(500)로 번진다.
+        int deletedFriendships = friendshipRepository.deleteByPair(
+                Math.min(myUserId, targetUserId), Math.max(myUserId, targetUserId));
+        if (deletedFriendships == 0) {
+            throw new GeneralException(BlockErrorStatus.NOT_FRIENDS);
+        }
 
         // 6. 둘 사이의 응원(만료 여부와 무관)과 대기 중 친구 요청(양방향)을 같은 트랜잭션에서 함께 지운다.
         //    응원 보내기는 친구 관계 행을 공유 잠금으로 읽으므로, 동시에 보낸 응원도 5번의 삭제를 기다린 뒤 여기서 함께 지워진다.

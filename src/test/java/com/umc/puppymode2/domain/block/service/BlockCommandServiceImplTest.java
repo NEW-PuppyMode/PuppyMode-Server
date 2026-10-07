@@ -6,7 +6,6 @@ import com.umc.puppymode2.domain.block.exception.BlockErrorStatus;
 import com.umc.puppymode2.domain.block.repository.UserBlockRepository;
 import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
 import com.umc.puppymode2.domain.friend.converter.FriendConverter;
-import com.umc.puppymode2.domain.friend.entity.Friendship;
 import com.umc.puppymode2.domain.friend.repository.FriendRequestRepository;
 import com.umc.puppymode2.domain.friend.repository.FriendshipRepository;
 import com.umc.puppymode2.domain.user.auth.enums.Provider;
@@ -82,8 +81,7 @@ class BlockCommandServiceImplTest {
     void 친구를_차단하면_차단_기록을_저장하고_친구_응원_대기_요청을_함께_지운다() {
         givenTarget(UserStatus.NORMAL);
         givenBlockSaved();
-        Friendship friendship = Friendship.of(ME, OTHER);
-        when(friendshipRepository.findByUserLowIdAndUserHighId(OTHER, ME)).thenReturn(Optional.of(friendship));
+        when(friendshipRepository.deleteByPair(OTHER, ME)).thenReturn(1);
 
         BlockCreateResponseDTO result = service.block(ME, OTHER);
 
@@ -98,7 +96,7 @@ class BlockCommandServiceImplTest {
         // 차단 기록을 먼저 저장해 동시 중복 요청을 직렬화한 뒤 삭제한다.
         InOrder order = inOrder(userBlockRepository, friendshipRepository, cheerRepository, friendRequestRepository);
         order.verify(userBlockRepository).saveAndFlush(any(UserBlock.class));
-        order.verify(friendshipRepository).delete(friendship);
+        order.verify(friendshipRepository).deleteByPair(OTHER, ME);
         order.verify(cheerRepository).deleteAllBetween(ME, OTHER);
         order.verify(friendRequestRepository).deletePendingBetween(ME, OTHER);
     }
@@ -154,12 +152,11 @@ class BlockCommandServiceImplTest {
     void 친구가_아니면_403이고_예외로_차단_기록_저장도_롤백된다() {
         givenTarget(UserStatus.NORMAL);
         givenBlockSaved();
-        when(friendshipRepository.findByUserLowIdAndUserHighId(OTHER, ME)).thenReturn(Optional.empty());
+        when(friendshipRepository.deleteByPair(OTHER, ME)).thenReturn(0);
 
         // 서비스 메서드가 @Transactional이라 이 예외로 앞에서 저장한 차단 기록이 롤백된다. (실제 롤백은 통합 테스트에서 검증)
         assertError(BlockErrorStatus.NOT_FRIENDS, () -> service.block(ME, OTHER));
 
-        verify(friendshipRepository, never()).delete(any());
         verifyNoInteractions(cheerRepository, friendRequestRepository);
     }
 
