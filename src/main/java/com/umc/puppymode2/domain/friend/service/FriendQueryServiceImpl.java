@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.friend.service;
 
+import com.umc.puppymode2.domain.block.repository.UserBlockRepository;
 import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
 import com.umc.puppymode2.domain.cheer.repository.CheerSentProjection;
 import com.umc.puppymode2.domain.friend.cache.PuppyProfileCache;
@@ -42,6 +43,7 @@ public class FriendQueryServiceImpl implements FriendQueryService {
     private final FriendshipRepository friendshipRepository;
     private final FriendDrinkRecordRepository friendDrinkRecordRepository;
     private final CheerRepository cheerRepository;
+    private final UserBlockRepository userBlockRepository;
     private final UserRepository userRepository;
     private final PuppyRepository puppyRepository;
     private final PuppyProfileCache puppyProfileCache;
@@ -59,17 +61,19 @@ public class FriendQueryServiceImpl implements FriendQueryService {
         // 서로 동시에 요청해서 이미 친구가 됐는데 PENDING이 남은 경우를 목록에서 걸러낸다.
         Set<Long> friendIds = new HashSet<>(friendshipRepository.findFriendIds(myUserId));
 
+        // 어느 쪽이 차단했든 차단 관계인 요청자는 제외한다. (차단하면 대기 중 요청이 삭제되므로 동시 처리 방어용이다)
+        Set<Long> blockedIds = new HashSet<>(userBlockRepository.findRelatedUserIds(myUserId));
+
         List<Long> requesterIds = pending.stream()
                 .map(FriendRequest::getRequesterId)
                 .filter(id -> !friendIds.contains(id))
+                .filter(id -> !blockedIds.contains(id))
                 .distinct()
                 .toList();
 
         // 요청자가 NORMAL이 아니면(탈퇴/휴면) 목록에서 제외한다.
         Map<Long, User> users = findNormalUsers(requesterIds);
         Map<Long, Puppy> puppies = findPuppies(users.keySet());
-
-        // TODO: 소셜 3/4(차단)에서 차단 관계인 요청자도 이 목록에서 제외한다.
 
         List<ReceivedFriendRequestListResponseDTO.Item> items = new ArrayList<>();
         for (FriendRequest request : pending) {
