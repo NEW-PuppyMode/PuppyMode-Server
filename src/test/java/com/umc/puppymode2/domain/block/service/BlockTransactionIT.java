@@ -173,38 +173,42 @@ class BlockTransactionIT {
 
         int threads = 4;
         ExecutorService pool = Executors.newFixedThreadPool(threads);
-        CountDownLatch ready = new CountDownLatch(threads);
-        CountDownLatch go = new CountDownLatch(1);
-        List<Future<BaseErrorCode>> futures = new ArrayList<>();
-        for (int i = 0; i < threads; i++) {
-            Callable<BaseErrorCode> task = () -> {
-                ready.countDown();
-                go.await();
-                try {
-                    blockCommandService.block(me, other);
-                    return null; // 성공
-                } catch (GeneralException e) {
-                    return e.getCode();
-                }
-            };
-            futures.add(pool.submit(task));
-        }
-        ready.await();
-        go.countDown();
-
         int success = 0;
         int alreadyBlocked = 0;
-        for (Future<BaseErrorCode> future : futures) {
-            BaseErrorCode result = future.get();
-            if (result == null) {
-                success++;
-            } else if (result == BlockErrorStatus.ALREADY_BLOCKED) {
-                alreadyBlocked++;
-            } else {
-                fail("예상하지 못한 결과: " + result);
+        try {
+            CountDownLatch ready = new CountDownLatch(threads);
+            CountDownLatch go = new CountDownLatch(1);
+            List<Future<BaseErrorCode>> futures = new ArrayList<>();
+            for (int i = 0; i < threads; i++) {
+                Callable<BaseErrorCode> task = () -> {
+                    ready.countDown();
+                    go.await();
+                    try {
+                        blockCommandService.block(me, other);
+                        return null; // 성공
+                    } catch (GeneralException e) {
+                        return e.getCode();
+                    }
+                };
+                futures.add(pool.submit(task));
             }
+            ready.await();
+            go.countDown();
+
+            for (Future<BaseErrorCode> future : futures) {
+                BaseErrorCode result = future.get();
+                if (result == null) {
+                    success++;
+                } else if (result == BlockErrorStatus.ALREADY_BLOCKED) {
+                    alreadyBlocked++;
+                } else {
+                    fail("예상하지 못한 결과: " + result);
+                }
+            }
+        } finally {
+            // 검증이 실패해도 non-daemon 스레드가 남아 테스트 프로세스를 붙잡지 않도록 반드시 종료한다.
+            pool.shutdownNow();
         }
-        pool.shutdown();
 
         assertEquals(1, success);
         assertEquals(threads - 1, alreadyBlocked);
@@ -221,28 +225,32 @@ class BlockTransactionIT {
             friendshipRepository.save(Friendship.of(me, other));
 
             ExecutorService pool = Executors.newFixedThreadPool(2);
-            CountDownLatch ready = new CountDownLatch(2);
-            CountDownLatch go = new CountDownLatch(1);
-            List<Callable<Object>> tasks = List.of(
-                    () -> runBlock(ready, go, me, other),
-                    () -> runBlock(ready, go, other, me));
-            List<Future<Object>> futures = new ArrayList<>();
-            for (Callable<Object> task : tasks) {
-                futures.add(pool.submit(task));
-            }
-            ready.await();
-            go.countDown();
-
             int success = 0;
-            for (Future<Object> future : futures) {
-                Object result = future.get();
-                if (result == null) {
-                    success++;
-                } else {
-                    assertEquals(BlockErrorStatus.NOT_FRIENDS, result, "라운드 " + round + ": 예상하지 못한 결과 " + result);
+            try {
+                CountDownLatch ready = new CountDownLatch(2);
+                CountDownLatch go = new CountDownLatch(1);
+                List<Callable<Object>> tasks = List.of(
+                        () -> runBlock(ready, go, me, other),
+                        () -> runBlock(ready, go, other, me));
+                List<Future<Object>> futures = new ArrayList<>();
+                for (Callable<Object> task : tasks) {
+                    futures.add(pool.submit(task));
                 }
+                ready.await();
+                go.countDown();
+
+                for (Future<Object> future : futures) {
+                    Object result = future.get();
+                    if (result == null) {
+                        success++;
+                    } else {
+                        assertEquals(BlockErrorStatus.NOT_FRIENDS, result, "라운드 " + round + ": 예상하지 못한 결과 " + result);
+                    }
+                }
+            } finally {
+                // 검증이 실패해도 non-daemon 스레드가 남아 테스트 프로세스를 붙잡지 않도록 반드시 종료한다.
+                pool.shutdownNow();
             }
-            pool.shutdown();
 
             assertEquals(1, success, "라운드 " + round);
             assertEquals(1, userBlockRepository.count(), "라운드 " + round);
