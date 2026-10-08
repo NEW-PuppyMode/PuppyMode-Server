@@ -1,6 +1,7 @@
 package com.umc.puppymode2.domain.user.batch;
 
 import com.umc.puppymode2.domain.user.repository.WithDrawnUserArchiveRepository;
+import com.umc.puppymode2.global.alert.SchedulerFailureSender;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 public class WithdrawalDataCleanupBatch {
 
     private final WithDrawnUserArchiveRepository withdrawnUserArchiveRepository;
+    private final SchedulerFailureSender failureSender;
 
     @Scheduled(cron = "0 0 3 * * *")
     @Transactional
@@ -24,6 +26,7 @@ public class WithdrawalDataCleanupBatch {
             log.info("[Batch] 만료된 탈퇴 보관 데이터 삭제 완료");
         } catch (Exception e) {
             log.error("[Batch] 탈퇴 데이터 삭제 실패", e);
+            failureSender.notifyFailure("WithdrawalDataCleanupBatch.cleanupExpiredWithdrawalData", e);
         }
     }
 }

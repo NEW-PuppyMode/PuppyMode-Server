@@ -3,6 +3,7 @@ package com.umc.puppymode2.domain.notification.scheduler;
 import com.umc.puppymode2.domain.notification.dto.DrinkReminderTarget;
 import com.umc.puppymode2.domain.notification.repository.FcmTokenRepository;
 import com.umc.puppymode2.domain.notification.service.FcmSender;
+import com.umc.puppymode2.global.alert.SchedulerFailureSender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,6 +21,7 @@ public class DrinkReminderScheduler {
 
     private final FcmTokenRepository fcmTokenRepository;
     private final FcmSender fcmSender;
+    private final SchedulerFailureSender failureSender;
 
     // TODO: 멀티 인스턴스 배포 시 ShedLock 적용 필요
     @Scheduled(cron = "0 0 22 * * *", zone = "Asia/Seoul")
@@ -41,6 +43,7 @@ public class DrinkReminderScheduler {
                     result.successCount(), result.failureCount());
         } catch (Exception e) {
             log.error("[DrinkReminder] 예외 발생", e);
+            failureSender.notifyFailure("DrinkReminderScheduler.sendDrinkReminder", e);
         }
     }
 }
