@@ -4,11 +4,13 @@ import com.google.firebase.messaging.*;
 import com.umc.puppymode2.domain.notification.dto.DrinkReminderMessage;
 import com.umc.puppymode2.domain.notification.dto.DrinkReminderTarget;
 import com.umc.puppymode2.domain.notification.repository.FcmTokenRepository;
+import com.umc.puppymode2.global.metrics.NotificationMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +21,8 @@ import java.util.List;
 public class FcmSender {
 
     private final FcmTokenRepository fcmTokenRepository;
+    private final FcmClient fcmClient;
+    private final NotificationMetrics metrics;
 
     private static final int FCM_BATCH_SIZE = 500;
 
@@ -56,23 +60,23 @@ public class FcmSender {
                     .toList();
 
             try {
-                BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages);
+                FcmClient.BatchResult response = fcmClient.sendEach(messages);
                 log.info("[FCM] 배치 전송 완료 - 성공: {}, 실패: {}",
-                        response.getSuccessCount(), response.getFailureCount());
+                        response.successCount(), response.failureCount());
 
-                totalSuccess += response.getSuccessCount();
-                totalFailure += response.getFailureCount();
+                totalSuccess += response.successCount();
+                totalFailure += response.failureCount();
 
                 // 성공 건: messageId를 남겨야 Firebase/APNs 쪽에서 실제 도달 여부 추적 가능
-                List<SendResponse> responses = response.getResponses();
+                List<FcmClient.Item> responses = response.items();
                 for (int i = 0; i < responses.size(); i++) {
-                    if (responses.get(i).isSuccessful()) {
+                    if (responses.get(i).successful()) {
                         log.info("[FCM] 전송 성공 - user: {}, messageId: {}",
-                                maskUsername(batch.get(i).username()), responses.get(i).getMessageId());
+                                maskUsername(batch.get(i).username()), responses.get(i).messageId());
                     }
                 }
 
-                if (response.getFailureCount() > 0) {
+                if (response.failureCount() > 0) {
                     handleFailures(batch, response);
                 }
             } catch (FirebaseMessagingException e) {
@@ -110,29 +114,34 @@ public class FcmSender {
                         .build())
                 .toList();
 
+        long start = System.nanoTime();
+        String result = "error";
         try {
-            BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages);
+            FcmClient.BatchResult response = fcmClient.sendEach(messages);
             log.info("[FCM] 토큰 전송 완료 - 성공: {}, 실패: {}",
-                    response.getSuccessCount(), response.getFailureCount());
+                    response.successCount(), response.failureCount());
 
-            if (response.getFailureCount() > 0) {
+            if (response.failureCount() > 0) {
                 handleTokenFailures(tokens, response);
             }
-            return new FcmSendResult(response.getSuccessCount(), response.getFailureCount());
+            result = response.failureCount() > 0 ? "failure" : "success";
+            return new FcmSendResult(response.successCount(), response.failureCount());
         } catch (FirebaseMessagingException e) {
             log.error("[FCM] 토큰 전송 실패", e);
             return new FcmSendResult(0, tokens.size());
+        } finally {
+            // 예외가 밖으로 나가는 경우(Firebase 미초기화 등)도 result=error로 센다.
+            metrics.recordSend("push", result, Duration.ofNanos(System.nanoTime() - start));
         }
     }
 
-    private void handleTokenFailures(List<String> tokens, BatchResponse response) {
-        List<SendResponse> responses = response.getResponses();
+    private void handleTokenFailures(List<String> tokens, FcmClient.BatchResult response) {
+        List<FcmClient.Item> responses = response.items();
         for (int i = 0; i < responses.size(); i++) {
-            if (responses.get(i).isSuccessful()) continue;
+            if (responses.get(i).successful()) continue;
 
-            FirebaseMessagingException ex = responses.get(i).getException();
-            MessagingErrorCode code = ex.getMessagingErrorCode();
-            log.warn("[FCM] 토큰 전송 실패 - errorCode: {}, message: {}", code, ex.getMessage());
+            MessagingErrorCode code = responses.get(i).errorCode();
+            log.warn("[FCM] 토큰 전송 실패 - errorCode: {}, message: {}", code, responses.get(i).errorMessage());
 
             if (code == MessagingErrorCode.UNREGISTERED || code == MessagingErrorCode.INVALID_ARGUMENT) {
                 log.warn("[FCM] 만료 토큰 삭제");
@@ -141,15 +150,14 @@ public class FcmSender {
         }
     }
 
-    private void handleFailures(List<DrinkReminderTarget> targets, BatchResponse response) {
-        List<SendResponse> responses = response.getResponses();
+    private void handleFailures(List<DrinkReminderTarget> targets, FcmClient.BatchResult response) {
+        List<FcmClient.Item> responses = response.items();
         for (int i = 0; i < responses.size(); i++) {
-            if (!responses.get(i).isSuccessful()) {
-                FirebaseMessagingException ex = responses.get(i).getException();
-                MessagingErrorCode code = ex.getMessagingErrorCode();
+            if (!responses.get(i).successful()) {
+                MessagingErrorCode code = responses.get(i).errorCode();
 
                 log.warn("[FCM] 토큰 전송 실패 - user: {}, errorCode: {}, message: {}",
-                        maskUsername(targets.get(i).username()), code, ex.getMessage());
+                        maskUsername(targets.get(i).username()), code, responses.get(i).errorMessage());
 
                 if (code == MessagingErrorCode.UNREGISTERED
                         || code == MessagingErrorCode.INVALID_ARGUMENT) {
