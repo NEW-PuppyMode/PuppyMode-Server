@@ -7,11 +7,13 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,7 +32,7 @@ class ComplaintSlackSenderTest {
     void 웹훅_URL이_비어_있으면_전송하지_않는다() {
         AtomicInteger calls = new AtomicInteger();
         ComplaintSlackSender sender = new ComplaintSlackSender(
-                webClientReturning(calls, () -> Mono.just(ClientResponse.create(HttpStatus.OK).build())), "");
+                webClientReturning(calls, () -> Mono.just(ClientResponse.create(HttpStatus.OK).build())), "", "");
 
         assertDoesNotThrow(() -> sender.send("신고"));
 
@@ -42,7 +44,7 @@ class ComplaintSlackSenderTest {
         AtomicInteger calls = new AtomicInteger();
         ComplaintSlackSender sender = new ComplaintSlackSender(
                 webClientReturning(calls, () -> Mono.just(ClientResponse.create(HttpStatus.OK).build())),
-                "https://hooks.slack.com/services/test");
+                "https://hooks.slack.com/services/test", "");
 
         sender.send("신고");
 
@@ -54,7 +56,7 @@ class ComplaintSlackSenderTest {
         AtomicInteger calls = new AtomicInteger();
         ComplaintSlackSender sender = new ComplaintSlackSender(
                 webClientReturning(calls, () -> Mono.just(ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR).build())),
-                "https://hooks.slack.com/services/test");
+                "https://hooks.slack.com/services/test", "");
 
         assertDoesNotThrow(() -> sender.send("신고"));
         assertEquals(1, calls.get());
@@ -65,7 +67,7 @@ class ComplaintSlackSenderTest {
         AtomicInteger calls = new AtomicInteger();
         ComplaintSlackSender sender = new ComplaintSlackSender(
                 webClientReturning(calls, () -> Mono.error(new RuntimeException("connection refused"))),
-                "https://hooks.slack.com/services/test");
+                "https://hooks.slack.com/services/test", "");
 
         assertDoesNotThrow(() -> sender.send("신고"));
         assertEquals(1, calls.get());
@@ -94,11 +96,11 @@ class ComplaintSlackSenderTest {
             new ComplaintSlackSender(
                     webClientReturning(new AtomicInteger(),
                             () -> Mono.just(ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR).build())),
-                    webhookUrl).send("신고");
+                    webhookUrl, "").send("신고");
             // 그 밖의 예외: 메시지에 URL이 섞여 있는 경우
             new ComplaintSlackSender(
                     webClientReturning(new AtomicInteger(), () -> Mono.error(new RuntimeException("POST " + webhookUrl + " failed"))),
-                    webhookUrl).send("신고");
+                    webhookUrl, "").send("신고");
         } finally {
             logger.detachAppender(appender);
         }
@@ -109,5 +111,66 @@ class ComplaintSlackSenderTest {
             assertFalse(event.getFormattedMessage().contains("SECRET"), event.getFormattedMessage());
         }
         assertTrue(appender.list.get(0).getFormattedMessage().contains("500"));
+    }
+
+    private WebClient capturingWebClient(AtomicReference<ClientRequest> captured, HttpStatus status) {
+        return WebClient.builder()
+                .exchangeFunction(request -> {
+                    captured.set(request);
+                    return Mono.just(ClientResponse.create(status).build());
+                })
+                .build();
+    }
+
+    @Test
+    void 시크릿이_있으면_X_Webhook_Secret_헤더를_보낸다() {
+        AtomicReference<ClientRequest> captured = new AtomicReference<>();
+        new ComplaintSlackSender(capturingWebClient(captured, HttpStatus.OK),
+                "https://n8n.example.com/webhook/test", "test-secret").send("신고");
+
+        assertNotNull(captured.get());
+        assertEquals("test-secret", captured.get().headers().getFirst(ComplaintSlackSender.SECRET_HEADER));
+    }
+
+    @Test
+    void 시크릿이_비어_있으면_헤더를_붙이지_않는다() {
+        AtomicReference<ClientRequest> captured = new AtomicReference<>();
+        new ComplaintSlackSender(capturingWebClient(captured, HttpStatus.OK),
+                "https://n8n.example.com/webhook/test", "").send("신고");
+
+        assertNotNull(captured.get());
+        assertFalse(captured.get().headers().containsKey(ComplaintSlackSender.SECRET_HEADER));
+    }
+
+    @Test
+    void 전송이_실패해도_로그에_시크릿이_남지_않는다() {
+        String secret = "super-secret-value";
+        Logger logger = (Logger) LoggerFactory.getLogger(ComplaintSlackSender.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            new ComplaintSlackSender(capturingWebClient(new AtomicReference<>(), HttpStatus.FORBIDDEN),
+                    "https://n8n.example.com/webhook/test", secret).send("신고");
+        } finally {
+            logger.detachAppender(appender);
+        }
+
+        assertEquals(1, appender.list.size());
+        assertTrue(appender.list.get(0).getFormattedMessage().contains("403"));
+        for (ILoggingEvent event : appender.list) {
+            assertFalse(event.getFormattedMessage().contains(secret), event.getFormattedMessage());
+        }
+    }
+
+    @Test
+    void 구조화_필드가_text와_함께_본문에_실리고_null_값은_뺀다() {
+        java.util.Map<String, Object> data = new java.util.LinkedHashMap<>();
+        data.put("complaintId", 7L);
+        data.put("targetPuppyName", null);
+
+        java.util.Map<String, Object> body = ComplaintSlackSender.buildBody("신고", data);
+
+        assertEquals("{text=신고, complaintId=7}", body.toString());
     }
 }

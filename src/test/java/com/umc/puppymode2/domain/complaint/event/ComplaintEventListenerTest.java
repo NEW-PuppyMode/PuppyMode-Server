@@ -9,8 +9,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,7 +33,7 @@ class ComplaintEventListenerTest {
                 7L, 1L, 55L, "정우주", "별이", ComplaintReason.ABUSE_HARASSMENT));
 
         ArgumentCaptor<String> text = ArgumentCaptor.forClass(String.class);
-        verify(slackSender).send(text.capture());
+        verify(slackSender).send(text.capture(), anyMap());
         assertTrue(text.getValue().contains("#7"));
         assertTrue(text.getValue().contains("욕설·괴롭힘"));
         assertTrue(text.getValue().contains("정우주"));
@@ -44,5 +49,19 @@ class ComplaintEventListenerTest {
 
         assertFalse(message.contains("강아지"));
         assertFalse(message.contains("null"));
+    }
+
+    @Test
+    void 구조화_필드에_스프레드시트_열로_쓸_값이_담긴다() {
+        Map<String, Object> data = ComplaintEventListener.buildData(new ComplaintCreatedEvent(
+                7L, 1L, 55L, "정우주", null, ComplaintReason.SPAM_AD));
+
+        assertEquals(7L, data.get("complaintId"));
+        assertEquals(55L, data.get("targetUserId"));
+        assertEquals("정우주", data.get("targetUsername"));
+        assertEquals(1L, data.get("reporterId"));
+        assertTrue(data.containsKey("occurredAt"));
+        assertTrue(data.containsKey("reason"));
+        assertNull(data.get("targetPuppyName")); // null은 전송 시 ComplaintSlackSender가 뺀다
     }
 }

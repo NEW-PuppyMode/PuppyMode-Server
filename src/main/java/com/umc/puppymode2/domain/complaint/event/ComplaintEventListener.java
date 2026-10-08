@@ -7,6 +7,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 @Component
 @RequiredArgsConstructor
 public class ComplaintEventListener {
@@ -17,7 +22,20 @@ public class ComplaintEventListener {
     @Async("complaintExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onComplaintCreated(ComplaintCreatedEvent event) {
-        slackSender.send(buildMessage(event));
+        slackSender.send(buildMessage(event), buildData(event));
+    }
+
+    // n8n에서 스프레드시트 열로 매핑할 구조화 필드. 값이 없는 항목(강아지 이름 등)은 보내지 않는다.
+    static Map<String, Object> buildData(ComplaintCreatedEvent event) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("occurredAt", OffsetDateTime.now(ZoneId.of("Asia/Seoul")).withNano(0).toString());
+        data.put("complaintId", event.complaintId());
+        data.put("reason", event.reason().getLabel());
+        data.put("targetUserId", event.targetUserId());
+        data.put("targetUsername", event.targetUsername());
+        data.put("targetPuppyName", event.targetPuppyName());
+        data.put("reporterId", event.reporterId());
+        return data;
     }
 
     static String buildMessage(ComplaintCreatedEvent event) {
