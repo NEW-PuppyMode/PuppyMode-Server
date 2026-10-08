@@ -43,3 +43,5 @@ out/
 
 ### Firebase ###
 src/main/resources/firebase-service-account.json
+### load test output (tokens) ###
+/scripts/perf/out/

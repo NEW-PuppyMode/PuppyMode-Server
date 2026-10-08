@@ -1,0 +1,39 @@
+# 로컬 부하 테스트용 모니터링 스택 (#214). 운영 용도가 아니다.
+#
+# 사용법:
+#   1) 토큰 파일을 만든다 (scripts/perf/README 또는 make-prometheus-token.py 참고)
+#        -> scripts/perf/out/prometheus-token
+#   2) docker compose -f scripts/perf/monitoring/docker-compose.yml up -d
+#   3) 앱을 아래 옵션으로 실행한다
+#        --management.endpoints.web.exposure.include=health,prometheus
+#        --management.metrics.distribution.percentiles-histogram.http.server.requests=true
+#   4) Grafana: http://localhost:3000 (익명 Viewer, 로그인 불필요)  /  Prometheus: http://localhost:9090
+#
+# 두 포트 모두 127.0.0.1에만 바인딩해 같은 PC 밖에서는 접근할 수 없다.
+services:
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    container_name: puppy-perf-prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../out/prometheus-token:/etc/prometheus/token:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: puppy-perf-grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: "/var/lib/grafana/dashboards/notification-pipeline.json"
+      GF_USERS_DEFAULT_THEME: "light"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus

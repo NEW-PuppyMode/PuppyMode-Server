@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: puppymode-local
+    metrics_path: /actuator/prometheus
+    # /actuator/prometheus는 JWT 인증이 필요하다. 로컬 서명 토큰을 파일로 전달한다. (커밋 금지: scripts/perf/out/)
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/token
+    static_configs:
+      - targets: ["host.docker.internal:8080"]
