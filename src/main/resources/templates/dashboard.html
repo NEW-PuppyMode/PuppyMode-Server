@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<!--/* TODO(#213): 임시 대시보드 페이지. Amplitude 연동 후 파일째로 제거 */-->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>PuppyMode Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            color: #111827;
+            background: #ffffff;
+            padding: 40px 24px;
+        }
+        .wrap { max-width: 640px; margin: 0 auto; }
+        h1 { font-size: 18px; font-weight: 600; margin-bottom: 32px; }
+        .label { font-size: 13px; color: #6b7280; margin-bottom: 4px; }
+        .total { font-size: 32px; font-weight: 600; margin-bottom: 40px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th {
+            text-align: left;
+            font-weight: 500;
+            color: #6b7280;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        td {
+            padding: 8px 0;
+            border-bottom: 1px solid #f3f4f6;
+            font-variant-numeric: tabular-nums;
+        }
+        th:last-child, td:last-child { text-align: right; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>멍멍멍멍멍 Admin</h1>
+
+    <p class="label">총 유저 수</p>
+    <p class="total" th:text="${userCount}">0</p>
+
+    <p class="label">날짜별 가입 수 (KST)</p>
+    <table>
+        <tr><th>날짜</th><th>가입 수</th></tr>
+        <tr th:each="row : ${dailySignups}">
+            <td th:text="${row.date}">2026-10-08</td>
+            <td th:text="${row.count}">0</td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>
