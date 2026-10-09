@@ -22,13 +22,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MonthlyGoalScheduler {
 
+    private static final long MIN_RECORD_DAYS = 20L;
+    private static final int MONTHLY_REWARD_EXP = 100;
+
     private final UserGoalHistoryRepository userGoalHistoryRepository;
     private final DrinkHistoryRepository drinkHistoryRepository;
     private final PuppyRepository puppyRepository;
 
     /**
      * 매월 마지막 날 23:59에 실행되는 월간 목표 달성 보상 스케줄러
-     * 이번 달 음주 기록이 있고 실제 음주 횟수가 목표 이하인 유저에게 경험치 300 지급
+     * 이번 달 음주 기록이 20일 이상 + 목표 달성한 유저에게 경험치 100 지급
      */
     // TODO: 멀티 인스턴스 배포 시 중복 실행 방지를 위해 ShedLock 적용 필요
     @Scheduled(cron = "0 59 23 L * *", zone = "Asia/Seoul")
@@ -67,22 +70,22 @@ public class MonthlyGoalScheduler {
                 ));
 
         for (UserGoalHistory goal : goals) {
-            Long userId = goal.getUserId();
-            UserDrinkCountProjection stat = drinkStatMap.get(userId);
+            UserDrinkCountProjection stat = drinkStatMap.get(goal.getUserId());
 
-            // 목표만 세우고 기록 안 한 경우 경험치 미지급
-            if (stat == null || stat.getTotalCount() == 0) continue;
+            // 조건 1: 해당 월 20일 이상 기록
+            if (stat == null
+                    || stat.getRecordDays() == null
+                    || stat.getRecordDays() < MIN_RECORD_DAYS) continue;
 
+            // 조건 2: 목표 달성 (음주 횟수 <= 목표)
             long drinkCount = stat.getDrinkCount() == null ? 0L : stat.getDrinkCount();
+            if (drinkCount > goal.getMonthlyGoalCount()) continue;
 
-            // 이번 달 음주 횟수가 목표 이하면 달성 - 경험치 지급
-            if (drinkCount <= goal.getMonthlyGoalCount()) {
-                Puppy puppy = puppyMap.get(userId);
-                if (puppy == null) continue;
+            Puppy puppy = puppyMap.get(goal.getUserId());
+            if (puppy == null) continue;
 
-                puppy.setPuppyExp(puppy.getPuppyExp() + 300);
-                goal.markRewarded();
-            }
+            puppy.setPuppyExp(puppy.getPuppyExp() + MONTHLY_REWARD_EXP);
+            goal.markRewarded();
         }
     }
 }
