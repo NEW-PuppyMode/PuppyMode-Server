@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
@@ -51,8 +52,8 @@ class MonthlyGoalSchedulerTest {
     }
 
     @Test
-    @DisplayName("음주 횟수가 목표보다 적으면 경험치 300을 지급한다")
-    void 음주_횟수가_목표_이하면_경험치_300이_지급된다() {
+    @DisplayName("20일 이상 기록하고 음주 횟수가 목표 이하면 경험치 100을 지급한다")
+    void 음주_횟수가_목표_이하면_경험치_100이_지급된다() {
         // given
         Long userId = 1L;
 
@@ -68,7 +69,7 @@ class MonthlyGoalSchedulerTest {
 
         UserDrinkCountProjection stat = mock(UserDrinkCountProjection.class);
         when(stat.getUserId()).thenReturn(userId);
-        when(stat.getTotalCount()).thenReturn(5L);
+        when(stat.getRecordDays()).thenReturn(20L);
         when(stat.getDrinkCount()).thenReturn(2L);
 
         when(userGoalHistoryRepository.findAllByGoalMonthAndRewardedFalse(any()))
@@ -82,7 +83,7 @@ class MonthlyGoalSchedulerTest {
         monthlyGoalScheduler.evaluateMonthlyGoals();
 
         // then
-        verify(puppy).setPuppyExp(400);
+        verify(puppy).setPuppyExp(200);
         verify(goal).markRewarded();
     }
 
@@ -103,7 +104,7 @@ class MonthlyGoalSchedulerTest {
 
         UserDrinkCountProjection stat = mock(UserDrinkCountProjection.class);
         when(stat.getUserId()).thenReturn(userId);
-        when(stat.getTotalCount()).thenReturn(5L);
+        when(stat.getRecordDays()).thenReturn(20L);
         when(stat.getDrinkCount()).thenReturn(5L);
 
         when(userGoalHistoryRepository.findAllByGoalMonthAndRewardedFalse(any()))
@@ -148,8 +149,8 @@ class MonthlyGoalSchedulerTest {
     }
 
     @Test
-    @DisplayName("음주 횟수가 목표와 같으면 경험치 300을 지급한다")
-    void 음주_횟수가_목표와_같으면_경험치_300이_지급된다() {
+    @DisplayName("20일 이상 기록하고 음주 횟수가 목표와 같으면 경험치 100을 지급한다")
+    void 음주_횟수가_목표와_같으면_경험치_100이_지급된다() {
         // given
         Long userId = 1L;
 
@@ -165,7 +166,7 @@ class MonthlyGoalSchedulerTest {
 
         UserDrinkCountProjection stat = mock(UserDrinkCountProjection.class);
         when(stat.getUserId()).thenReturn(userId);
-        when(stat.getTotalCount()).thenReturn(3L);
+        when(stat.getRecordDays()).thenReturn(20L);
         when(stat.getDrinkCount()).thenReturn(3L);
 
         when(userGoalHistoryRepository.findAllByGoalMonthAndRewardedFalse(any()))
@@ -179,13 +180,13 @@ class MonthlyGoalSchedulerTest {
         monthlyGoalScheduler.evaluateMonthlyGoals();
 
         // then
-        verify(puppy).setPuppyExp(400);
+        verify(puppy).setPuppyExp(200);
         verify(goal).markRewarded();
     }
 
     @Test
-    @DisplayName("기록은 있지만 모두 '안 마셨어요'인 경우 경험치 300을 지급한다")
-    void 기록은_있는데_전부_안마신_유저는_경험치_300이_지급된다() {
+    @DisplayName("20일 이상 기록했고 모두 '안 마셨어요'인 경우 경험치 100을 지급한다")
+    void 기록은_있는데_전부_안마신_유저는_경험치_100이_지급된다() {
         // given
         Long userId = 1L;
 
@@ -201,7 +202,7 @@ class MonthlyGoalSchedulerTest {
 
         UserDrinkCountProjection stat = mock(UserDrinkCountProjection.class);
         when(stat.getUserId()).thenReturn(userId);
-        when(stat.getTotalCount()).thenReturn(5L);
+        when(stat.getRecordDays()).thenReturn(20L);
         when(stat.getDrinkCount()).thenReturn(0L);
 
         when(userGoalHistoryRepository.findAllByGoalMonthAndRewardedFalse(any()))
@@ -215,7 +216,76 @@ class MonthlyGoalSchedulerTest {
         monthlyGoalScheduler.evaluateMonthlyGoals();
 
         // then
-        verify(puppy).setPuppyExp(400);
+        verify(puppy).setPuppyExp(200);
+        verify(goal).markRewarded();
+    }
+
+    @Test
+    @DisplayName("기록 일수가 19일이면 목표를 달성해도 경험치를 지급하지 않는다")
+    void 기록_19일이면_목표_달성해도_경험치가_지급되지_않는다() {
+        // given
+        Long userId = 1L;
+
+        UserGoalHistory goal = mock(UserGoalHistory.class);
+        when(goal.getUserId()).thenReturn(userId);
+
+        Puppy puppy = mock(Puppy.class);
+        User user = mock(User.class);
+        when(user.getUserId()).thenReturn(userId);
+        when(puppy.getUser()).thenReturn(user);
+
+        UserDrinkCountProjection stat = mock(UserDrinkCountProjection.class);
+        when(stat.getUserId()).thenReturn(userId);
+        when(stat.getRecordDays()).thenReturn(19L);
+
+        when(userGoalHistoryRepository.findAllByGoalMonthAndRewardedFalse(any()))
+                .thenReturn(List.of(goal));
+        when(puppyRepository.findAllByUserUserIdIn(anyList()))
+                .thenReturn(List.of(puppy));
+        when(drinkHistoryRepository.countMonthlyDrinkByUserIds(anyList(), any(), any()))
+                .thenReturn(List.of(stat));
+
+        // when
+        monthlyGoalScheduler.evaluateMonthlyGoals();
+
+        // then
+        verify(puppy, never()).setPuppyExp(anyInt());
+        verify(goal, never()).markRewarded();
+    }
+
+    @Test
+    @DisplayName("기록 일수가 정확히 20일이고 목표를 달성하면 경험치 100을 지급한다")
+    void 기록_20일_경계값이면_경험치_100이_지급된다() {
+        // given
+        Long userId = 1L;
+
+        UserGoalHistory goal = mock(UserGoalHistory.class);
+        when(goal.getUserId()).thenReturn(userId);
+        when(goal.getMonthlyGoalCount()).thenReturn(0);
+
+        Puppy puppy = mock(Puppy.class);
+        User user = mock(User.class);
+        when(user.getUserId()).thenReturn(userId);
+        when(puppy.getUser()).thenReturn(user);
+        when(puppy.getPuppyExp()).thenReturn(0);
+
+        UserDrinkCountProjection stat = mock(UserDrinkCountProjection.class);
+        when(stat.getUserId()).thenReturn(userId);
+        when(stat.getRecordDays()).thenReturn(20L);
+        when(stat.getDrinkCount()).thenReturn(0L);
+
+        when(userGoalHistoryRepository.findAllByGoalMonthAndRewardedFalse(any()))
+                .thenReturn(List.of(goal));
+        when(puppyRepository.findAllByUserUserIdIn(anyList()))
+                .thenReturn(List.of(puppy));
+        when(drinkHistoryRepository.countMonthlyDrinkByUserIds(anyList(), any(), any()))
+                .thenReturn(List.of(stat));
+
+        // when
+        monthlyGoalScheduler.evaluateMonthlyGoals();
+
+        // then
+        verify(puppy).setPuppyExp(100);
         verify(goal).markRewarded();
     }
 }

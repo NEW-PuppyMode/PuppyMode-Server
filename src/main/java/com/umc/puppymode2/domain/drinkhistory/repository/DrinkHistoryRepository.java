@@ -26,6 +26,7 @@ public interface DrinkHistoryRepository extends JpaRepository<DrinkHistory, Long
     @Query("""
         SELECT d.user.userId AS userId,
                COUNT(d) AS totalCount,
+               COUNT(DISTINCT d.drinkDate) AS recordDays,
                SUM(CASE WHEN d.isDrink = true THEN 1 ELSE 0 END) AS drinkCount
         FROM DrinkHistory d
         WHERE d.user.userId IN :userIds
