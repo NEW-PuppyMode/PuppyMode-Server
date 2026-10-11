@@ -37,7 +37,8 @@ public class SecurityConfig {
 
     public static final String[] PUBLIC_WHITELIST = {
             "/account-deletion",
-            "/privacy-policy"
+            "/privacy-policy",
+            "/dashboard" // TODO(#213): 임시 대시보드. Amplitude 연동 후 제거
     };
 
     public static final String[] SYSTEM_WHITELIST = {
