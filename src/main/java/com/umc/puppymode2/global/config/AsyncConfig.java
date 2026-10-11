@@ -1,6 +1,6 @@
 package com.umc.puppymode2.global.config;
 
-import io.micrometer.core.instrument.Counter;
+import com.umc.puppymode2.global.metrics.NotificationMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
@@ -19,11 +19,12 @@ import java.util.concurrent.Executor;
 @EnableAsync
 public class AsyncConfig implements AsyncConfigurer {
 
-    // 큐 포화로 폐기된 알림 수. Prometheus에서는 notification_dropped_total{name="..."} 로 보인다.
-    static final String DROPPED_METRIC = "notification.dropped";
+    // 큐 포화로 폐기·거부된 알림 수. Prometheus에서는 notification_dropped_total{name="...",reason="queue_full"} 로 보인다.
+    static final String DROPPED_METRIC = NotificationMetrics.DROPPED;
+    private static final String QUEUE_FULL = "queue_full";
+    private static final String NOTIFICATION_EXECUTOR = "notificationExecutor";
     private static final String COMPLAINT_EXECUTOR = "complaintExecutor";
 
-    // 레지스트리는 지연 조회한다. 설정 클래스를 직접 생성하는 테스트에서는 null이고, 이때는 카운터를 건너뛴다.
     @Autowired
     private ObjectProvider<MeterRegistry> meterRegistry;
 
@@ -34,6 +35,15 @@ public class AsyncConfig implements AsyncConfigurer {
         executor.setMaxPoolSize(8);
         executor.setQueueCapacity(100);
         executor.setThreadNamePrefix("notify-");
+        // 큐가 가득 차면 예외를 던지지 않고 경고 한 줄만 남긴 채 푸시를 버린다. 푸시는 부가 기능이고 응원 자체는 이미 커밋된 뒤다.
+        // (기본 AbortPolicy면 스프링이 AFTER_COMMIT 리스너의 거부 예외를 ERROR 스택트레이스 약 178줄(26KB)로 남겨
+        //  포화 때 로그가 폭증하고 정상 장애 알람과 구분되지 않았다. #216 부하 테스트) 폐기 건수는 메트릭으로 계속 센다.
+        executor.setRejectedExecutionHandler((task, pool) -> {
+            metrics().countDropped(NOTIFICATION_EXECUTOR, QUEUE_FULL);
+            log.warn("[푸시 알림] 작업 큐가 가득 차 알림을 건너뜁니다. (active={}, queued={})",
+                    pool.getActiveCount(), pool.getQueue().size());
+        });
+        metrics().registerDropped(NOTIFICATION_EXECUTOR, QUEUE_FULL); // 첫 거부 전에도 0으로 보이도록 미리 등록한다
         executor.initialize();
         return executor;
     }
@@ -52,48 +62,19 @@ public class AsyncConfig implements AsyncConfigurer {
         // 큐가 가득 차면 예외를 던지지 않고 경고만 남긴 채 알림을 버린다. 알림은 부가 기능이고 신고 접수는 이미 커밋된 뒤다.
         // (스프링이 AFTER_COMMIT 리스너의 거부 예외를 삼키고 ERROR 스택트레이스로 남기므로, 의도를 명시하고 로그를 한 줄로 줄인다)
         executor.setRejectedExecutionHandler((task, pool) -> {
-            countDropped(COMPLAINT_EXECUTOR);
+            metrics().countDropped(COMPLAINT_EXECUTOR, QUEUE_FULL);
             log.warn("[신고 알림] 작업 큐가 가득 차 알림을 건너뜁니다. (active={}, queued={})",
                     pool.getActiveCount(), pool.getQueue().size());
         });
-        registerDroppedCounter(COMPLAINT_EXECUTOR); // 첫 폐기 전에도 0으로 보이도록 미리 등록한다
+        metrics().registerDropped(COMPLAINT_EXECUTOR, QUEUE_FULL); // 첫 폐기 전에도 0으로 보이도록 미리 등록한다
         executor.initialize();
         return executor;
     }
 
-    // 폐기 핸들러는 어떤 경우에도 예외를 던지면 안 된다. (카운터 실패가 알림 경로에 영향을 주지 않도록 삼킨다)
-    private void countDropped(String executorName) {
-        try {
-            MeterRegistry registry = registry();
-            if (registry != null) {
-                droppedCounter(registry, executorName).increment();
-            }
-        } catch (RuntimeException ignored) {
-            // 메트릭은 부가 기능이다.
-        }
-    }
-
-    private void registerDroppedCounter(String executorName) {
-        try {
-            MeterRegistry registry = registry();
-            if (registry != null) {
-                droppedCounter(registry, executorName);
-            }
-        } catch (RuntimeException ignored) {
-            // 미리 등록하지 못해도 첫 폐기 때 생성된다.
-        }
-    }
-
-    // 같은 이름·태그면 기존 카운터를 돌려준다.
-    private static Counter droppedCounter(MeterRegistry registry, String executorName) {
-        return Counter.builder(DROPPED_METRIC)
-                .tag("name", executorName)
-                .description("큐가 가득 차 폐기된 알림 수")
-                .register(registry);
-    }
-
-    private MeterRegistry registry() {
-        return meterRegistry == null ? null : meterRegistry.getIfAvailable();
+    // 레지스트리는 지연 조회한다. 설정 클래스를 직접 생성하는 테스트에서는 null이고, 이때는 카운터를 건너뛴다.
+    // 폐기·거부 핸들러는 어떤 경우에도 메트릭 때문에 예외를 던지면 안 된다. (NotificationMetrics가 예외를 삼킨다)
+    private NotificationMetrics metrics() {
+        return new NotificationMetrics(meterRegistry);
     }
 
     @Override

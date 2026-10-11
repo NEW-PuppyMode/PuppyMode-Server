@@ -58,6 +58,67 @@ class AsyncConfigTest {
     }
 
     @Test
+    void 푸시_알림_실행기는_가득_차면_예외_없이_버리고_폐기_건수를_센다() throws Exception {
+        MeterRegistry registry = new SimpleMeterRegistry();
+        AsyncConfig config = new AsyncConfig();
+        ReflectionTestUtils.setField(config, "meterRegistry", providerOf(registry));
+        ThreadPoolTaskExecutor executor = (ThreadPoolTaskExecutor) config.notificationExecutor();
+        CountDownLatch release = new CountDownLatch(1);
+        CountDownLatch done = new CountDownLatch(108);
+        Runnable blocking = () -> {
+            try {
+                release.await();
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+            done.countDown();
+        };
+        double before = registry.get(AsyncConfig.DROPPED_METRIC).tag("name", "notificationExecutor").tag("reason", "queue_full").counter().count();
+        assertEquals(0.0, before, "첫 거부 전에도 0으로 등록되어 있어야 한다");
+
+        try {
+            try {
+                // 최대 스레드 8개 + 큐 100개 = 108개까지 받는다.
+                for (int i = 0; i < 108; i++) {
+                    executor.execute(blocking);
+                }
+                // 109번째부터는 거부되지만 예외 없이 버려진다. (이전 기본 정책이면 TaskRejectedException)
+                executor.execute(blocking);
+                executor.execute(blocking);
+            } finally {
+                release.countDown();
+            }
+            assertTrue(done.await(5, TimeUnit.SECONDS));
+            assertEquals(2.0, registry.get(AsyncConfig.DROPPED_METRIC).tag("name", "notificationExecutor").tag("reason", "queue_full").counter().count());
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    @Test
+    void 레지스트리가_없어도_푸시_알림_실행기의_폐기_동작은_예외를_던지지_않는다() {
+        AsyncConfig config = new AsyncConfig();
+        ThreadPoolTaskExecutor executor = (ThreadPoolTaskExecutor) config.notificationExecutor();
+        CountDownLatch release = new CountDownLatch(1);
+        Runnable blocking = () -> {
+            try {
+                release.await();
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+        };
+        try {
+            for (int i = 0; i < 108; i++) {
+                executor.execute(blocking);
+            }
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> executor.execute(blocking));
+        } finally {
+            release.countDown();
+            executor.shutdown();
+        }
+    }
+
+    @Test
     void 푸시_알림_실행기와_신고_알림_실행기는_별도_풀이다() {
         AsyncConfig config = new AsyncConfig();
         ThreadPoolTaskExecutor notification = (ThreadPoolTaskExecutor) config.notificationExecutor();
@@ -77,7 +138,7 @@ class AsyncConfigTest {
     }
 
     private static double dropped(MeterRegistry registry) {
-        return registry.counter(AsyncConfig.DROPPED_METRIC, "name", "complaintExecutor").count();
+        return registry.counter(AsyncConfig.DROPPED_METRIC, "name", "complaintExecutor", "reason", "queue_full").count();
     }
 
     @Test
@@ -99,7 +160,7 @@ class AsyncConfigTest {
 
         try {
             // 아직 아무것도 버려지지 않았지만 시계열은 이미 있어야 한다. (없으면 알람 규칙이 "데이터 없음"이 된다)
-            assertEquals(0.0, registry.find(AsyncConfig.DROPPED_METRIC).tag("name", "complaintExecutor").counter().count());
+            assertEquals(0.0, registry.find(AsyncConfig.DROPPED_METRIC).tag("name", "complaintExecutor").tag("reason", "queue_full").counter().count());
             try {
                 for (int i = 0; i < 22; i++) {
                     executor.execute(blocking);
