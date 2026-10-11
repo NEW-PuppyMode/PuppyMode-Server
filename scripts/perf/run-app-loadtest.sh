@@ -13,6 +13,15 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
+# PERF_APP_PORT: 앱 포트(기본 8080). 다른 앱이 쓰고 있으면 바꾼다.
+# EXTRA_APP_ARGS: 앱에 덧붙일 스프링 인자.
+# FAKE_FCM=1: 가짜 FCM을 켠다(loadtest.fake-fcm.enabled=true). 지연·실패는 scripts/perf/out/fcm-control.json 으로 실행 중에 바꾼다.
+#             활성 DB가 localhost가 아니면 앱이 기동에 실패한다. 실제 FCM은 호출되지 않는다.
+PORT="${PERF_APP_PORT:-8080}"
+FCM_ARGS=""
+if [ "${FAKE_FCM:-0}" = "1" ]; then
+  FCM_ARGS="--loadtest.fake-fcm.enabled=true --loadtest.fake-fcm.control-file=$PWD/scripts/perf/out/fcm-control.json"
+fi
 LOG=scripts/perf/out/app.log
 FAKE_URL="http://localhost:9999/hook"
 FAKE_SECRET="loadtest-dummy"   # 더미 값. 실제 시크릿을 쓰지 않는다.
@@ -23,7 +32,7 @@ listening_pid() { lsof -nP -iTCP:"$1" -sTCP:LISTEN -t 2>/dev/null | head -1 || t
 
 case "${1:-}" in
   start)
-    [ -z "$(listening_pid 8080)" ] || { echo "8080 포트가 이미 사용 중입니다. 먼저 stop 하세요." >&2; exit 1; }
+    [ -z "$(listening_pid "$PORT")" ] || { echo "$PORT 포트가 이미 사용 중입니다. 먼저 stop 하세요." >&2; exit 1; }
     [ -n "$(listening_pid 9999)" ] || { echo "가짜 웹훅 서버(:9999)가 없습니다. 먼저 'python3 scripts/perf/fake-webhook.py'를 실행하세요." >&2; exit 1; }
     mkdir -p scripts/perf/out
     COMPLAINT_SLACK_WEBHOOK_URL="$FAKE_URL" COMPLAINT_SLACK_WEBHOOK_SECRET="$FAKE_SECRET" \
@@ -31,16 +40,17 @@ case "${1:-}" in
     FIREBASE_CREDENTIALS_BASE64="" \
       nohup ./gradlew bootRun --args="--management.endpoints.web.exposure.include=health,prometheus \
 --management.metrics.distribution.percentiles-histogram.http.server.requests=true \
---logging.level.root=WARN --spring.jpa.properties.hibernate.show_sql=false" > "$LOG" 2>&1 &
+--logging.level.root=WARN --spring.jpa.properties.hibernate.show_sql=false \
+--server.port=$PORT $FCM_ARGS ${EXTRA_APP_ARGS:-}" > "$LOG" 2>&1 &
     for _ in $(seq 1 60); do
-      if curl -fs localhost:8080/actuator/health >/dev/null 2>&1; then echo "앱 실행 완료 (로그: $LOG)"; exit 0; fi
+      if curl -fs localhost:$PORT/actuator/health >/dev/null 2>&1; then echo "앱 실행 완료 (로그: $LOG)"; exit 0; fi
       sleep 3
     done
     echo "앱이 시간 안에 뜨지 않았습니다. 로그를 확인하세요: $LOG" >&2; exit 1 ;;
   stop)
-    pid="$(listening_pid 8080)"
+    pid="$(listening_pid "$PORT")"
     if [ -n "$pid" ]; then kill "$pid"; sleep 3; echo "앱 종료"; else echo "실행 중인 앱이 없습니다."; fi ;;
   status)
-    [ -n "$(listening_pid 8080)" ] && echo "앱 실행 중 (8080)" || echo "앱 중지됨" ;;
+    [ -n "$(listening_pid "$PORT")" ] && echo "앱 실행 중 ($PORT)" || echo "앱 중지됨" ;;
   *) echo "사용법: $0 {start|stop|status}" >&2; exit 2 ;;
 esac

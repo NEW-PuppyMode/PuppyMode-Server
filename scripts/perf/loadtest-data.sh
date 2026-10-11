@@ -23,4 +23,6 @@ status=0
 LOADTEST_MODE="$mode" ./gradlew cleanTest test --tests 'com.umc.puppymode2.loadtest.LoadTestDataSetup' -i >"$out" 2>&1 || status=$?
 grep -E "\[loadtest\]|BUILD|FAILED|localhost DB" "$out" || true
 rm -f "$out"
+# 응원 조합 소진 위치(#216)는 응원을 지우면 처음부터 다시 쓴다.
+if [ "$status" -eq 0 ] && { [ "$mode" = "reset" ] || [ "$mode" = "cleanup" ]; }; then rm -f scripts/perf/out/push-offset; fi
 exit "$status"
