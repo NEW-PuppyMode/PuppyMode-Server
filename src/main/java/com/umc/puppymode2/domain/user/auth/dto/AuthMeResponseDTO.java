@@ -6,6 +6,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record AuthMeResponseDTO(
 
         @Schema(
+                description = "사용자 고유 ID (분석 도구 식별용, 문자열)",
+                example = "12345"
+        )
+        String userId,
+
+        @Schema(
                 description = "온보딩 완료 여부 (deprecated + 신규 개발 시에는 isPuppyTestCompledted)",
                 example = "true"
         )

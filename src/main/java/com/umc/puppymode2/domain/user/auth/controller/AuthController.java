@@ -177,6 +177,7 @@ public class AuthController {
             summary = "현재 사용자 상태 조회",
             description = """
                     현재 사용자의 상태를 조회합니다.
+                    - userId: 사용자 고유 ID (문자열, 분석 도구 식별용)
                     - isOnboarded / isPuppyTestCompleted: 강아지 유형 검사 완료 여부 (동일한 값, isOnboarded는 구버전 호환용)
                     - onboardingCompleted: 강아지이름·내이름·최초 목표설정 완료 여부
                     - tutorialShown: 튜토리얼 진행 여부

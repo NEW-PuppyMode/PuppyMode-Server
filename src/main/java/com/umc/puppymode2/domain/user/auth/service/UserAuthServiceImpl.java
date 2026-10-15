@@ -217,6 +217,7 @@ public class UserAuthServiceImpl implements UserAuthService {
 
     /**
      * 사용자의 온보딩/튜토리얼 진행 상태를 조회합니다.
+     * - userId: 사용자 고유 ID (분석 도구 식별용, 문자열)
      * - isOnboarded / isPuppyTestCompleted: puppy 존재 여부 (강아지 유형 검사 완료 여부)
      *   ※ isOnboarded는 구버전 클라이언트 호환을 위해 유지, 값은 isPuppyTestCompleted와 동일
      * - onboardingCompleted: 강아지이름 + 내이름 + 최초 목표설정 3단계 완료 여부
@@ -235,6 +236,7 @@ public class UserAuthServiceImpl implements UserAuthService {
         boolean onboardingCompleted = onboardingProgressService.isOnboardingCompleted(user);
 
         return new AuthMeResponseDTO(
+                String.valueOf(user.getUserId()),   // userId (분석 도구 식별용)
                 isPuppyTestCompleted,   // isOnboarded (구버전 호환, 값 동일)
                 isPuppyTestCompleted,   // isPuppyTestCompleted
                 onboardingCompleted,
