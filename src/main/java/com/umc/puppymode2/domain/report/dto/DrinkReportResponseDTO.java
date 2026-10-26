@@ -16,4 +16,7 @@ public class DrinkReportResponseDTO {
 
     // 조회 대상 월의 목표 대비 달성 상태 (NO_GOAL / IN_PROGRESS / ACHIEVED / FAILED)
     private GoalStatus goalStatus;
+
+    // 월간 목표 달성 보상 전/후 레벨. 보상 없으면(실패, 목표없음, 진행 중) null
+    private GoalRewardDTO goalReward;
 }

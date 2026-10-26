@@ -84,7 +84,7 @@ class MonthlyGoalSchedulerTest {
 
         // then
         verify(puppy).setPuppyExp(200);
-        verify(goal).markRewarded();
+        verify(goal).markRewarded(100, 200);
     }
 
     @Test
@@ -119,7 +119,7 @@ class MonthlyGoalSchedulerTest {
 
         // then
         verify(puppy, never()).setPuppyExp(anyInt());
-        verify(goal, never()).markRewarded();
+        verify(goal, never()).markRewarded(anyInt(), anyInt());
     }
 
     @Test
@@ -145,7 +145,7 @@ class MonthlyGoalSchedulerTest {
         monthlyGoalScheduler.evaluateMonthlyGoals();
 
         verify(puppy, never()).setPuppyExp(anyInt());
-        verify(goal, never()).markRewarded();
+        verify(goal, never()).markRewarded(anyInt(), anyInt());
     }
 
     @Test
@@ -181,7 +181,7 @@ class MonthlyGoalSchedulerTest {
 
         // then
         verify(puppy).setPuppyExp(200);
-        verify(goal).markRewarded();
+        verify(goal).markRewarded(100, 200);
     }
 
     @Test
@@ -217,7 +217,7 @@ class MonthlyGoalSchedulerTest {
 
         // then
         verify(puppy).setPuppyExp(200);
-        verify(goal).markRewarded();
+        verify(goal).markRewarded(100, 200);
     }
 
     @Test
@@ -250,7 +250,7 @@ class MonthlyGoalSchedulerTest {
 
         // then
         verify(puppy, never()).setPuppyExp(anyInt());
-        verify(goal, never()).markRewarded();
+        verify(goal, never()).markRewarded(anyInt(), anyInt());
     }
 
     @Test
@@ -286,6 +286,6 @@ class MonthlyGoalSchedulerTest {
 
         // then
         verify(puppy).setPuppyExp(100);
-        verify(goal).markRewarded();
+        verify(goal).markRewarded(0, 100);
     }
 }

@@ -68,8 +68,19 @@ public class UserGoalHistory {
     @Column(name = "is_rewarded", nullable = false)
     private boolean rewarded = false;
 
-    // 목표 달성 경험치 지급 처리
-    public void markRewarded() {
+    // 보상 지급 직전 강아지 경험치 (월간 리포트 goalReward.before)
+    @Column(name = "reward_exp_before")
+    private Integer rewardExpBefore;
+
+    // 보상 지급 이후 강아지 경험치 (월간 리포트 goalReward.after)
+    @Column(name = "reward_exp_after")
+    private Integer rewardExpAfter;
+
+    // 목표 달성 경험치 지급 + 리포트용 지급 전/후 경험치 저장
+    public void markRewarded(int expBefore, int expAfter) {
+
         this.rewarded = true;
+        this.rewardExpBefore = expBefore;
+        this.rewardExpAfter = expAfter;
     }
 }

@@ -11,9 +11,9 @@ import com.umc.puppymode2.domain.user.entity.User;
 import com.umc.puppymode2.domain.user.repository.UserRepository;
 import com.umc.puppymode2.global.auth.context.UserContext;
 import com.umc.puppymode2.global.exception.GeneralException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -41,10 +41,23 @@ class MainServiceImplTest {
     @Mock
     private UserContext userContext;
 
-    @InjectMocks
     private MainServiceImpl mainService;
 
     private final Long userId = 1L;
+
+    // 레벨/퍼센트 계산은 실제 PuppyLevelCalculator로 수행하고, 그 안의 LevelExpRepository만 mock으로 둔다.
+    @BeforeEach
+    void setUp() {
+        mainService = new MainServiceImpl(
+                puppyRepository,
+                userRepository,
+                drinkHistoryRepository,
+                userGoalHistoryRepository,
+                new PuppyLevelCalculator(levelExpRepository),
+                userContext,
+                puppyAppearanceRepository
+        );
+    }
 
     @Test
     void 온보딩_미완료_유저가_메인을_조회하면_isOnboarded가_false이다() {

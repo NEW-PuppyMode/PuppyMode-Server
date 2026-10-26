@@ -4,9 +4,12 @@ import com.umc.puppymode2.domain.drinkhistory.repository.DrinkHistoryRepository;
 import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
 import com.umc.puppymode2.domain.advice.repository.AdviceRepository;
+import com.umc.puppymode2.domain.puppy.service.PuppyLevelCalculator;
 import com.umc.puppymode2.domain.report.converter.DrinkReportConverter;
 import com.umc.puppymode2.domain.report.dto.DrinkReportResponseDTO;
+import com.umc.puppymode2.domain.report.dto.GoalRewardDTO;
 import com.umc.puppymode2.domain.report.dto.GoalStatus;
+import com.umc.puppymode2.domain.report.dto.LevelSnapshotDTO;
 import com.umc.puppymode2.global.cache.DrinkReportCacheService;
 import com.umc.puppymode2.global.util.TimeConstants;
 import jakarta.transaction.Transactional;
@@ -37,6 +40,7 @@ public class DrinkReportServiceImpl implements DrinkReportService {
     private final AdviceRepository adviceRepository;
     private final DrinkReportConverter drinkReportConverter;
     private final DrinkReportCacheService reportCacheService;
+    private final PuppyLevelCalculator puppyLevelCalculator;
 
     @Transactional(Transactional.TxType.SUPPORTS)
     @Override
@@ -134,13 +138,16 @@ public class DrinkReportServiceImpl implements DrinkReportService {
                 drinkRecordCount
         );
 
+        GoalRewardDTO goalReward = resolveGoalReward(goalOpt.orElse(null));
+
         DrinkReportResponseDTO result = drinkReportConverter.toDto(
                 goal,
                 drinkRecordCount,
                 drinkDays,
                 achievementRate,
                 scoldedCount,
-                goalStatus
+                goalStatus,
+                goalReward
         );
 
         // 3) 다음 조회부터는 캐시로 응답할 수 있도록 계산 결과를 Redis에 적재
@@ -258,6 +265,39 @@ public class DrinkReportServiceImpl implements DrinkReportService {
         return drinkDays <= goal.getMonthlyGoalCount()
                 ? GoalStatus.ACHIEVED
                 : GoalStatus.FAILED;
+    }
+
+    /**
+     * 조회 대상 월의 목표 달성 보상 전/후 레벨을 계산한다.
+     *
+     * goalStatus(ACHIEVED)가 아니라 실제 지급 여부(rewarded)를 기준으로 한다.
+     *
+     * 다음 경우는 null:
+     * <ul>
+     *   <li>목표 없음 / 보상 미지급(실패, 진행 중, 기록 일수 부족)</li>
+     *   <li>경험치 스냅샷 저장 기능 도입 전에 지급된 보상 (지급 시점 경험치를 알 수 없음)</li>
+     * </ul>
+     */
+    private GoalRewardDTO resolveGoalReward(UserGoalHistory goal) {
+        if (goal == null
+                || !goal.isRewarded()
+                || goal.getRewardExpBefore() == null
+                || goal.getRewardExpAfter() == null) {
+            return null;
+        }
+
+        return GoalRewardDTO.builder()
+                .before(toLevelSnapshot(goal.getRewardExpBefore()))
+                .after(toLevelSnapshot(goal.getRewardExpAfter()))
+                .build();
+    }
+
+    private LevelSnapshotDTO toLevelSnapshot(int exp) {
+        PuppyLevelCalculator.LevelProgress progress = puppyLevelCalculator.calculate(exp);
+        return LevelSnapshotDTO.builder()
+                .level(progress.level())
+                .percent(progress.percent())
+                .build();
     }
 
     private int resolveCurrentDay(YearMonth targetMonth) {

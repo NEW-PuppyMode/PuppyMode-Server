@@ -84,8 +84,10 @@ public class MonthlyGoalScheduler {
             Puppy puppy = puppyMap.get(goal.getUserId());
             if (puppy == null) continue;
 
-            puppy.setPuppyExp(puppy.getPuppyExp() + MONTHLY_REWARD_EXP);
-            goal.markRewarded();
+            int expBefore = puppy.getPuppyExp();
+            int expAfter = expBefore + MONTHLY_REWARD_EXP;
+            puppy.setPuppyExp(expAfter);
+            goal.markRewarded(expBefore, expAfter);
         }
     }
 }
