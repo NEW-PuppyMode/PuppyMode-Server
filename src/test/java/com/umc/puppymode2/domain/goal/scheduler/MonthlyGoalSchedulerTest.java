@@ -7,6 +7,7 @@ import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
 import com.umc.puppymode2.domain.puppy.entity.Puppy;
 import com.umc.puppymode2.domain.puppy.repository.PuppyRepository;
 import com.umc.puppymode2.domain.user.entity.User;
+import com.umc.puppymode2.global.cache.DrinkReportCacheService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +34,9 @@ class MonthlyGoalSchedulerTest {
     @Mock
     private PuppyRepository puppyRepository;
 
+    @Mock
+    private DrinkReportCacheService reportCacheService;
+
     @InjectMocks
     private MonthlyGoalScheduler monthlyGoalScheduler;
 
@@ -49,6 +53,7 @@ class MonthlyGoalSchedulerTest {
         // then
         verify(puppyRepository, never()).findAllByUserUserIdIn(anyList());
         verify(drinkHistoryRepository, never()).countMonthlyDrinkByUserIds(anyList(), any(), any());
+        verify(reportCacheService, never()).evict(any(), any());
     }
 
     @Test
@@ -85,6 +90,7 @@ class MonthlyGoalSchedulerTest {
         // then
         verify(puppy).setPuppyExp(200);
         verify(goal).markRewarded(100, 200);
+        verify(reportCacheService).evict(eq(userId), any());
     }
 
     @Test
@@ -120,6 +126,7 @@ class MonthlyGoalSchedulerTest {
         // then
         verify(puppy, never()).setPuppyExp(anyInt());
         verify(goal, never()).markRewarded(anyInt(), anyInt());
+        verify(reportCacheService, never()).evict(any(), any());
     }
 
     @Test
@@ -146,6 +153,7 @@ class MonthlyGoalSchedulerTest {
 
         verify(puppy, never()).setPuppyExp(anyInt());
         verify(goal, never()).markRewarded(anyInt(), anyInt());
+        verify(reportCacheService, never()).evict(any(), any());
     }
 
     @Test
@@ -182,6 +190,7 @@ class MonthlyGoalSchedulerTest {
         // then
         verify(puppy).setPuppyExp(200);
         verify(goal).markRewarded(100, 200);
+        verify(reportCacheService).evict(eq(userId), any());
     }
 
     @Test
@@ -218,6 +227,7 @@ class MonthlyGoalSchedulerTest {
         // then
         verify(puppy).setPuppyExp(200);
         verify(goal).markRewarded(100, 200);
+        verify(reportCacheService).evict(eq(userId), any());
     }
 
     @Test
@@ -251,6 +261,7 @@ class MonthlyGoalSchedulerTest {
         // then
         verify(puppy, never()).setPuppyExp(anyInt());
         verify(goal, never()).markRewarded(anyInt(), anyInt());
+        verify(reportCacheService, never()).evict(any(), any());
     }
 
     @Test
@@ -287,5 +298,6 @@ class MonthlyGoalSchedulerTest {
         // then
         verify(puppy).setPuppyExp(100);
         verify(goal).markRewarded(0, 100);
+        verify(reportCacheService).evict(eq(userId), any());
     }
 }
