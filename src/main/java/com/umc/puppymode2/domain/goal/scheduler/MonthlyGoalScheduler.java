@@ -6,12 +6,14 @@ import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
 import com.umc.puppymode2.domain.puppy.entity.Puppy;
 import com.umc.puppymode2.domain.puppy.repository.PuppyRepository;
+import com.umc.puppymode2.global.cache.DrinkReportCacheService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,7 @@ public class MonthlyGoalScheduler {
     private final UserGoalHistoryRepository userGoalHistoryRepository;
     private final DrinkHistoryRepository drinkHistoryRepository;
     private final PuppyRepository puppyRepository;
+    private final DrinkReportCacheService reportCacheService;
 
     /**
      * 매월 마지막 날 23:59에 실행되는 월간 목표 달성 보상 스케줄러
@@ -84,8 +87,13 @@ public class MonthlyGoalScheduler {
             Puppy puppy = puppyMap.get(goal.getUserId());
             if (puppy == null) continue;
 
-            puppy.setPuppyExp(puppy.getPuppyExp() + MONTHLY_REWARD_EXP);
-            goal.markRewarded();
+            int expBefore = puppy.getPuppyExp();
+            int expAfter = expBefore + MONTHLY_REWARD_EXP;
+            puppy.setPuppyExp(expAfter);
+            goal.markRewarded(expBefore, expAfter);
+
+            // 보상 지급으로 해당 월 리포트(goalReward)가 바뀌므로 캐시 무효화
+            reportCacheService.evict(goal.getUserId(), YearMonth.from(firstDay));
         }
     }
 }

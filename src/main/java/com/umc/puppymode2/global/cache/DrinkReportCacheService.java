@@ -32,7 +32,8 @@ public class DrinkReportCacheService {
     // 배포 직후 기존 키(구 버전 JSON)는 아무도 읽지 않게 되고 각자 TTL이 지나면 사라지며,
     // 새 키로는 첫 요청부터 새 필드가 채워진 값이 재계산되어 저장된다.
     // (v2: goalStatus 필드 추가 - #184)
-    private static final String KEY_PREFIX = "report:v2:";
+    // (v3: goalReward 필드 추가 - #209)
+    private static final String KEY_PREFIX = "report:v3:";
     private static final Duration CURRENT_MONTH_TTL = Duration.ofMinutes(5);
     private static final Duration PAST_MONTH_TTL = Duration.ofDays(1);
 
