@@ -4,10 +4,8 @@ import com.umc.puppymode2.domain.advice.repository.AdviceRepository;
 import com.umc.puppymode2.domain.drinkhistory.repository.DrinkHistoryRepository;
 import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
 import com.umc.puppymode2.domain.goal.repository.UserGoalHistoryRepository;
-import com.umc.puppymode2.domain.puppy.service.PuppyLevelCalculator;
 import com.umc.puppymode2.domain.report.converter.DrinkReportConverter;
 import com.umc.puppymode2.domain.report.dto.DrinkReportResponseDTO;
-import com.umc.puppymode2.domain.report.dto.GoalRewardDTO;
 import com.umc.puppymode2.domain.report.dto.GoalStatus;
 import com.umc.puppymode2.global.cache.DrinkReportCacheService;
 import com.umc.puppymode2.global.util.TimeConstants;
@@ -45,9 +43,6 @@ class DrinkReportServiceImplTest {
 
     @Mock
     private DrinkReportCacheService reportCacheService;
-
-    @Mock
-    private PuppyLevelCalculator puppyLevelCalculator;
 
     @InjectMocks
     private DrinkReportServiceImpl drinkReportService;
@@ -102,7 +97,6 @@ class DrinkReportServiceImplTest {
                 eq(drinkDays),
                 anyInt(),
                 eq(scoldedCount),
-                any(),
                 any()
         )).thenReturn(dto);
 
@@ -129,7 +123,7 @@ class DrinkReportServiceImplTest {
                 .countByUserUserIdAndAdvisedAtBetween(any(), any(), any());
 
         verify(drinkReportConverter, times(1))
-                .toDto(eq(goal), eq(drinkRecordCount), eq(drinkDays), anyInt(), eq(scoldedCount), any(), any());
+                .toDto(eq(goal), eq(drinkRecordCount), eq(drinkDays), anyInt(), eq(scoldedCount), any());
     }
 
     @Test
@@ -169,7 +163,6 @@ class DrinkReportServiceImplTest {
                 eq(drinkDays),
                 anyInt(),
                 eq(scoldedCount),
-                any(),
                 any()
         )).thenReturn(dto);
 
@@ -186,7 +179,6 @@ class DrinkReportServiceImplTest {
                 eq(drinkDays),
                 anyInt(),
                 eq(scoldedCount),
-                any(),
                 any()
         );
     }
@@ -231,7 +223,6 @@ class DrinkReportServiceImplTest {
                 eq(drinkDays),
                 anyInt(),
                 eq(scoldedCount),
-                any(),
                 any()
         )).thenReturn(dto);
 
@@ -251,7 +242,6 @@ class DrinkReportServiceImplTest {
                 eq(drinkDays),
                 achievementRateCaptor.capture(),
                 eq(scoldedCount),
-                any(),
                 any()
         );
 
@@ -299,7 +289,6 @@ class DrinkReportServiceImplTest {
                 eq(drinkDays),
                 eq(0),
                 eq(scoldedCount),
-                any(),
                 any()
         )).thenReturn(dto);
 
@@ -316,7 +305,6 @@ class DrinkReportServiceImplTest {
                 eq(drinkDays),
                 eq(0),
                 eq(scoldedCount),
-                any(),
                 any()
         );
     }
@@ -361,7 +349,6 @@ class DrinkReportServiceImplTest {
                 eq(drinkDays),
                 eq(0),
                 eq(scoldedCount),
-                any(),
                 any()
         )).thenReturn(dto);
 
@@ -378,7 +365,6 @@ class DrinkReportServiceImplTest {
                 eq(drinkDays),
                 eq(0),
                 eq(scoldedCount),
-                any(),
                 any()
         );
     }
@@ -409,7 +395,7 @@ class DrinkReportServiceImplTest {
         when(adviceRepository
                 .countByUserUserIdAndAdvisedAtBetween(eq(userId), any(), any()))
                 .thenReturn(0L);
-        when(drinkReportConverter.toDto(anyInt(), anyLong(), anyLong(), anyInt(), anyInt(), any(), any()))
+        when(drinkReportConverter.toDto(anyInt(), anyLong(), anyLong(), anyInt(), anyInt(), any()))
                 .thenReturn(mock(DrinkReportResponseDTO.class));
 
         // when & then
@@ -498,7 +484,7 @@ class DrinkReportServiceImplTest {
         when(adviceRepository
                 .countByUserUserIdAndAdvisedAtBetween(eq(userId), any(), any()))
                 .thenReturn(0L);
-        when(drinkReportConverter.toDto(anyInt(), anyLong(), anyLong(), anyInt(), anyInt(), any(), any()))
+        when(drinkReportConverter.toDto(anyInt(), anyLong(), anyLong(), anyInt(), anyInt(), any()))
                 .thenReturn(mock(DrinkReportResponseDTO.class));
 
         try (MockedStatic<LocalDate> mockedLocalDate = mockStatic(LocalDate.class, CALLS_REAL_METHODS)) {
@@ -508,92 +494,6 @@ class DrinkReportServiceImplTest {
         }
 
         assertThat(captureGoalStatus()).isEqualTo(GoalStatus.IN_PROGRESS);
-    }
-
-    // ---------------------------------------------------------------------
-    // goalReward (월간 목표 보상 전/후 레벨)
-    // ---------------------------------------------------------------------
-
-    @Test
-    void 보상을_받았고_경험치_스냅샷이_있으면_goalReward에_전후_레벨이_담긴다() {
-        UserGoalHistory goalHistory = mock(UserGoalHistory.class);
-        when(goalHistory.getMonthlyGoalCount()).thenReturn(10);
-        when(goalHistory.isRewarded()).thenReturn(true);
-        when(goalHistory.getRewardExpBefore()).thenReturn(1000);
-        when(goalHistory.getRewardExpAfter()).thenReturn(1100);
-
-        when(puppyLevelCalculator.calculate(1000)).thenReturn(new PuppyLevelCalculator.LevelProgress(14, 10));
-        when(puppyLevelCalculator.calculate(1100)).thenReturn(new PuppyLevelCalculator.LevelProgress(14, 40));
-
-        stubDrinkReportBasics(Optional.of(goalHistory), 3L, 20L);
-
-        drinkReportService.drinkReport(userId, targetMonth);
-
-        GoalRewardDTO goalReward = captureGoalReward();
-        assertThat(goalReward).isNotNull();
-        assertThat(goalReward.getBefore().getLevel()).isEqualTo(14);
-        assertThat(goalReward.getBefore().getPercent()).isEqualTo(10);
-        assertThat(goalReward.getAfter().getLevel()).isEqualTo(14);
-        assertThat(goalReward.getAfter().getPercent()).isEqualTo(40);
-    }
-
-    @Test
-    void 보상으로_레벨업하면_goalReward의_전후_레벨이_다르다() {
-        UserGoalHistory goalHistory = mock(UserGoalHistory.class);
-        when(goalHistory.getMonthlyGoalCount()).thenReturn(10);
-        when(goalHistory.isRewarded()).thenReturn(true);
-        when(goalHistory.getRewardExpBefore()).thenReturn(1000);
-        when(goalHistory.getRewardExpAfter()).thenReturn(1100);
-
-        when(puppyLevelCalculator.calculate(1000)).thenReturn(new PuppyLevelCalculator.LevelProgress(19, 55));
-        when(puppyLevelCalculator.calculate(1100)).thenReturn(new PuppyLevelCalculator.LevelProgress(20, 55));
-
-        stubDrinkReportBasics(Optional.of(goalHistory), 3L, 20L);
-
-        drinkReportService.drinkReport(userId, targetMonth);
-
-        GoalRewardDTO goalReward = captureGoalReward();
-        assertThat(goalReward.getBefore().getLevel()).isEqualTo(19);
-        assertThat(goalReward.getAfter().getLevel()).isEqualTo(20);
-    }
-
-    @Test
-    void 보상을_받지_않았으면_goalReward는_null이다() {
-        UserGoalHistory goalHistory = mock(UserGoalHistory.class);
-        when(goalHistory.getMonthlyGoalCount()).thenReturn(5);
-        when(goalHistory.isRewarded()).thenReturn(false);
-
-        stubDrinkReportBasics(Optional.of(goalHistory), 8L, 10L);
-
-        drinkReportService.drinkReport(userId, targetMonth);
-
-        assertThat(captureGoalReward()).isNull();
-        verify(puppyLevelCalculator, never()).calculate(anyInt());
-    }
-
-    @Test
-    void 목표가_없으면_goalReward는_null이다() {
-        stubDrinkReportBasics(Optional.empty(), 0L, 0L);
-
-        drinkReportService.drinkReport(userId, targetMonth);
-
-        assertThat(captureGoalReward()).isNull();
-        verify(puppyLevelCalculator, never()).calculate(anyInt());
-    }
-
-    @Test
-    void 스냅샷_도입_전에_받은_보상이면_goalReward는_null이다() {
-        UserGoalHistory goalHistory = mock(UserGoalHistory.class);
-        when(goalHistory.getMonthlyGoalCount()).thenReturn(10);
-        when(goalHistory.isRewarded()).thenReturn(true);
-        when(goalHistory.getRewardExpBefore()).thenReturn(null);
-
-        stubDrinkReportBasics(Optional.of(goalHistory), 3L, 20L);
-
-        drinkReportService.drinkReport(userId, targetMonth);
-
-        assertThat(captureGoalReward()).isNull();
-        verify(puppyLevelCalculator, never()).calculate(anyInt());
     }
 
     /**
@@ -616,7 +516,7 @@ class DrinkReportServiceImplTest {
         when(adviceRepository
                 .countByUserUserIdAndAdvisedAtBetween(eq(userId), any(), any()))
                 .thenReturn(0L);
-        when(drinkReportConverter.toDto(anyInt(), anyLong(), anyLong(), anyInt(), anyInt(), any(), any()))
+        when(drinkReportConverter.toDto(anyInt(), anyLong(), anyLong(), anyInt(), anyInt(), any()))
                 .thenReturn(mock(DrinkReportResponseDTO.class));
     }
 
@@ -624,15 +524,7 @@ class DrinkReportServiceImplTest {
     private GoalStatus captureGoalStatus() {
         ArgumentCaptor<GoalStatus> captor = ArgumentCaptor.forClass(GoalStatus.class);
         verify(drinkReportConverter).toDto(
-                anyInt(), anyLong(), anyLong(), anyInt(), anyInt(), captor.capture(), any());
-        return captor.getValue();
-    }
-
-    /** drinkReportConverter.toDto(...)에 전달된 goalReward 인자를 캡처한다. */
-    private GoalRewardDTO captureGoalReward() {
-        ArgumentCaptor<GoalRewardDTO> captor = ArgumentCaptor.forClass(GoalRewardDTO.class);
-        verify(drinkReportConverter).toDto(
-                anyInt(), anyLong(), anyLong(), anyInt(), anyInt(), any(), captor.capture());
+                anyInt(), anyLong(), anyLong(), anyInt(), anyInt(), captor.capture());
         return captor.getValue();
     }
 

@@ -1,7 +1,9 @@
 package com.umc.puppymode2.domain.goal.repository;
 
 import com.umc.puppymode2.domain.goal.entity.UserGoalHistory;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,6 +23,11 @@ public interface UserGoalHistoryRepository extends JpaRepository<UserGoalHistory
     // 특정 월 목표 조회
     Optional<UserGoalHistory> findByUserIdAndGoalMonth(Long userId, LocalDate goalMonth);
 
+    // 특정 월 목표를 행 잠금
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT ugh FROM UserGoalHistory ugh WHERE ugh.userId = :userId AND ugh.goalMonth = :goalMonth")
+    Optional<UserGoalHistory> findForUpdate(@Param("userId") Long userId, @Param("goalMonth") LocalDate goalMonth);
+
     // 특정 월 목표 존재 여부 확인 (중복 요청 방지)
     boolean existsByUserIdAndGoalMonth(Long userId, LocalDate goalMonth);
 
@@ -33,9 +40,6 @@ public interface UserGoalHistoryRepository extends JpaRepository<UserGoalHistory
     @Modifying
     @Query("DELETE FROM UserGoalHistory ugh WHERE ugh.userId = :userId")
     void deleteAllByUserId(@Param("userId") Long userId);
-
-    // 이번 달 보상 미지급 목록 조회
-    List<UserGoalHistory> findAllByGoalMonthAndRewardedFalse(LocalDate goalMonth);
 
     // 해당 유저가 목표를 설정한 적 있는 모든 월(goalMonth)을 오름차순으로 조회한다.
     // (user_id, goal_month) UNIQUE 제약이 있어 월별로 row가 최대 1개이므로 DISTINCT는 불필요하다.

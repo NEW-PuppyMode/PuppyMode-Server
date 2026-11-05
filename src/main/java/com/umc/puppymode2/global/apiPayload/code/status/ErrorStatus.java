@@ -30,6 +30,9 @@ public enum ErrorStatus implements BaseErrorCode {
     USER_ALREADY_WITHDRAWN(HttpStatus.BAD_REQUEST, "USER4001", "이미 탈퇴한 사용자입니다."),
     USER_ID_NULL(HttpStatus.BAD_REQUEST, "USER_4002", "userId는 필수입니다."),
 
+    // Goal
+    GOAL_REWARD_MONTH_NOT_ENDED(HttpStatus.BAD_REQUEST, "GOAL4001", "아직 끝나지 않은 달은 보상을 받을 수 없습니다."),
+
     // Puppy 관련 에러
     PUPPY_LEVEL_NOT_FOUND(HttpStatus.NOT_FOUND, "PUPPY4041", "해당 강아지 레벨 정보가 존재하지 않습니다."),
     PUPPY_NOT_FOUND(HttpStatus.NOT_FOUND, "PUPPY4042", "해당 유저의 강아지 정보가 존재하지 않습니다."),

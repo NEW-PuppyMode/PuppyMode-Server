@@ -1,20 +1,28 @@
 package com.umc.puppymode2.domain.goal.controller;
 
+import com.umc.puppymode2.domain.goal.dto.MonthlyGoalRewardResponseDTO;
 import com.umc.puppymode2.domain.goal.dto.GoalInfoResponseDTO;
 import com.umc.puppymode2.domain.goal.dto.GoalPostRequestDTO;
 import com.umc.puppymode2.domain.goal.dto.GoalPostResponseDTO;
+import com.umc.puppymode2.domain.goal.service.MonthlyGoalRewardService;
 import com.umc.puppymode2.domain.goal.service.UserGoalHistoryCommandService;
 import com.umc.puppymode2.domain.goal.service.UserGoalHistoryQueryService;
 import com.umc.puppymode2.global.apiPayload.ApiResponse;
 import com.umc.puppymode2.global.auth.context.SecurityUserContext;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.YearMonth;
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping("/goals")
 @RequiredArgsConstructor
@@ -23,6 +31,7 @@ public class UserGoalHistoryController {
     private final UserGoalHistoryCommandService commandService;
     private final UserGoalHistoryQueryService queryService;
     private final SecurityUserContext securityUserContext;
+    private final MonthlyGoalRewardService monthlyGoalRewardService;
 
     private Long getCurrentUserId() {
         return securityUserContext.getCurrentUserId();
@@ -73,6 +82,34 @@ public class UserGoalHistoryController {
         boolean isPassed = queryService.isMoreThan30DayPassed(userId);
         return ResponseEntity.ok(
                 ApiResponse.onSuccess(isPassed, "GOAL200", "이번 달 목표 설정 여부 조회 성공")
+        );
+    }
+
+    // 5. 월간 목표 보상 받기
+    @PostMapping("/reward")
+    @Operation(
+            summary = "월간 목표 보상 받기 API",
+            description = """
+                  지난 달 목표 달성 보상(경험치 100)을 판정하고 지급합니다.
+                  
+                  - 다음 달 리포트 창에서 호출합니다.
+                  - 기록 20일 이상 + 음주 횟수 ≤ 목표일 때 지급됩니다.
+                  - 이미 받은 달은 저장된 before/after를 그대로 반환합니다.
+                  - 여러 번 호출해도 한 번만 지급됩니다.
+                  """
+    )
+    public ResponseEntity<ApiResponse<MonthlyGoalRewardResponseDTO>> grantMonthlyGoalReward(
+            @Parameter(description = "보상 받을 연도", example = "2026")
+            @RequestParam(name = "year") @Min(2000) @Max(2100) int year,
+
+            @Parameter(description = "보상 받을 월 (1~12), 지난 달만 가능", example = "10")
+            @RequestParam(name = "month") @Min(1) @Max(12) int month
+    ) {
+        Long userId = getCurrentUserId();
+        MonthlyGoalRewardResponseDTO response =
+                monthlyGoalRewardService.grantReward(userId, YearMonth.of(year, month));
+        return ResponseEntity.ok(
+                ApiResponse.onSuccess(response, "GOAL200", "월간 목표 보상 처리 성공")
         );
     }
 }
