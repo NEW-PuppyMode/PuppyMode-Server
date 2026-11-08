@@ -22,7 +22,7 @@ public class ComplaintController {
 
     @PostMapping
     @Operation(summary = "신고하기 API",
-            description = "사용자를 신고합니다. 사유가 OTHER(기타)일 때만 detail(직접 입력)이 필수입니다. " +
+            description = "사용자를 신고합니다. detail(직접 입력)은 선택이며, 사유가 OTHER(기타)일 때만 저장됩니다. " +
                     "같은 대상을 같은 사유로 다시 신고하면 409(COMPLAINT4091)이고, 다른 사유로는 신고할 수 있습니다. " +
                     "신고해도 자동으로 차단되지 않습니다.")
     public ResponseEntity<ApiResponse<ComplaintCreateResponseDTO>> createComplaint(

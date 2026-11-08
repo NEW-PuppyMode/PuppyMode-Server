@@ -146,13 +146,17 @@ class ComplaintCommandServiceImplTest {
     }
 
     @Test
-    void 기타_사유인데_직접_입력이_비어_있으면_거절한다() {
-        assertError(ComplaintErrorStatus.DETAIL_REQUIRED,
-                () -> service.createComplaint(myUserId, request(ComplaintReason.OTHER, null)));
-        assertError(ComplaintErrorStatus.DETAIL_REQUIRED,
-                () -> service.createComplaint(myUserId, request(ComplaintReason.OTHER, "   ")));
+    void 기타_사유라도_직접_입력이_비어_있으면_null로_저장한다() {
+        givenTargetExists();
+        when(puppyRepository.findByUser_UserId(targetUserId)).thenReturn(Optional.empty());
+        givenSaveAssignsId(7L);
 
-        verify(complaintRepository, never()).saveAndFlush(any());
+        service.createComplaint(myUserId, request(ComplaintReason.OTHER, null));
+        service.createComplaint(myUserId, request(ComplaintReason.OTHER, "   "));
+
+        ArgumentCaptor<UserComplaint> saved = ArgumentCaptor.forClass(UserComplaint.class);
+        verify(complaintRepository, times(2)).saveAndFlush(saved.capture());
+        saved.getAllValues().forEach(complaint -> assertNull(complaint.getDetail()));
     }
 
     @Test

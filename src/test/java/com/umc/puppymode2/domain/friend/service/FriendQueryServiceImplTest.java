@@ -69,7 +69,7 @@ class FriendQueryServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        lenient().when(puppyProfileCache.profileOf(any())).thenReturn(new PuppyProfile(5, "https://cdn/img.png"));
+        lenient().when(puppyProfileCache.profileOf(any())).thenReturn(new PuppyProfile(5));
     }
 
     // ---------------------------------------------------------------- 친구 목록
@@ -222,7 +222,7 @@ class FriendQueryServiceImplTest {
     }
 
     @Test
-    void 강아지_정보가_있으면_강아지_이름과_레벨_이미지가_채워진다() {
+    void 강아지_정보가_있으면_강아지_이름과_레벨_견종이_채워진다() {
         Puppy puppy = Puppy.builder().puppyType(PuppyType.CORGI).puppyName("쿠키").puppyExp(100).build();
         User friend = user(1L, "가", UserStatus.NORMAL);
         ReflectionTestUtils.setField(puppy, "user", friend);
@@ -235,7 +235,7 @@ class FriendQueryServiceImplTest {
 
         assertEquals("쿠키", item.getPuppyName());
         assertEquals(5, item.getLevel());
-        assertEquals("https://cdn/img.png", item.getProfileImageUrl());
+        assertEquals(PuppyType.CORGI, item.getPuppyType());
     }
 
     // ---------------------------------------------------------------- 받은 요청 목록

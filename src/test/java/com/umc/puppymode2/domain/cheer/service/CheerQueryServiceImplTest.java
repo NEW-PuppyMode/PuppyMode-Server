@@ -7,9 +7,9 @@ import com.umc.puppymode2.domain.cheer.entity.Cheer;
 import com.umc.puppymode2.domain.cheer.entity.CheerTemplate;
 import com.umc.puppymode2.domain.cheer.entity.enums.CheerCategory;
 import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
-import com.umc.puppymode2.domain.friend.cache.PuppyProfileCache;
-import com.umc.puppymode2.domain.friend.cache.PuppyProfileCache.PuppyProfile;
 import com.umc.puppymode2.domain.friend.converter.FriendConverter;
+import com.umc.puppymode2.domain.puppy.entity.Puppy;
+import com.umc.puppymode2.domain.puppy.entity.PuppyType;
 import com.umc.puppymode2.domain.puppy.repository.PuppyRepository;
 import com.umc.puppymode2.domain.user.auth.enums.Provider;
 import com.umc.puppymode2.domain.user.entity.User;
@@ -43,7 +43,6 @@ class CheerQueryServiceImplTest {
     @Mock private CheerRepository cheerRepository;
     @Mock private UserRepository userRepository;
     @Mock private PuppyRepository puppyRepository;
-    @Mock private PuppyProfileCache puppyProfileCache;
     @Spy private CheerTimePolicy timePolicy = new CheerTimePolicy();
     @Spy private CheerConverter converter = new CheerConverter(new FriendConverter());
 
@@ -57,7 +56,6 @@ class CheerQueryServiceImplTest {
     @BeforeEach
     void setUp() {
         originalTimeZone = TimeZone.getDefault();
-        lenient().when(puppyProfileCache.profileOf(any())).thenReturn(new PuppyProfile(5, "https://cdn/img.png"));
     }
 
     @AfterEach
@@ -96,14 +94,17 @@ class CheerQueryServiceImplTest {
     void 응원_항목에_보낸_사람과_발송_시점_문구_스냅샷이_담긴다() {
         when(cheerRepository.findReceivable(eq(ME), any(), any())).thenReturn(List.of(
                 cheer(900L, 31L, "다 이유가 있겠지", CheerCategory.COMFORT, null)));
-        when(userRepository.findAllById(anyCollection())).thenReturn(List.of(user(31L, "박쭝쭝")));
-        when(puppyRepository.findAllByUserUserIdIn(any())).thenReturn(List.of());
+        User sender = user(31L, "박쭝쭝");
+        Puppy puppy = Puppy.builder().puppyType(PuppyType.SHIBA).puppyName("보리").build();
+        ReflectionTestUtils.setField(puppy, "user", sender);
+        when(userRepository.findAllById(anyCollection())).thenReturn(List.of(sender));
+        when(puppyRepository.findAllByUserUserIdIn(any())).thenReturn(List.of(puppy));
 
         ReceivedCheerListResponseDTO.Item item = service.getReceivedCheers(ME).getCheers().get(0);
 
         assertEquals(31L, item.getSender().getUserId());
         assertEquals("박쭝쭝", item.getSender().getUsername());
-        assertEquals("https://cdn/img.png", item.getSender().getProfileImageUrl());
+        assertEquals(PuppyType.SHIBA, item.getSender().getPuppyType());
         assertEquals(CheerCategory.COMFORT, item.getCategory());
         assertEquals("다 이유가 있겠지", item.getMessage());
     }

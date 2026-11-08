@@ -39,7 +39,7 @@ public class ComplaintCommandServiceImpl implements ComplaintCommandService {
             throw new GeneralException(ComplaintErrorStatus.CANNOT_COMPLAIN_SELF);
         }
 
-        // 2. 사유가 기타(OTHER)면 직접 입력 내용이 필수이고, 그 외 사유에서는 입력 내용을 저장하지 않는다.
+        // 2. 직접 입력 내용은 사유가 기타(OTHER)일 때만 선택적으로 저장하고, 비어 있으면 null로 둔다.
         String detail = normalizeDetail(reason, request.getDetail());
 
         // 3. 신고 대상은 존재하고 NORMAL 이어야 한다. (탈퇴/휴면 사용자는 없는 사용자로 취급)
@@ -71,11 +71,8 @@ public class ComplaintCommandServiceImpl implements ComplaintCommandService {
     }
 
     private String normalizeDetail(ComplaintReason reason, String detail) {
-        if (reason != ComplaintReason.OTHER) {
+        if (reason != ComplaintReason.OTHER || detail == null || detail.isBlank()) {
             return null;
-        }
-        if (detail == null || detail.isBlank()) {
-            throw new GeneralException(ComplaintErrorStatus.DETAIL_REQUIRED);
         }
         return detail;
     }

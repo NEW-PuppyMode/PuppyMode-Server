@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.friend.dto;
 
+import com.umc.puppymode2.domain.puppy.entity.PuppyType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,7 +29,8 @@ public class FriendListResponseDTO {
         private String username;
         private String puppyName;
         private Integer level;
-        private String profileImageUrl;
+        @Schema(description = "BICHON / SHIBA / CORGI / POODLE (강아지가 없으면 null)", example = "SHIBA", nullable = true)
+        private PuppyType puppyType; // 강아지가 없으면 null
         private FriendDrinkStatus drinkStatus;
         private Cheer cheer;
     }

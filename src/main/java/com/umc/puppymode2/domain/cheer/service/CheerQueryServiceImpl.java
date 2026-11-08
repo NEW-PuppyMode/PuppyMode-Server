@@ -4,7 +4,6 @@ import com.umc.puppymode2.domain.cheer.converter.CheerConverter;
 import com.umc.puppymode2.domain.cheer.dto.ReceivedCheerListResponseDTO;
 import com.umc.puppymode2.domain.cheer.entity.Cheer;
 import com.umc.puppymode2.domain.cheer.repository.CheerRepository;
-import com.umc.puppymode2.domain.friend.cache.PuppyProfileCache;
 import com.umc.puppymode2.domain.puppy.entity.Puppy;
 import com.umc.puppymode2.domain.puppy.repository.PuppyRepository;
 import com.umc.puppymode2.domain.user.entity.User;
@@ -29,7 +28,6 @@ public class CheerQueryServiceImpl implements CheerQueryService {
     private final CheerRepository cheerRepository;
     private final UserRepository userRepository;
     private final PuppyRepository puppyRepository;
-    private final PuppyProfileCache puppyProfileCache;
     private final CheerTimePolicy timePolicy;
     private final CheerConverter converter;
 
@@ -59,7 +57,7 @@ public class CheerQueryServiceImpl implements CheerQueryService {
             items.add(converter.toReceivedItem(
                     cheer,
                     sender,
-                    puppyProfileCache.profileOf(puppies.get(sender.getUserId())),
+                    puppies.get(sender.getUserId()),
                     timePolicy.calculateExpiresIn(cheer.getExpiresAt(), todayKst)));
         }
         return converter.toReceivedListDto(items);

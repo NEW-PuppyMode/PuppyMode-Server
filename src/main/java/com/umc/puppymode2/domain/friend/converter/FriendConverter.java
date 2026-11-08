@@ -42,7 +42,7 @@ public class FriendConverter {
                 .username(requester.getUsername())
                 .puppyName(puppy == null ? null : puppy.getPuppyName())
                 .level(profile.level())
-                .profileImageUrl(profile.imageUrl())
+                .puppyType(puppy == null ? null : puppy.getPuppyType())
                 .requestedAt(toKstOffset(request.getCreatedAt()))
                 .build();
     }
@@ -60,7 +60,7 @@ public class FriendConverter {
                 .username(friend.getUsername())
                 .puppyName(puppy == null ? null : puppy.getPuppyName())
                 .level(profile.level())
-                .profileImageUrl(profile.imageUrl())
+                .puppyType(puppy == null ? null : puppy.getPuppyType())
                 .drinkStatus(status.drinkStatus())
                 .cheer(FriendListResponseDTO.Cheer.builder()
                         .state(status.cheerState())
@@ -83,7 +83,6 @@ public class FriendConverter {
                 .puppyName(puppy == null ? null : puppy.getPuppyName())
                 .puppyType(puppy == null ? null : puppy.getPuppyType())
                 .level(profile.level())
-                .profileImageUrl(profile.imageUrl())
                 .build();
     }
 
