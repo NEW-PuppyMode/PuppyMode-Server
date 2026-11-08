@@ -1,5 +1,6 @@
 package com.umc.puppymode2.domain.friend.dto;
 
+import com.umc.puppymode2.domain.puppy.entity.PuppyType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,7 +30,7 @@ public class ReceivedFriendRequestListResponseDTO {
         private String username;         // 요청자 이름
         private String puppyName;        // 요청자 강아지 이름
         private Integer level;           // 요청자 강아지 레벨
-        private String profileImageUrl;  // 요청자 프로필 이미지
+        private PuppyType puppyType;     // 요청자 강아지 종류 (강아지가 없으면 null)
         private OffsetDateTime requestedAt; // 요청 시각 (+09:00)
     }
 }

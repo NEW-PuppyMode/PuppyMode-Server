@@ -1,6 +1,7 @@
 package com.umc.puppymode2.domain.cheer.dto;
 
 import com.umc.puppymode2.domain.cheer.entity.enums.CheerCategory;
+import com.umc.puppymode2.domain.puppy.entity.PuppyType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -43,6 +44,6 @@ public class ReceivedCheerListResponseDTO {
     public static class Sender {
         private Long userId;
         private String username;
-        private String profileImageUrl;
+        private PuppyType puppyType; // 강아지가 없으면 null
     }
 }

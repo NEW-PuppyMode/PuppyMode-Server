@@ -61,7 +61,7 @@ public class BlockQueryServiceImpl implements BlockQueryService {
                     .username(blocked.getUsername())
                     .puppyName(puppy == null ? null : puppy.getPuppyName())
                     .level(profile.level())
-                    .profileImageUrl(profile.imageUrl())
+                    .puppyType(puppy == null ? null : puppy.getPuppyType())
                     .blockedAt(friendConverter.toKstOffset(block.getCreatedAt()))
                     .build());
         }

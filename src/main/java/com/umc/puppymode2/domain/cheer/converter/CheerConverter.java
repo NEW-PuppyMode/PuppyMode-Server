@@ -4,8 +4,8 @@ import com.umc.puppymode2.domain.cheer.dto.*;
 import com.umc.puppymode2.domain.cheer.entity.Cheer;
 import com.umc.puppymode2.domain.cheer.entity.CheerTemplate;
 import com.umc.puppymode2.domain.cheer.entity.enums.CheerCategory;
-import com.umc.puppymode2.domain.friend.cache.PuppyProfileCache.PuppyProfile;
 import com.umc.puppymode2.domain.friend.converter.FriendConverter;
+import com.umc.puppymode2.domain.puppy.entity.Puppy;
 import com.umc.puppymode2.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -53,13 +53,13 @@ public class CheerConverter {
     }
 
     public ReceivedCheerListResponseDTO.Item toReceivedItem(
-            Cheer cheer, User sender, PuppyProfile senderProfile, CheerExpiresIn expiresIn) {
+            Cheer cheer, User sender, Puppy senderPuppy, CheerExpiresIn expiresIn) {
         return ReceivedCheerListResponseDTO.Item.builder()
                 .cheerId(cheer.getCheerId())
                 .sender(ReceivedCheerListResponseDTO.Sender.builder()
                         .userId(sender.getUserId())
                         .username(sender.getUsername())
-                        .profileImageUrl(senderProfile.imageUrl())
+                        .puppyType(senderPuppy == null ? null : senderPuppy.getPuppyType())
                         .build())
                 .category(cheer.getCategory())
                 .message(cheer.getMessageSnapshot())

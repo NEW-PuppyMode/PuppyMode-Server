@@ -7,6 +7,7 @@ import com.umc.puppymode2.domain.friend.cache.PuppyProfileCache;
 import com.umc.puppymode2.domain.friend.cache.PuppyProfileCache.PuppyProfile;
 import com.umc.puppymode2.domain.friend.converter.FriendConverter;
 import com.umc.puppymode2.domain.puppy.entity.Puppy;
+import com.umc.puppymode2.domain.puppy.entity.PuppyType;
 import com.umc.puppymode2.domain.puppy.repository.PuppyRepository;
 import com.umc.puppymode2.domain.user.auth.enums.Provider;
 import com.umc.puppymode2.domain.user.entity.User;
@@ -60,7 +61,7 @@ class BlockQueryServiceImplTest {
     }
 
     private Puppy puppy(User owner, String name) {
-        Puppy puppy = Puppy.builder().puppyName(name).build();
+        Puppy puppy = Puppy.builder().puppyName(name).puppyType(PuppyType.POODLE).build();
         ReflectionTestUtils.setField(puppy, "user", owner);
         return puppy;
     }
@@ -93,6 +94,8 @@ class BlockQueryServiceImplTest {
         assertEquals(List.of(2L, 1L), result.getBlocks().stream().map(BlockListResponseDTO.Item::getUserId).toList());
         assertEquals("별이", result.getBlocks().get(0).getPuppyName());
         assertNull(result.getBlocks().get(1).getPuppyName());
+        assertEquals(PuppyType.POODLE, result.getBlocks().get(0).getPuppyType());
+        assertNull(result.getBlocks().get(1).getPuppyType());
         assertNotNull(result.getBlocks().get(0).getBlockedAt());
         assertEquals(9 * 3600, result.getBlocks().get(0).getBlockedAt().getOffset().getTotalSeconds());
     }

@@ -16,5 +16,4 @@ public class FriendProfileResponseDTO {
     private String puppyName;
     private PuppyType puppyType; // BICHON / SHIBA / CORGI / POODLE
     private Integer level;
-    private String profileImageUrl; // 강아지 이미지 URL
 }
