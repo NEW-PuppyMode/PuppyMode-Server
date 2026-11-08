@@ -4,6 +4,9 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
+// Docker Engine 29+ 호환을 위해 Spring Boot BOM이 관리하는 Testcontainers 버전을 올린다.
+ext['testcontainers.version'] = '1.21.4'
+
 group = 'com.umc'
 version = '0.0.1-SNAPSHOT'
 
@@ -42,8 +45,8 @@ dependencies {
 
     // test
     testImplementation 'com.h2database:h2'
-    testImplementation 'org.testcontainers:mysql:1.19.0'
-    testImplementation 'org.testcontainers:junit-jupiter:1.19.0'
+    testImplementation 'org.testcontainers:mysql'
+    testImplementation 'org.testcontainers:junit-jupiter'
 
     // JJWT Core
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
