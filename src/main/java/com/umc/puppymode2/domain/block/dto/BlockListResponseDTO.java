@@ -29,7 +29,7 @@ public class BlockListResponseDTO {
         private String username;
         private String puppyName;        // 강아지가 없으면 null
         private Integer level;
-        @Schema(description = "BICHON / SHIBA / CORGI / POODLE", example = "SHIBA")
+        @Schema(description = "BICHON / SHIBA / CORGI / POODLE (강아지가 없으면 null)", example = "SHIBA", nullable = true)
         private PuppyType puppyType;     // 강아지가 없으면 null
         private OffsetDateTime blockedAt; // 차단 시각 (+09:00)
     }

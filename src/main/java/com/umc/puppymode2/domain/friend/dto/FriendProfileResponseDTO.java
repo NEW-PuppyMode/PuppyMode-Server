@@ -15,7 +15,7 @@ public class FriendProfileResponseDTO {
     private Long userId;
     private String username;
     private String puppyName;
-    @Schema(description = "BICHON / SHIBA / CORGI / POODLE", example = "SHIBA")
+    @Schema(description = "BICHON / SHIBA / CORGI / POODLE (강아지가 없으면 null)", example = "SHIBA", nullable = true)
     private PuppyType puppyType; // BICHON / SHIBA / CORGI / POODLE
     private Integer level;
 }
