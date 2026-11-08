@@ -69,7 +69,7 @@ class FriendQueryServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        lenient().when(puppyProfileCache.profileOf(any())).thenReturn(new PuppyProfile(5, null));
+        lenient().when(puppyProfileCache.profileOf(any())).thenReturn(new PuppyProfile(5));
     }
 
     // ---------------------------------------------------------------- 친구 목록

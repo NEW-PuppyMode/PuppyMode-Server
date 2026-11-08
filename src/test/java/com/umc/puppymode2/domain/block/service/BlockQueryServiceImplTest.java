@@ -86,7 +86,7 @@ class BlockQueryServiceImplTest {
                 block(1L, LocalDateTime.of(2026, 10, 7, 10, 0))));
         when(userRepository.findAllById(anyCollection())).thenReturn(List.of(first, second));
         when(puppyRepository.findAllByUserUserIdIn(any())).thenReturn(List.of(puppy(second, "별이")));
-        when(puppyProfileCache.profileOf(any())).thenReturn(new PuppyProfile(null, null));
+        when(puppyProfileCache.profileOf(any())).thenReturn(new PuppyProfile(null));
 
         BlockListResponseDTO result = service.getBlocks(ME);
 
@@ -111,7 +111,7 @@ class BlockQueryServiceImplTest {
                 user(2L, "휴면", UserStatus.REST),
                 user(3L, "탈퇴", UserStatus.STOP)));
         when(puppyRepository.findAllByUserUserIdIn(any())).thenReturn(List.of());
-        when(puppyProfileCache.profileOf(any())).thenReturn(new PuppyProfile(null, null));
+        when(puppyProfileCache.profileOf(any())).thenReturn(new PuppyProfile(null));
 
         BlockListResponseDTO result = service.getBlocks(ME);
 
