@@ -30,6 +30,7 @@ public class ReceivedFriendRequestListResponseDTO {
         private String username;         // 요청자 이름
         private String puppyName;        // 요청자 강아지 이름
         private Integer level;           // 요청자 강아지 레벨
+        @Schema(description = "BICHON / SHIBA / CORGI / POODLE", example = "SHIBA")
         private PuppyType puppyType;     // 요청자 강아지 종류 (강아지가 없으면 null)
         private OffsetDateTime requestedAt; // 요청 시각 (+09:00)
     }

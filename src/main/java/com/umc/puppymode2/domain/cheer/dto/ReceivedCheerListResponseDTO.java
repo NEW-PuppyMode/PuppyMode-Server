@@ -44,6 +44,7 @@ public class ReceivedCheerListResponseDTO {
     public static class Sender {
         private Long userId;
         private String username;
+        @Schema(description = "BICHON / SHIBA / CORGI / POODLE", example = "SHIBA")
         private PuppyType puppyType; // 강아지가 없으면 null
     }
 }
