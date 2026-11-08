@@ -15,7 +15,6 @@ import org.springframework.http.HttpStatus;
 public enum ComplaintErrorStatus implements BaseErrorCode {
 
     CANNOT_COMPLAIN_SELF(HttpStatus.BAD_REQUEST, "COMPLAINT4001", "나는 신고할 수 없어요"),
-    DETAIL_REQUIRED(HttpStatus.BAD_REQUEST, "COMPLAINT4002", "신고 사유를 입력해주세요"),
     TARGET_USER_NOT_FOUND(HttpStatus.NOT_FOUND, "COMPLAINT4041", "존재하지 않는 사용자예요"),
     ALREADY_COMPLAINED(HttpStatus.CONFLICT, "COMPLAINT4091", "이미 같은 사유로 신고했어요"),
     ;

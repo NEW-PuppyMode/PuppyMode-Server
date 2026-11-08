@@ -19,7 +19,7 @@ public class ComplaintCreateRequestDTO {
     @NotNull(message = "신고 사유를 선택해주세요")
     private ComplaintReason reason;
 
-    // 사유가 OTHER일 때만 필수. 필수 여부는 서비스에서 COMPLAINT4002로 검증한다.
+    // 사유가 OTHER일 때만 저장하는 선택 입력값. 비어 있어도 신고할 수 있다.
     @Size(max = UserComplaint.DETAIL_MAX_LENGTH, message = "신고 내용은 500자 이하로 입력해주세요")
     private String detail;
 
