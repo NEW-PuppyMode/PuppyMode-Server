@@ -32,6 +32,32 @@
             font-variant-numeric: tabular-nums;
         }
         th:last-child, td:last-child { text-align: right; }
+        .hbar-list { margin-top: 8px; }
+        .hbar-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 22px;
+            font-size: 12px;
+            font-variant-numeric: tabular-nums;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .hbar-row.empty { opacity: 0.4; }
+        .hbar-row .lv { width: 44px; color: #6b7280; }
+        .hbar-row .cnt { width: 40px; text-align: right; font-weight: 600; }
+        .hbar-row .pct { width: 48px; text-align: right; color: #6b7280; }
+        .hbar-track { flex: 1; height: 12px; }
+        .hbar-fill {
+            height: 100%;
+            background: #0FD380;
+            border-radius: 0 2px 2px 0;
+        }
+        .no-level {
+            font-size: 14px;
+            color: #6b7280;
+            margin: 12px 0 40px;
+            font-variant-numeric: tabular-nums;
+        }
     </style>
 </head>
 <body>
@@ -40,6 +66,21 @@
 
     <p class="label">총 유저 수</p>
     <p class="total" th:text="${userCount}">0</p>
+
+    <p class="label">레벨별 유저 분포</p>
+    <div class="hbar-list">
+        <div class="hbar-row" th:each="row, stat : ${levelDistribution}" th:unless="${stat.last}"
+             th:classappend="${row.count == 0} ? 'empty' : ''">
+            <span class="lv" th:text="${row.label}">Lv.1</span>
+            <span class="cnt" th:text="${row.count} + '명'">0명</span>
+            <span class="pct" th:text="${#numbers.formatDecimal(row.ratio, 1, 1)} + '%'">0.0%</span>
+            <div class="hbar-track">
+                <div class="hbar-fill" th:style="'width:' + ${#numbers.formatDecimal(row.intensity * 100, 1, 'NONE', 1, 'POINT')} + '%'"></div>
+            </div>
+        </div>
+    </div>
+    <p class="no-level" th:with="noLevel=${levelDistribution[levelDistribution.size() - 1]}"
+       th:text="${noLevel.label} + ' ' + ${noLevel.count} + '명 · ' + ${#numbers.formatDecimal(noLevel.ratio, 1, 1)} + '%'">레벨 없음 0명 · 0.0%</p>
 
     <p class="label">날짜별 가입 수 (KST)</p>
     <table>
