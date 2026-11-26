@@ -34,4 +34,27 @@ public interface UserRepository extends JpaRepository<User, Long> {
         String getDate();
         long getCount();
     }
+
+    // TODO(#228): 임시 대시보드용. Amplitude 연동 후 제거
+    // 레벨별 유저 수
+    // 강아지가 없는 유저(온보딩 전)는 level = NULL로 집계
+    @Query(value = """
+            SELECT l.level AS level,
+                   COUNT(*) AS count
+            FROM `user` u
+            LEFT JOIN puppy p ON p.user_id = u.user_id
+            LEFT JOIN level_exp l
+                   ON p.puppy_exp >= l.min_exp
+                  AND (p.puppy_exp < l.max_exp
+                       OR l.level = (SELECT MAX(level) FROM level_exp))
+            WHERE u.status = 'NORMAL'
+            GROUP BY l.level
+            """, nativeQuery = true)
+    List<LevelCount> countByLevel();
+
+    // TODO(#228): 임시 대시보드용.
+    interface LevelCount {
+        Integer getLevel();
+        long getCount();
+    }
 }

@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PuppyLevelCalculator {
 
-    private static final int MAX_LEVEL = 30;
+    public static final int MAX_LEVEL = 30;
 
     private final LevelExpRepository levelExpRepository;
 
